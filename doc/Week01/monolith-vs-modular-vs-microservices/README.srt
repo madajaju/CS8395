@@ -1,0 +1,1467 @@
+﻿1
+00:00:00,000 --> 00:00:00,200
+All right.
+
+2
+00:00:00,200 --> 00:00:05,066
+In this lecture we're going to talk about
+monolithic versus modular versus
+
+3
+00:00:05,066 --> 00:00:06,700
+microservice architectures
+
+4
+00:00:06,700 --> 00:00:08,633
+so that you can understand
+what the differences are
+
+5
+00:00:08,633 --> 00:00:10,433
+and the trade offs are for each.
+
+6
+00:00:10,433 --> 00:00:12,966
+A lot of people say,
+oh well, everyone knows microservice
+
+7
+00:00:12,966 --> 00:00:14,300
+architectures is the best.
+
+8
+00:00:14,300 --> 00:00:15,633
+There's some downsides to it.
+
+9
+00:00:15,633 --> 00:00:18,700
+So we need to look at each
+one of these independently
+
+10
+00:00:18,933 --> 00:00:23,133
+and so that we can make good and wise,
+architectural decisions.
+
+11
+00:00:23,766 --> 00:00:26,400
+So first, we want to build
+
+12
+00:00:26,400 --> 00:00:29,533
+a clear vocabulary
+for systems composition.
+
+13
+00:00:29,733 --> 00:00:32,866
+We need to understand the differences
+between monolithic,
+
+14
+00:00:33,033 --> 00:00:36,100
+modular,
+monolithic and microservice architectures.
+
+15
+00:00:36,366 --> 00:00:40,233
+We should be able to identify
+and recognize each style and where it
+
+16
+00:00:40,233 --> 00:00:43,766
+fits, and identify
+key risk and trade offs for each.
+
+17
+00:00:45,366 --> 00:00:45,666
+Okay.
+
+18
+00:00:45,666 --> 00:00:49,200
+First off, monolithic right?
+
+19
+00:00:49,633 --> 00:00:53,433
+Application is one big application
+with code
+
+20
+00:00:53,433 --> 00:00:57,266
+UI, API domain with one database, right?
+
+21
+00:00:57,266 --> 00:00:59,000
+A shared database, even if it wants you.
+
+22
+00:00:59,000 --> 00:01:01,166
+That's that's what that is.
+
+23
+00:01:01,166 --> 00:01:04,333
+Modular
+monolithic says I have multiple modules
+
+24
+00:01:04,533 --> 00:01:08,666
+that can be developed independently,
+but they may share the same database.
+
+25
+00:01:09,066 --> 00:01:12,066
+And they own certain tables per module.
+
+26
+00:01:12,100 --> 00:01:17,233
+But the application itself
+is all built as one application.
+
+27
+00:01:18,266 --> 00:01:18,866
+It could be
+
+28
+00:01:18,866 --> 00:01:22,166
+multi-tiered too, but it's all released
+together.
+
+29
+00:01:22,366 --> 00:01:24,666
+All, all deployed together.
+
+30
+00:01:24,666 --> 00:01:28,433
+Modular, monolithic microservice
+architectures say, hey, look,
+
+31
+00:01:28,900 --> 00:01:32,066
+the application
+and the database reside together.
+
+32
+00:01:32,666 --> 00:01:36,566
+A user database does not have order data
+in it.
+
+33
+00:01:36,566 --> 00:01:38,033
+And the order database,
+
+34
+00:01:38,033 --> 00:01:41,400
+well, he has order data, and there's
+an order service tied to that database.
+
+35
+00:01:41,733 --> 00:01:44,466
+Right? Same problem space.
+
+36
+00:01:44,466 --> 00:01:46,933
+Three different architectural approaches.
+
+37
+00:01:46,933 --> 00:01:49,433
+Typically microservice architectures.
+You're
+
+38
+00:01:49,433 --> 00:01:52,566
+going to have a lot of communications
+between these microservices.
+
+39
+00:01:52,800 --> 00:01:53,633
+Right.
+
+40
+00:01:53,633 --> 00:01:58,733
+What this does is it draws clear
+boundaries between the microservices.
+
+41
+00:01:58,966 --> 00:02:02,266
+You can only communicate
+through an API call
+
+42
+00:02:02,533 --> 00:02:07,000
+that is very well known
+with with modular monolithic.
+
+43
+00:02:07,133 --> 00:02:10,333
+Sometimes you might have a library
+there that you're calling.
+
+44
+00:02:10,633 --> 00:02:13,333
+There's ways around things.
+
+45
+00:02:13,333 --> 00:02:15,900
+I've seen it myself. I've done it right.
+
+46
+00:02:15,900 --> 00:02:18,033
+And then a monolithic it's a free for all.
+
+47
+00:02:18,033 --> 00:02:20,600
+It turns out to be a spaghetti code
+a lot of times,
+
+48
+00:02:20,600 --> 00:02:23,766
+unless you've got a lot of discipline
+on your engineering team.
+
+49
+00:02:25,333 --> 00:02:27,800
+Okay, so why does this matter?
+
+50
+00:02:27,800 --> 00:02:31,000
+Well, modern systems
+kind of outlive the original design.
+
+51
+00:02:31,000 --> 00:02:34,833
+Great example is there's a piece
+of software that was written in the 60s
+
+52
+00:02:35,066 --> 00:02:38,066
+that is managing Department
+of Defense contracts
+
+53
+00:02:38,433 --> 00:02:41,433
+on mainframes
+written in COBOL, still out there today.
+
+54
+00:02:42,000 --> 00:02:43,166
+Amazing, right.
+
+55
+00:02:43,166 --> 00:02:46,800
+We're talking 60 years
+that code has been running
+
+56
+00:02:47,833 --> 00:02:49,733
+approaching 60 years.
+
+57
+00:02:49,733 --> 00:02:50,900
+Amazing, right.
+
+58
+00:02:50,900 --> 00:02:54,933
+So a lot of times we have to understand,
+hey, we should really develop things.
+
+59
+00:02:55,333 --> 00:03:00,466
+And, and have the ability to add
+new features and teams and traffic on it.
+
+60
+00:03:00,833 --> 00:03:01,300
+Right.
+
+61
+00:03:01,300 --> 00:03:04,633
+Architecture that works for one team
+for one year fails.
+
+62
+00:03:05,133 --> 00:03:08,166
+All the time. Right?
+If I try and scale it.
+
+63
+00:03:08,166 --> 00:03:14,366
+So let's look at microservices is an often
+slogan and not a reason decision.
+
+64
+00:03:14,800 --> 00:03:16,700
+We got to watch out for that
+as well. Right.
+
+65
+00:03:16,700 --> 00:03:18,166
+So we need to understand
+
+66
+00:03:18,166 --> 00:03:21,533
+the three different styles
+of what's good for what sorts of things.
+
+67
+00:03:21,800 --> 00:03:24,766
+We've seen some major blow ups
+and microservices,
+
+68
+00:03:24,766 --> 00:03:30,233
+especially in cloud service providers,
+where, they, they use the microservice
+
+69
+00:03:30,233 --> 00:03:33,233
+architecture, but they didn't follow
+good design principles.
+
+70
+00:03:33,366 --> 00:03:33,566
+Right.
+
+71
+00:03:33,566 --> 00:03:35,266
+And we had some major failures.
+
+72
+00:03:35,266 --> 00:03:36,866
+But, because of that.
+
+73
+00:03:38,933 --> 00:03:39,333
+Okay.
+
+74
+00:03:39,333 --> 00:03:42,333
+Monolithic. Let's go deeper
+into monolithic.
+
+75
+00:03:42,533 --> 00:03:45,633
+Most monster,
+all the code is in a single runtime unit.
+
+76
+00:03:45,633 --> 00:03:49,933
+So the UI, the business logic,
+the data access is all in one
+
+77
+00:03:49,933 --> 00:03:53,133
+monolithic application, one process, one
+
+78
+00:03:53,133 --> 00:03:56,133
+artifact, one database.
+
+79
+00:03:56,500 --> 00:03:57,166
+Right.
+
+80
+00:03:57,166 --> 00:04:01,766
+Tends to give tends to lead to more tight
+coupling over time.
+
+81
+00:04:02,066 --> 00:04:05,066
+But this is easy to deploy,
+
+82
+00:04:05,366 --> 00:04:07,533
+very easy to deploy.
+
+83
+00:04:07,533 --> 00:04:10,133
+If I have a small application
+it's not doing a lot.
+
+84
+00:04:10,133 --> 00:04:13,666
+This may be the way to go
+if I have a small cohesive team,
+
+85
+00:04:14,500 --> 00:04:16,033
+this may be the way to go.
+
+86
+00:04:16,033 --> 00:04:19,433
+Instead of a
+I'm going to break up this into, you know,
+
+87
+00:04:19,700 --> 00:04:22,566
+5 or 6 different, 
+microservice architecture.
+
+88
+00:04:22,566 --> 00:04:24,133
+Microservices.
+
+89
+00:04:24,133 --> 00:04:27,266
+But it's, a small application
+for a small company.
+
+90
+00:04:28,166 --> 00:04:30,666
+You may have created some complexity
+that you don't need.
+
+91
+00:04:30,666 --> 00:04:32,566
+So understanding that is important.
+
+92
+00:04:33,700 --> 00:04:34,600
+Okay.
+
+93
+00:04:34,600 --> 00:04:37,366
+Simple deployment I already mentioned.
+
+94
+00:04:37,366 --> 00:04:40,466
+Great for small teams, easy
+for local deployment.
+
+95
+00:04:40,766 --> 00:04:44,600
+Some of the cons on this could be,
+it can become
+
+96
+00:04:44,600 --> 00:04:48,866
+a big ball of mud or spaghetti
+if it's not structured properly.
+
+97
+00:04:49,033 --> 00:04:51,766
+Requires more discipline
+from the software engineers.
+
+98
+00:04:51,766 --> 00:04:54,066
+It could be much harder to scale.
+
+99
+00:04:54,066 --> 00:04:55,600
+If I need to scale.
+
+100
+00:04:55,600 --> 00:04:58,333
+And you have a risk, factoring risk,
+
+101
+00:04:58,333 --> 00:05:01,466
+grows, with time and with the size.
+
+102
+00:05:01,666 --> 00:05:04,666
+So these are
+the things you have to watch out for
+
+103
+00:05:04,900 --> 00:05:06,000
+and be weary.
+
+104
+00:05:06,000 --> 00:05:08,400
+Sometimes you say
+this is just a small application.
+
+105
+00:05:08,400 --> 00:05:12,233
+In a small company,
+what if they hit big all of a sudden?
+
+106
+00:05:12,233 --> 00:05:15,700
+You've got a code base
+that is, rigid and hard.
+
+107
+00:05:16,033 --> 00:05:17,300
+Hard to scale.
+
+108
+00:05:17,300 --> 00:05:21,233
+It runs great,
+but you may not be able to scale on to it.
+
+109
+00:05:21,233 --> 00:05:23,700
+So you got to watch out for that
+sort of thing.
+
+110
+00:05:23,700 --> 00:05:24,966
+All right, let's look at modular.
+
+111
+00:05:24,966 --> 00:05:27,666
+Monolithic. Still one deployment. You.
+
+112
+00:05:29,000 --> 00:05:30,966
+But now I have libraries in there.
+
+113
+00:05:30,966 --> 00:05:36,833
+And with the advent of shared
+libraries in 90s this was huge, right.
+
+114
+00:05:36,833 --> 00:05:39,000
+Because now I can have a library
+that can be shared
+
+115
+00:05:39,000 --> 00:05:41,100
+across multiple applications.
+
+116
+00:05:41,100 --> 00:05:43,133
+Which was great.
+
+117
+00:05:43,133 --> 00:05:47,900
+But it requires, clear internal module,
+
+118
+00:05:47,900 --> 00:05:51,266
+a lot of, boundaries that are set clear
+
+119
+00:05:51,266 --> 00:05:54,266
+API definitions that are set.
+
+120
+00:05:55,366 --> 00:05:56,900
+And if you don't
+
+121
+00:05:56,900 --> 00:05:59,900
+define explicit interfaces
+between the modules,
+
+122
+00:06:00,033 --> 00:06:03,566
+people tend to go around them
+and they'll use things directly
+
+123
+00:06:03,866 --> 00:06:08,366
+in, in internal, calls directly,
+which they shouldn't be using.
+
+124
+00:06:08,666 --> 00:06:11,066
+And this is when I get tight
+coupling again.
+
+125
+00:06:11,066 --> 00:06:12,833
+So people fall back
+
+126
+00:06:12,833 --> 00:06:16,233
+to, hey, I really need to get this done
+in a short period of time.
+
+127
+00:06:16,600 --> 00:06:20,466
+I don't have time to go coordinate with
+someone to get a new interface, developed,
+
+128
+00:06:20,966 --> 00:06:22,000
+and they circumvent it.
+
+129
+00:06:22,000 --> 00:06:24,100
+I've seen this, I've done this.
+
+130
+00:06:24,100 --> 00:06:25,800
+This is what typically happens.
+
+131
+00:06:25,800 --> 00:06:28,466
+So some of, some of the pros.
+
+132
+00:06:28,466 --> 00:06:31,333
+Well, first off,
+think of it as a bunch of logical servers.
+
+133
+00:06:31,333 --> 00:06:34,333
+Services with one physical deployment.
+
+134
+00:06:34,400 --> 00:06:38,133
+Again, some of the benefits
+it keeps the operational simplicity.
+
+135
+00:06:38,133 --> 00:06:41,133
+I have one application
+when I deploy it, it's simple.
+
+136
+00:06:41,466 --> 00:06:43,433
+It's easier to maintain
+
+137
+00:06:43,433 --> 00:06:47,133
+than a big monolithic because I can focus
+my changes on one library.
+
+138
+00:06:47,533 --> 00:06:51,800
+And easier to refactor
+if I divide my interfaces really well.
+
+139
+00:06:52,300 --> 00:06:55,533
+There's clear ownership
+between the different, libraries,
+
+140
+00:06:55,533 --> 00:06:57,166
+and you can set team boundaries up,
+
+141
+00:06:58,166 --> 00:06:58,933
+for that.
+
+142
+00:06:58,933 --> 00:07:00,500
+And there's an easier migration
+
+143
+00:07:00,500 --> 00:07:03,500
+path to microservices later
+if I want to go that route.
+
+144
+00:07:04,300 --> 00:07:07,833
+But still, I have one failure.
+
+145
+00:07:07,833 --> 00:07:10,433
+If that deployment unit fails.
+
+146
+00:07:10,433 --> 00:07:12,466
+Right. So I got one failure point.
+
+147
+00:07:12,466 --> 00:07:14,666
+If it fails on on toast. Right.
+
+148
+00:07:14,666 --> 00:07:17,700
+And requires
+discipline to keep the boundaries clean.
+
+149
+00:07:18,233 --> 00:07:22,166
+Right to define those well-defined
+interfaces for the libraries
+
+150
+00:07:22,366 --> 00:07:24,500
+and not circumvent them. Right.
+
+151
+00:07:24,500 --> 00:07:28,200
+And there is a whole industry
+built around this where I can do,
+
+152
+00:07:28,600 --> 00:07:34,866
+I can do both dynamic and static code
+analysis to see if I have,
+
+153
+00:07:35,333 --> 00:07:39,933
+coupling problems,
+to see if I have cohesion problems.
+
+154
+00:07:40,500 --> 00:07:43,000
+Whole industry was built around, around
+
+155
+00:07:43,000 --> 00:07:46,866
+analyzing code,
+both dynamically and also statically.
+
+156
+00:07:47,233 --> 00:07:49,233
+So great tools out there.
+
+157
+00:07:49,233 --> 00:07:53,933
+This is where we've been, developing
+for 20, 30 years in, in this space.
+
+158
+00:07:56,066 --> 00:07:56,433
+Okay.
+
+159
+00:07:56,433 --> 00:07:58,466
+Microservices again.
+
+160
+00:07:58,466 --> 00:08:00,400
+Now what microservices is done
+
+161
+00:08:00,400 --> 00:08:04,066
+is I have multiple independent
+deployable services out there.
+
+162
+00:08:04,566 --> 00:08:05,466
+They're independent.
+
+163
+00:08:05,466 --> 00:08:07,166
+They can run by themselves.
+
+164
+00:08:07,166 --> 00:08:10,766
+They may not be able to do much,
+but they can run by themselves.
+
+165
+00:08:11,033 --> 00:08:15,400
+Like if I have an order service out there,
+and
+
+166
+00:08:16,533 --> 00:08:19,966
+I don't have any users,
+then I've got a problem.
+
+167
+00:08:19,966 --> 00:08:24,733
+But the order service itself
+can handle orders all by itself, right?
+
+168
+00:08:24,733 --> 00:08:27,300
+When it's getting requests
+from the outside.
+
+169
+00:08:27,300 --> 00:08:31,533
+These services have their own code base,
+their own processor, their own container.
+
+170
+00:08:31,966 --> 00:08:35,366
+They own their own database
+most of the time in their own
+
+171
+00:08:35,366 --> 00:08:38,366
+schema, they communicate over networks.
+
+172
+00:08:38,666 --> 00:08:43,266
+I mean, there's lots of different network
+protocols, Http, gRPC message,
+
+173
+00:08:43,266 --> 00:08:47,266
+protocols that are out there
+that, we're going to look at all those,
+
+174
+00:08:47,700 --> 00:08:51,033
+in, in lectures coming up.
+
+175
+00:08:52,366 --> 00:08:52,766
+All right.
+
+176
+00:08:52,766 --> 00:08:56,033
+Some of,
+the, the best way to think about it is
+
+177
+00:08:56,333 --> 00:09:00,033
+each service can be built, deployed
+and scaled independent of each other.
+
+178
+00:09:00,233 --> 00:09:04,600
+So this is really great when you've got,
+bottlenecks in your architecture
+
+179
+00:09:04,600 --> 00:09:08,433
+and you need to scale,
+maybe your ordering, process
+
+180
+00:09:08,700 --> 00:09:11,700
+or your inventory check process
+takes a long time.
+
+181
+00:09:11,866 --> 00:09:15,866
+I can scale those up
+independent of the ordering process.
+
+182
+00:09:15,866 --> 00:09:17,700
+I don't have to do them together.
+
+183
+00:09:17,700 --> 00:09:19,900
+So that's that's a great benefit.
+
+184
+00:09:19,900 --> 00:09:24,633
+So strong alignment with team boundaries
+as we talk about in Conway's Law.
+
+185
+00:09:25,166 --> 00:09:25,766
+Right.
+
+186
+00:09:25,766 --> 00:09:28,766
+Independent release cycles
+of the individual.
+
+187
+00:09:30,200 --> 00:09:31,900
+Individual microservices
+
+188
+00:09:31,900 --> 00:09:37,466
+and much better for, fault
+isolation and fault tolerance.
+
+189
+00:09:37,466 --> 00:09:37,933
+Right.
+
+190
+00:09:37,933 --> 00:09:40,933
+If I've got one service
+that's causing a problem,
+
+191
+00:09:41,166 --> 00:09:44,166
+I can make a change quickly
+without shutting everything down.
+
+192
+00:09:44,366 --> 00:09:48,000
+Right now, I've shifted the complexity
+
+193
+00:09:48,266 --> 00:09:52,633
+to operational deployment
+and and maintainability.
+
+194
+00:09:52,933 --> 00:09:56,766
+Because now, instead
+of managing one application or one binary,
+
+195
+00:09:56,766 --> 00:10:00,633
+I'm managing three for a dozen,
+a couple dozen.
+
+196
+00:10:01,200 --> 00:10:03,900
+And I'm also handling,
+
+197
+00:10:03,900 --> 00:10:06,900
+their different versions
+that are coming through.
+
+198
+00:10:06,966 --> 00:10:12,000
+I also have to handle network failures,
+timeouts, retries, versioning is in there.
+
+199
+00:10:12,566 --> 00:10:17,200
+It's easy to create a slow
+and fragile distributed monolith.
+
+200
+00:10:17,666 --> 00:10:19,533
+I've done this.
+
+201
+00:10:19,533 --> 00:10:20,700
+I've seen it.
+
+202
+00:10:20,700 --> 00:10:23,000
+So you got to be careful of this, right?
+
+203
+00:10:23,000 --> 00:10:25,166
+Establish your boundaries effectively.
+
+204
+00:10:25,166 --> 00:10:28,166
+If you don't, then
+all you've done is a distributed monolith,
+
+205
+00:10:28,233 --> 00:10:32,033
+which all you did
+was take all the cons of the monolith
+
+206
+00:10:32,366 --> 00:10:34,133
+and the cons of a microservice
+
+207
+00:10:34,133 --> 00:10:36,800
+architecture and fold them together,
+and you've got a mess on your hands.
+
+208
+00:10:38,666 --> 00:10:39,300
+All right.
+
+209
+00:10:39,300 --> 00:10:43,466
+So if I can, if I can compare them
+to deployment in ops,
+
+210
+00:10:43,466 --> 00:10:46,566
+the easiest one by far is monolithic
+and modular
+
+211
+00:10:47,233 --> 00:10:50,966
+microservices
+a lot of artifacts complexity, right.
+
+212
+00:10:51,266 --> 00:10:53,033
+Code base.
+
+213
+00:10:53,033 --> 00:10:53,866
+Right.
+
+214
+00:10:53,866 --> 00:10:54,633
+Monolith.
+
+215
+00:10:54,633 --> 00:10:57,833
+There's nothing in there
+that prevents, coupling.
+
+216
+00:10:58,300 --> 00:11:00,233
+So I can have tight coupling.
+
+217
+00:11:00,233 --> 00:11:03,800
+Modular is a little bit better
+as far as, code
+
+218
+00:11:04,066 --> 00:11:07,100
+because I have the concept of interfaces
+between the libraries,
+
+219
+00:11:07,466 --> 00:11:09,966
+but there's nothing enforcing
+those contracts.
+
+220
+00:11:09,966 --> 00:11:12,300
+Microservice is totally enforced.
+
+221
+00:11:12,300 --> 00:11:16,133
+You can't have one microservice accessing
+the internals of another microservice
+
+222
+00:11:16,366 --> 00:11:17,766
+unless it's through an interface.
+
+223
+00:11:17,766 --> 00:11:21,633
+So that kind of forces
+the hand of the application
+
+224
+00:11:21,633 --> 00:11:25,166
+developers
+or microservice developers, right?
+
+225
+00:11:25,166 --> 00:11:27,266
+As far as data and transactions.
+
+226
+00:11:27,266 --> 00:11:31,233
+Monolith one database easy asset
+
+227
+00:11:31,233 --> 00:11:35,000
+across all the features,
+but there's blurry ownership on who owns
+
+228
+00:11:35,000 --> 00:11:39,000
+what, what data sets and data tables
+or whatever the case may be.
+
+229
+00:11:39,366 --> 00:11:42,566
+It's a little bit clearer in Modular
+Monolith.
+
+230
+00:11:43,100 --> 00:11:46,700
+But you can have table ownership
+
+231
+00:11:46,700 --> 00:11:50,633
+per module and you can do some,
+permissions around that.
+
+232
+00:11:50,633 --> 00:11:55,300
+But you've shifted some of some of the,
+complexity into the database server
+
+233
+00:11:55,866 --> 00:12:00,166
+with microservice architectures, 
+per service data.
+
+234
+00:12:00,333 --> 00:12:03,400
+No easy distributed, acid.
+
+235
+00:12:03,400 --> 00:12:04,866
+So that's a problem.
+
+236
+00:12:04,866 --> 00:12:08,300
+But, 
+you need sagas and eventual consistency
+
+237
+00:12:08,300 --> 00:12:12,366
+across multiple databases so that that's, 
+something you got to deal with.
+
+238
+00:12:12,966 --> 00:12:15,500
+So as we mentioned before,
+
+239
+00:12:15,500 --> 00:12:18,500
+microservices
+isn't always the right answer.
+
+240
+00:12:19,066 --> 00:12:22,900
+You got to look and see what's going
+to be most effective for you.
+
+241
+00:12:26,433 --> 00:12:27,266
+Okay.
+
+242
+00:12:27,266 --> 00:12:30,266
+When each one fits, let's go over this
+real quick.
+
+243
+00:12:30,266 --> 00:12:31,133
+Monolith.
+
+244
+00:12:31,133 --> 00:12:35,666
+New product, small teams, fast iterations,
+requirements changing all the time.
+
+245
+00:12:35,666 --> 00:12:40,033
+Great fit for that long
+term use is limited.
+
+246
+00:12:41,900 --> 00:12:44,400
+You're just looking for something
+quick and dirty.
+
+247
+00:12:44,400 --> 00:12:46,366
+Monolith modular.
+
+248
+00:12:46,366 --> 00:12:49,966
+When I got multiple development
+teams, one deployment still,
+
+249
+00:12:52,166 --> 00:12:55,466
+I want a clean architecture
+that's with clear ownership
+
+250
+00:12:56,600 --> 00:12:58,966
+that moves me from monolith to modular,
+
+251
+00:12:58,966 --> 00:13:01,733
+and then it might involve
+some microservices later.
+
+252
+00:13:01,733 --> 00:13:06,266
+I can take those individual libraries
+and fold them into microservices.
+
+253
+00:13:06,266 --> 00:13:11,700
+As long as I adhere to the, 
+interface boundaries that I established.
+
+254
+00:13:12,566 --> 00:13:15,866
+Microservices are great
+when I have multiple teams needing
+
+255
+00:13:15,866 --> 00:13:20,300
+independent deploys, large,
+complex systems with distinct
+
+256
+00:13:20,300 --> 00:13:25,300
+scalability needs, and the organization
+has operational maturity as far as CI, CD
+
+257
+00:13:25,400 --> 00:13:28,833
+pipelines, observability, and freestyle
+practices.
+
+258
+00:13:29,100 --> 00:13:31,000
+Here's the problem though, right?
+
+259
+00:13:31,000 --> 00:13:31,966
+In microservices
+
+260
+00:13:31,966 --> 00:13:35,766
+that you need to be careful of,
+you still need to architect the system.
+
+261
+00:13:37,300 --> 00:13:40,300
+You don't just go, oh, I'm
+going to ignore the system architecture.
+
+262
+00:13:40,366 --> 00:13:43,533
+Microservice
+will architect their own thing
+
+263
+00:13:43,533 --> 00:13:45,666
+and it'll be ad hoc at the top.
+
+264
+00:13:45,666 --> 00:13:49,533
+If you do that, you end up with a big
+monolithic mess is what you end up with.
+
+265
+00:13:49,766 --> 00:13:51,266
+So you still need our architecture,
+
+266
+00:13:51,266 --> 00:13:55,233
+microservice architecture,
+not the individual microservices.
+
+267
+00:13:55,233 --> 00:13:58,466
+You need to do that,
+but also how the system operates.
+
+268
+00:13:58,700 --> 00:14:01,700
+Holistically.
+
+269
+00:14:02,666 --> 00:14:04,166
+Okay.
+
+270
+00:14:04,166 --> 00:14:06,133
+Here are some failures.
+
+271
+00:14:06,133 --> 00:14:10,900
+Premature when you move to microservices
+too early, when you have a tiny team
+
+272
+00:14:11,133 --> 00:14:15,366
+and a lot of services, there's a lot of
+time spent on boilerplate and debugging.
+
+273
+00:14:15,766 --> 00:14:17,133
+Not on feature development.
+
+274
+00:14:17,133 --> 00:14:19,766
+Now, this is hard.
+
+275
+00:14:19,766 --> 00:14:23,333
+Debugging
+microservices is difficult, right?
+
+276
+00:14:23,700 --> 00:14:28,533
+You've got logs coming
+from several different, applications.
+
+277
+00:14:28,533 --> 00:14:30,566
+If it's all running one application,
+it's really easy.
+
+278
+00:14:30,566 --> 00:14:32,266
+All your logs are in one place.
+
+279
+00:14:32,266 --> 00:14:34,766
+You can set breakpoints really easily.
+
+280
+00:14:34,766 --> 00:14:37,000
+Right?
+That that can be problematic. Right.
+
+281
+00:14:37,000 --> 00:14:39,466
+So watch out for those sorts of things.
+
+282
+00:14:39,466 --> 00:14:44,366
+Also a shared database with microservices
+typically you don't want to do that.
+
+283
+00:14:44,366 --> 00:14:47,166
+You want to have a database
+per microservice.
+
+284
+00:14:47,166 --> 00:14:52,533
+If you have multiple services
+that are directly hitting a, a database,
+
+285
+00:14:52,533 --> 00:14:56,433
+you've just created a distributed monolith
+to watch out for that.
+
+286
+00:14:56,866 --> 00:14:59,933
+Also look out for over modularize
+monoliths,
+
+287
+00:14:59,933 --> 00:15:04,200
+where I've got tiny of hundred modules
+and with little business
+
+288
+00:15:04,200 --> 00:15:04,933
+meaning at all.
+
+289
+00:15:04,933 --> 00:15:08,766
+So understanding
+the size of your microservice is going
+
+290
+00:15:08,766 --> 00:15:10,800
+to be important, right?
+
+291
+00:15:10,800 --> 00:15:15,833
+If you go too deep into a, well,
+too broad, right?
+
+292
+00:15:15,833 --> 00:15:20,500
+With too many, tiny microservices, you're
+going to slow everything down, right?
+
+293
+00:15:20,800 --> 00:15:23,833
+And it's gonna be harder
+to understand the whole architecture.
+
+294
+00:15:24,200 --> 00:15:26,033
+You gotta create boundaries,
+
+295
+00:15:26,033 --> 00:15:29,600
+create the boundaries around business
+capabilities, not just technical layers.
+
+296
+00:15:29,866 --> 00:15:31,466
+That's Conway's law,
+
+297
+00:15:32,600 --> 00:15:33,433
+right?
+
+298
+00:15:33,433 --> 00:15:37,733
+You need to also make sure that you have
+an ability to evolve your architecture.
+
+299
+00:15:37,733 --> 00:15:41,833
+If you need that, then,
+moving from monolith
+
+300
+00:15:42,400 --> 00:15:46,533
+to modular, you need to identify the major
+domains, start establishing
+
+301
+00:15:46,533 --> 00:15:50,666
+those, those libraries
+and establishing interfaces between them.
+
+302
+00:15:50,666 --> 00:15:54,433
+If I'm moving from modular monoliths
+to microservices,
+
+303
+00:15:54,766 --> 00:15:57,766
+you should already have those interfaces
+well-defined.
+
+304
+00:15:57,933 --> 00:15:59,000
+You're gonna find out real quick
+
+305
+00:15:59,000 --> 00:16:02,866
+if anyone's circumvented those interfaces
+when you move to a microservice.
+
+306
+00:16:03,266 --> 00:16:05,933
+So make sure that you,
+
+307
+00:16:05,933 --> 00:16:09,566
+mimic those APIs,
+move them out as an individual service,
+
+308
+00:16:09,566 --> 00:16:12,800
+and you'll find out real quickly
+if you had a problem or not.
+
+309
+00:16:16,533 --> 00:16:19,633
+Okay,
+so the most important thing that you guys
+
+310
+00:16:19,633 --> 00:16:23,066
+can do with microservice architectures
+and choosing between these three,
+
+311
+00:16:23,500 --> 00:16:29,100
+choose the simplest architecture
+that involves that solves today's problem,
+
+312
+00:16:29,366 --> 00:16:32,466
+but with a eye towards
+
+313
+00:16:32,466 --> 00:16:35,466
+enough modularity
+that you can solve for tomorrow's.
+
+314
+00:16:36,033 --> 00:16:37,033
+Right now,
+
+315
+00:16:38,100 --> 00:16:39,133
+since we're
+
+316
+00:16:39,133 --> 00:16:42,133
+talking about microservices
+in this course,
+
+317
+00:16:42,166 --> 00:16:45,333
+we're going to skip from monolithic
+directly over to microservices.
+
+318
+00:16:45,566 --> 00:16:48,466
+But we are going to start
+with a simple monolithic
+
+319
+00:16:48,466 --> 00:16:51,366
+that can take API calls
+and things like that
+
+320
+00:16:51,366 --> 00:16:55,900
+so that you understand the design pattern
+around developing your own microservice.

@@ -1,0 +1,852 @@
+﻿1
+00:00:00,200 --> 00:00:03,066
+This lecture talks about Conway's
+laws and time boundaries.
+
+2
+00:00:03,066 --> 00:00:06,333
+Now, Conway's Law is an option.
+
+3
+00:00:06,333 --> 00:00:07,466
+When we look at systems.
+
+4
+00:00:07,466 --> 00:00:08,300
+Architecture fits
+
+5
+00:00:08,300 --> 00:00:12,000
+really well for microservices
+and these new architectures that we have.
+
+6
+00:00:12,566 --> 00:00:15,366
+So we're going to understand
+what Conway's Law is.
+
+7
+00:00:15,366 --> 00:00:19,300
+See how organizational structures
+are shapes systems design.
+
+8
+00:00:19,633 --> 00:00:22,066
+And then we're going to learn
+about some team boundaries.
+
+9
+00:00:22,066 --> 00:00:23,666
+Make sure that they're intentional
+
+10
+00:00:23,666 --> 00:00:25,866
+with your architectural boundaries
+that you have.
+
+11
+00:00:25,866 --> 00:00:29,566
+And be aware of some common risk
+and trade offs when using this technique.
+
+12
+00:00:30,300 --> 00:00:33,366
+Now, Conway,
+where Conway's Law was developed
+
+13
+00:00:33,366 --> 00:00:36,366
+by Melvin Conway back in 1968,
+
+14
+00:00:36,600 --> 00:00:40,600
+and he basically said this organizations
+that design systems
+
+15
+00:00:40,933 --> 00:00:43,966
+produce designs
+that are copies of communication
+
+16
+00:00:43,966 --> 00:00:46,966
+structures
+and channels of those organizations.
+
+17
+00:00:47,133 --> 00:00:50,266
+So in other words,
+the way that people communicate
+
+18
+00:00:51,100 --> 00:00:53,533
+shapes the architecture of
+the systems that they build.
+
+19
+00:00:54,533 --> 00:00:58,133
+So we've seen this time and time again.
+
+20
+00:00:58,433 --> 00:01:01,433
+And when we talk about systems
+back in the 1968,
+
+21
+00:01:01,533 --> 00:01:04,000
+these were not like necessarily
+computer systems.
+
+22
+00:01:04,000 --> 00:01:05,233
+They were systems in general.
+
+23
+00:01:05,233 --> 00:01:08,866
+So a lot of process in engineering
+and things like that was going on.
+
+24
+00:01:09,266 --> 00:01:13,200
+The great news is,
+is that these sorts of techniques exist
+
+25
+00:01:13,200 --> 00:01:17,133
+today and can be leveraged when you're
+designing your microservice architecture.
+
+26
+00:01:18,166 --> 00:01:20,000
+So why it matters.
+
+27
+00:01:20,000 --> 00:01:23,300
+Well, first off,
+the architecture mirrors team boundaries.
+
+28
+00:01:23,566 --> 00:01:27,133
+Departmen one budget lines, time
+zones, and locations,
+
+29
+00:01:27,433 --> 00:01:29,000
+vendor and regulatory boundaries.
+
+30
+00:01:29,000 --> 00:01:32,000
+Those are some architectural boundaries
+that we can look at.
+
+31
+00:01:32,100 --> 00:01:35,100
+And if we can identify those
+and we can do a better job at
+
+32
+00:01:35,700 --> 00:01:40,566
+creating our microservices to mimic
+that when they're misaligned.
+
+33
+00:01:40,700 --> 00:01:44,500
+What happens is
+I have higher coordination costs.
+
+34
+00:01:44,833 --> 00:01:48,600
+Slower delivery
+times, longer lead times, unclear
+
+35
+00:01:48,600 --> 00:01:52,433
+ownership and blame
+shifting starts happening.
+
+36
+00:01:52,700 --> 00:01:57,700
+Now you would say, well, Darren,
+that's for the 1960s, 1970s.
+
+37
+00:01:57,700 --> 00:01:59,166
+Sorts of things were processed.
+
+38
+00:01:59,166 --> 00:02:03,933
+World today same things happened today
+with microservice architectures,
+
+39
+00:02:04,200 --> 00:02:07,966
+especially when you've got teams
+that are focus on one architecture.
+
+40
+00:02:07,966 --> 00:02:10,966
+There's a lot of finger
+pointing on whose fault that was.
+
+41
+00:02:11,066 --> 00:02:14,633
+So these same techniques can be used
+in microservice architectures today.
+
+42
+00:02:15,933 --> 00:02:19,366
+So when they're aligned, when everything's
+aligned,
+
+43
+00:02:19,966 --> 00:02:23,466
+things move faster, safer to make changes.
+
+44
+00:02:23,633 --> 00:02:25,966
+There's clear ownership of components.
+
+45
+00:02:25,966 --> 00:02:28,966
+Architecture
+that evolves more smoothly happens
+
+46
+00:02:29,300 --> 00:02:32,300
+and it mimics
+what's going on in the real world.
+
+47
+00:02:32,400 --> 00:02:36,833
+So there's some benefits when they're
+light right now good and bad alignment.
+
+48
+00:02:36,833 --> 00:02:41,266
+This is really easy to define right
+when you when it's happening right.
+
+49
+00:02:41,666 --> 00:02:45,600
+When you've got good
+alignment business capabilities,
+
+50
+00:02:46,300 --> 00:02:49,166
+are aligned to teams.
+
+51
+00:02:49,166 --> 00:02:53,866
+So for example payments catalog
+onboarding these these sorts of things
+
+52
+00:02:54,400 --> 00:02:58,133
+that I've got full stacks
+that are for the category team,
+
+53
+00:02:58,133 --> 00:03:03,600
+for the payments team, when you've got
+one team that manage their part and it's
+
+54
+00:03:03,600 --> 00:03:09,333
+mostly independent of the other parts,
+you have low coupling, high cohesion.
+
+55
+00:03:10,133 --> 00:03:12,400
+So which we've learned in software
+engineering,
+
+56
+00:03:12,400 --> 00:03:13,900
+that's that's really important.
+
+57
+00:03:13,900 --> 00:03:18,033
+When you've got bad alignment,
+what happens is teams are aligned to
+
+58
+00:03:18,033 --> 00:03:23,466
+technology layers UI team, API team,
+database team and infrastructure team.
+
+59
+00:03:23,800 --> 00:03:27,500
+What happens is you create
+high coupling between the components
+
+60
+00:03:27,766 --> 00:03:30,733
+and between the organizational structure
+
+61
+00:03:31,866 --> 00:03:33,833
+and which increases lots of
+
+62
+00:03:33,833 --> 00:03:37,133
+handoffs, slow feedback loops,
+all those sorts of things happen.
+
+63
+00:03:37,600 --> 00:03:42,566
+So remember, you cannot architect
+a microservice architecture
+
+64
+00:03:42,700 --> 00:03:45,700
+without understanding
+the organization that you're working in.
+
+65
+00:03:45,933 --> 00:03:48,600
+You can cause a lot of problems.
+
+66
+00:03:48,600 --> 00:03:49,200
+All right.
+
+67
+00:03:49,200 --> 00:03:53,000
+There's another technique out there
+called the inverse Conway maneuver.
+
+68
+00:03:53,000 --> 00:03:56,866
+Now what this says is I have my structure
+
+69
+00:03:57,200 --> 00:04:00,266
+of my, solution structure. Right.
+
+70
+00:04:00,300 --> 00:04:02,400
+My microservice architecture structure.
+
+71
+00:04:02,400 --> 00:04:05,400
+And I'm going to align
+my organizational structure to match.
+
+72
+00:04:06,533 --> 00:04:09,566
+Now, this can be highly effective,
+especially if you can leverage
+
+73
+00:04:10,000 --> 00:04:13,600
+a lot of software techniques
+like reuse and,
+
+74
+00:04:13,966 --> 00:04:16,966
+portability and things like that.
+
+75
+00:04:17,366 --> 00:04:17,933
+Right.
+
+76
+00:04:17,933 --> 00:04:20,866
+If I want to leverage
+those sorts of benefits of,
+
+77
+00:04:20,866 --> 00:04:25,233
+I only have to write one database
+application that rules them all. Then
+
+78
+00:04:26,200 --> 00:04:28,366
+aligning
+your team structure to that may work.
+
+79
+00:04:28,366 --> 00:04:30,633
+But here's the problem.
+
+80
+00:04:30,633 --> 00:04:33,633
+Organizational structures
+have a lot of inertia.
+
+81
+00:04:33,800 --> 00:04:35,166
+They're very hard to change.
+
+82
+00:04:35,166 --> 00:04:38,166
+Especially
+they've been around a long time right.
+
+83
+00:04:38,266 --> 00:04:43,266
+So you may want to do that, but
+you may find much more difficult to do.
+
+84
+00:04:43,800 --> 00:04:46,800
+Now some people try and use the inverse
+Conway maneuver
+
+85
+00:04:46,800 --> 00:04:49,966
+to kind of circumvent Conway's
+Law and defeat it.
+
+86
+00:04:50,466 --> 00:04:52,566
+That doesn't work, right.
+
+87
+00:04:52,566 --> 00:04:56,033
+Because what you end up doing
+is you end up putting another layer
+
+88
+00:04:56,033 --> 00:04:59,933
+of abstraction in there, and that can't
+handle the changes very effectively.
+
+89
+00:05:00,166 --> 00:05:04,666
+And all you've done
+is, move to the park, around the ice,
+
+90
+00:05:04,800 --> 00:05:07,800
+to a different place, and it really didn't
+solve the problem at all.
+
+91
+00:05:08,266 --> 00:05:08,833
+Right.
+
+92
+00:05:08,833 --> 00:05:13,166
+So if you want to try the inverse, 
+maneuver,
+
+93
+00:05:13,800 --> 00:05:16,533
+then you define your architecture first,
+
+94
+00:05:16,533 --> 00:05:19,533
+then you create your team structure
+around that architecture.
+
+95
+00:05:19,666 --> 00:05:22,100
+It could be very difficult to do, but,
+
+96
+00:05:22,100 --> 00:05:25,466
+you know, it's it's
+one of the things that, is possible.
+
+97
+00:05:25,533 --> 00:05:26,266
+Right?
+
+98
+00:05:26,266 --> 00:05:29,266
+You still can't ignore Conway's Law here.
+
+99
+00:05:29,600 --> 00:05:31,166
+It doesn't get you around it.
+
+100
+00:05:31,166 --> 00:05:33,133
+It's just you're taking
+it from a different angle.
+
+101
+00:05:34,100 --> 00:05:34,633
+All right.
+
+102
+00:05:34,633 --> 00:05:36,466
+Let's talk about misaligned boundaries.
+
+103
+00:05:36,466 --> 00:05:40,533
+How do I know that my microservice
+architecture has bad boundary,
+
+104
+00:05:40,700 --> 00:05:42,566
+boundaries around it, right?
+
+105
+00:05:42,566 --> 00:05:46,500
+First off, if a small feature requires
+
+106
+00:05:46,500 --> 00:05:49,866
+3 to 5 different teams
+and or microservices,
+
+107
+00:05:50,766 --> 00:05:53,766
+then you've drawn poor boundaries.
+
+108
+00:05:53,766 --> 00:05:55,000
+Make sense?
+
+109
+00:05:55,000 --> 00:05:59,066
+If I have frequent cross team meetings
+for minor changes.
+
+110
+00:06:00,233 --> 00:06:03,233
+Bad, bad boundary alignment.
+
+111
+00:06:03,700 --> 00:06:04,366
+Okay.
+
+112
+00:06:04,366 --> 00:06:07,366
+If shared services or modules
+with funny ownership.
+
+113
+00:06:07,766 --> 00:06:11,566
+Oh, we created this shared module,
+but we don't know who owns it.
+
+114
+00:06:11,766 --> 00:06:12,133
+Right.
+
+115
+00:06:12,133 --> 00:06:13,600
+Is everyone owns it.
+
+116
+00:06:13,600 --> 00:06:16,266
+Bad misaligned boundary.
+
+117
+00:06:16,266 --> 00:06:17,433
+Walk away from that. Right.
+
+118
+00:06:17,433 --> 00:06:19,100
+You got to Re-Architect.
+
+119
+00:06:19,100 --> 00:06:22,666
+If the roadmap conflicts
+with the same code over database areas,
+
+120
+00:06:23,233 --> 00:06:24,500
+then I've got misalignment.
+
+121
+00:06:24,500 --> 00:06:28,066
+If architectural diagrams
+show clean domains,
+
+122
+00:06:28,300 --> 00:06:31,666
+but the repos and services mirror
+the old architecture, then
+
+123
+00:06:31,666 --> 00:06:35,266
+you have misalignment in your architecture
+and your implementation.
+
+124
+00:06:35,833 --> 00:06:37,866
+Right? Another, another symptom.
+
+125
+00:06:39,000 --> 00:06:39,466
+All right.
+
+126
+00:06:39,466 --> 00:06:43,166
+So let's look at some principles
+to help us design better boundaries.
+
+127
+00:06:43,566 --> 00:06:45,766
+Right. Follow value streams.
+
+128
+00:06:45,766 --> 00:06:48,766
+Look at the value stream
+of what's being produced.
+
+129
+00:06:48,900 --> 00:06:52,500
+And look at those value streams
+to draw some great boundaries there.
+
+130
+00:06:52,933 --> 00:06:56,833
+Also optimize your architecture
+for change.
+
+131
+00:06:56,866 --> 00:06:59,866
+Aim for the most changes
+to be done by one team.
+
+132
+00:07:00,566 --> 00:07:03,666
+Instead of
+I need three teams to make this change.
+
+133
+00:07:04,366 --> 00:07:07,533
+So look at look at your architecture
+and figure out, all right,
+
+134
+00:07:07,533 --> 00:07:09,266
+where can I do that? The most?
+
+135
+00:07:09,266 --> 00:07:13,133
+That all goes into that
+decoupling and cohesion.
+
+136
+00:07:13,266 --> 00:07:15,766
+That we want high cohesion, low coupling.
+
+137
+00:07:15,766 --> 00:07:16,600
+Right.
+
+138
+00:07:16,600 --> 00:07:19,600
+Limit
+the cognitive load by giving each team
+
+139
+00:07:20,133 --> 00:07:24,733
+a specific coherent domain instead of
+multiple domains or sets of systems.
+
+140
+00:07:24,733 --> 00:07:27,533
+It's very hard
+for someone to keep track of everything.
+
+141
+00:07:27,533 --> 00:07:30,300
+And then also last one,
+make sure your interfaces between
+
+142
+00:07:30,300 --> 00:07:34,033
+the microservices are explicit
+with clear APIs,
+
+143
+00:07:34,166 --> 00:07:39,733
+events, and contracts
+between the different microservices.
+
+144
+00:07:40,033 --> 00:07:43,733
+And that will, reduce the ad hoc,
+coordination that you need.
+
+145
+00:07:45,166 --> 00:07:45,833
+All right.
+
+146
+00:07:45,833 --> 00:07:47,266
+Let's talk about using Conway's Law.
+
+147
+00:07:47,266 --> 00:07:50,766
+In practice,
+when planning the architecture, go out
+
+148
+00:07:50,766 --> 00:07:53,966
+and find out who your teams are
+and what they own,
+
+149
+00:07:54,466 --> 00:07:57,700
+what processes they own,
+what data they own.
+
+150
+00:07:57,966 --> 00:07:59,700
+All those things are very important.
+
+151
+00:07:59,700 --> 00:08:03,966
+Also, find out how many teams are involved
+in a typical feature
+
+152
+00:08:04,733 --> 00:08:08,800
+or typical service that you're delivering
+to your customers out there.
+
+153
+00:08:09,300 --> 00:08:12,233
+Also, when you're planning
+organizational changes,
+
+154
+00:08:12,233 --> 00:08:15,233
+look at what architectural changes
+
+155
+00:08:15,500 --> 00:08:19,666
+need to be made or what naturally emerge
+from this new structure, right?
+
+156
+00:08:19,866 --> 00:08:24,966
+So it's almost like, a dance
+between your microservice architectures
+
+157
+00:08:24,966 --> 00:08:25,933
+and your org change.
+
+158
+00:08:25,933 --> 00:08:28,933
+Remember, the org change is leading
+
+159
+00:08:30,000 --> 00:08:31,400
+typically, right?
+
+160
+00:08:31,400 --> 00:08:32,966
+They're slower to change.
+
+161
+00:08:32,966 --> 00:08:36,600
+I can change code much faster
+if I architect it correctly
+
+162
+00:08:36,800 --> 00:08:38,566
+than the organization can change.
+
+163
+00:08:40,366 --> 00:08:40,833
+All right.
+
+164
+00:08:40,833 --> 00:08:44,400
+When when you know
+that the change you're making is wrong.
+
+165
+00:08:45,300 --> 00:08:46,600
+Slow delivery.
+
+166
+00:08:46,600 --> 00:08:48,500
+Constant integration. Friction.
+
+167
+00:08:48,500 --> 00:08:51,500
+Unclear ownership. Right?
+
+168
+00:08:51,733 --> 00:08:53,566
+Remember, it's not just code.
+
+169
+00:08:53,566 --> 00:08:54,666
+You're dealing with people here.
+
+170
+00:08:54,666 --> 00:08:57,033
+And that's really important to understand.
+
+171
+00:08:57,033 --> 00:08:58,633
+All right some key takeaways.
+
+172
+00:08:58,633 --> 00:09:03,000
+System architecture tends to mirror
+communication structures okay.
+
+173
+00:09:03,233 --> 00:09:07,566
+Team boundaries are very important
+to making architectural decisions.
+
+174
+00:09:08,066 --> 00:09:08,333
+Right.
+
+175
+00:09:08,333 --> 00:09:13,400
+And they will actually be, 
+an architectural decision in disguise.
+
+176
+00:09:13,400 --> 00:09:16,400
+So you might as well uncover it
+and identify it.
+
+177
+00:09:16,500 --> 00:09:19,200
+Use the inverse Conway maneuver to steer
+
+178
+00:09:19,200 --> 00:09:22,200
+the architecture via team designs
+if you have to,
+
+179
+00:09:22,666 --> 00:09:25,766
+and then align the teams with business
+capabilities best, which can.
+
+180
+00:09:26,000 --> 00:09:28,866
+This is an opportunity for you
+to make some fundamental
+
+181
+00:09:28,866 --> 00:09:32,000
+digital transformation
+changes in your organization.
+
+182
+00:09:32,700 --> 00:09:36,866
+And then last but not least,
+watch for symptoms of misalignment
+
+183
+00:09:37,466 --> 00:09:40,033
+costs, explosion coordination
+
+184
+00:09:40,033 --> 00:09:43,566
+cost, confusion, slow change,
+lack of ownership.
+
+185
+00:09:43,566 --> 00:09:45,266
+Those are the things
+that you need to look for.

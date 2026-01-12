@@ -1,0 +1,1060 @@
+﻿1
+00:00:00,000 --> 00:00:00,366
+All right.
+
+2
+00:00:00,366 --> 00:00:00,966
+In this lecture
+
+3
+00:00:00,966 --> 00:00:04,566
+we're going to talk about what problems
+microservices actually solve.
+
+4
+00:00:04,900 --> 00:00:07,433
+And we're going to do the corollary
+to that as well.
+
+5
+00:00:07,433 --> 00:00:10,033
+And find out what problems they introduce.
+
+6
+00:00:10,033 --> 00:00:13,033
+So let's first start
+by what problems do they solve.
+
+7
+00:00:13,333 --> 00:00:17,933
+We need to understand which problems
+are geared more towards microservices.
+
+8
+00:00:18,166 --> 00:00:21,133
+We need to recognize what they are
+and if they're a good fit.
+
+9
+00:00:21,133 --> 00:00:23,500
+And we need to be aware of key
+risks and trade offs.
+
+10
+00:00:23,500 --> 00:00:26,233
+Moving to a microservice architecture.
+
+11
+00:00:26,233 --> 00:00:29,366
+So first off microservices in contact.
+
+12
+00:00:29,366 --> 00:00:31,366
+We we hear this all the time.
+
+13
+00:00:31,366 --> 00:00:35,000
+Hey we need to scale use microservices
+or we have legacy code
+
+14
+00:00:35,366 --> 00:00:36,900
+rewrite them as microservices.
+
+15
+00:00:36,900 --> 00:00:38,566
+Hey we want to be modern.
+
+16
+00:00:38,566 --> 00:00:40,433
+Let's go to microservices.
+
+17
+00:00:40,433 --> 00:00:43,400
+But they add a lot of complexity.
+
+18
+00:00:43,400 --> 00:00:47,400
+So just because it's the flash
+in the pan thing that's going on right now
+
+19
+00:00:47,533 --> 00:00:50,433
+doesn't necessarily mean
+that you really want to do it.
+
+20
+00:00:50,433 --> 00:00:54,533
+You got to look at what the trade offs are
+in any architectural design that you do.
+
+21
+00:00:54,766 --> 00:00:58,300
+You need to understand
+what specific problems that they solve
+
+22
+00:00:58,633 --> 00:01:01,933
+and whether you have those problems
+and whether you want to move
+
+23
+00:01:02,333 --> 00:01:06,566
+to that or a simpler
+alternative like modular coding.
+
+24
+00:01:08,366 --> 00:01:10,066
+So a quick definition.
+
+25
+00:01:10,066 --> 00:01:15,366
+So a microservice architecture is a system
+composed of multiple small services
+
+26
+00:01:15,666 --> 00:01:18,833
+that each focus on a single responsibility
+or capability.
+
+27
+00:01:19,266 --> 00:01:24,100
+They're independently deployable, often
+have their own database or schema
+
+28
+00:01:24,566 --> 00:01:27,700
+services, communicate over network 
+protocols, either
+
+29
+00:01:27,700 --> 00:01:31,200
+Http rest, gRPC.
+
+30
+00:01:31,566 --> 00:01:37,200
+0IO sockets.
+
+31
+00:01:37,666 --> 00:01:40,766
+Yeah, there's a whole whole bunch of
+different protocols that it can talk over.
+
+32
+00:01:40,933 --> 00:01:43,233
+There's some standard ones
+that we're going to use.
+
+33
+00:01:43,233 --> 00:01:46,166
+In, in these lectures
+that you're going to see, but
+
+34
+00:01:46,166 --> 00:01:48,000
+you can use any of the protocols there.
+
+35
+00:01:48,000 --> 00:01:50,800
+And it's typically owned by one team
+
+36
+00:01:50,800 --> 00:01:54,366
+if its services can't be changed
+and deployed independently,
+
+37
+00:01:54,366 --> 00:01:57,366
+you don't have a microservice,
+you have a distributed monolith
+
+38
+00:01:57,700 --> 00:01:59,866
+and not microservices.
+
+39
+00:01:59,866 --> 00:02:02,500
+I have created distributed monoliths.
+
+40
+00:02:02,500 --> 00:02:04,466
+I see them all the time.
+
+41
+00:02:04,466 --> 00:02:08,200
+So you need to make sure that you are
+actually doing true microservices here.
+
+42
+00:02:10,066 --> 00:02:11,400
+All right.
+
+43
+00:02:11,400 --> 00:02:13,433
+One of the big problems that it, help
+
+44
+00:02:13,433 --> 00:02:16,900
+solve
+is the slow delivery of a huge codebase.
+
+45
+00:02:16,933 --> 00:02:21,366
+Remember, monoliths
+means I've got a huge code base.
+
+46
+00:02:22,066 --> 00:02:25,066
+Every feature touches one application,
+
+47
+00:02:25,200 --> 00:02:29,266
+right after I split, right?
+
+48
+00:02:29,333 --> 00:02:33,466
+I have individual services
+that are being built and deployed
+
+49
+00:02:33,466 --> 00:02:34,866
+independently of each other.
+
+50
+00:02:34,866 --> 00:02:38,400
+So some of the things that it can do
+is it can decrease your build time
+
+51
+00:02:38,400 --> 00:02:41,633
+dramatically and your test time
+dramatically.
+
+52
+00:02:42,066 --> 00:02:45,133
+Merge conflicts become easier
+because it's not one
+
+53
+00:02:45,133 --> 00:02:48,133
+big, huge
+codebase of 5 million lines of code.
+
+54
+00:02:48,266 --> 00:02:50,366
+It's a small microservice, right?
+
+55
+00:02:50,366 --> 00:02:53,966
+That has a small amount of code
+that I'm doing merges with.
+
+56
+00:02:54,333 --> 00:02:57,333
+Also, you can isolate the changes
+
+57
+00:02:57,400 --> 00:03:00,400
+from the different modules, more easily.
+
+58
+00:03:00,400 --> 00:03:00,933
+Right.
+
+59
+00:03:00,933 --> 00:03:02,200
+So this gives clear
+
+60
+00:03:02,200 --> 00:03:06,266
+responsibility on who's in charge of what
+and what the services responsible for.
+
+61
+00:03:06,533 --> 00:03:09,200
+And enables massively parallel development
+
+62
+00:03:10,166 --> 00:03:12,366
+without constant conflicts.
+
+63
+00:03:12,366 --> 00:03:17,300
+I used to be a, build meisters,
+what we call ourselves
+
+64
+00:03:17,566 --> 00:03:22,100
+back in the day, in the 90s of a massive,
+monolithic, code base,
+
+65
+00:03:22,300 --> 00:03:26,500
+10 million lines of code,
+and our build time took 21 days.
+
+66
+00:03:27,400 --> 00:03:29,966
+You heard that right? 21 days to build.
+
+67
+00:03:29,966 --> 00:03:35,133
+So merge were huge, big deals,
+doing merges and all that stuff.
+
+68
+00:03:35,433 --> 00:03:39,533
+We by the time I left there
+in a two years, we got that down
+
+69
+00:03:39,533 --> 00:03:43,433
+to 24 hours and we were happy as clams
+with 24 hour turnaround time.
+
+70
+00:03:44,000 --> 00:03:48,300
+So big monolithic
+can have a lot of issues with it.
+
+71
+00:03:48,800 --> 00:03:52,500
+And that's another option to move
+to, microservice architecture.
+
+72
+00:03:53,300 --> 00:03:53,900
+All right.
+
+73
+00:03:53,900 --> 00:03:56,900
+Let's look at another one
+coupled release cycles.
+
+74
+00:03:56,933 --> 00:04:00,600
+Now this this is really
+when I'm shipping a feature.
+
+75
+00:04:00,866 --> 00:04:03,266
+And it could be in a modular system.
+
+76
+00:04:03,266 --> 00:04:06,266
+But I end up having release
+
+77
+00:04:06,266 --> 00:04:11,033
+chains and change freezes and coordination
+between the different modules,
+
+78
+00:04:11,166 --> 00:04:16,766
+which says that I've got a microservice,
+I've got modular
+
+79
+00:04:16,933 --> 00:04:21,266
+that has coupling, between them, either
+because there's tight integration,
+
+80
+00:04:21,866 --> 00:04:25,066
+through the API, or they're circumventing
+the APIs directly,
+
+81
+00:04:25,066 --> 00:04:27,500
+which I have seen and done myself.
+
+82
+00:04:27,500 --> 00:04:30,500
+Microservices can allow for independent
+
+83
+00:04:31,000 --> 00:04:34,700
+deployments per service,
+letting teams ship on their own schedules.
+
+84
+00:04:35,233 --> 00:04:35,966
+Right.
+
+85
+00:04:35,966 --> 00:04:39,700
+And it can enable small, infrequent,
+safe releases.
+
+86
+00:04:39,700 --> 00:04:41,366
+And we've seen this before.
+
+87
+00:04:41,366 --> 00:04:42,900
+You have to make sure
+that you have backward
+
+88
+00:04:42,900 --> 00:04:46,333
+compatibility on your APIs
+if you're changing the APIs.
+
+89
+00:04:46,666 --> 00:04:49,666
+Otherwise
+the independence is completely fake
+
+90
+00:04:49,966 --> 00:04:52,466
+and you end up with unseen
+
+91
+00:04:52,466 --> 00:04:56,000
+dependance, between, the microservices.
+
+92
+00:04:56,000 --> 00:04:58,733
+So you have to watch out
+for that sort of thing.
+
+93
+00:04:58,733 --> 00:05:03,766
+You need to architect your microservices
+so they can handle changes to the API
+
+94
+00:05:04,033 --> 00:05:08,366
+and that they're additive,
+or that they, can fall
+
+95
+00:05:08,366 --> 00:05:11,600
+back to an earlier,
+version if, if required.
+
+96
+00:05:13,100 --> 00:05:13,533
+Okay.
+
+97
+00:05:13,533 --> 00:05:14,500
+Another problem.
+
+98
+00:05:14,500 --> 00:05:19,766
+Uneven, releasing
+uneven scaling and poor isolation.
+
+99
+00:05:19,766 --> 00:05:23,300
+So scaling problem
+if I've got a big monolithic code,
+
+100
+00:05:23,533 --> 00:05:28,466
+some parts of the code are used a lot
+and other parts are sitting there idle.
+
+101
+00:05:28,466 --> 00:05:32,366
+Even if I'm using multithreaded,
+I run into this issue.
+
+102
+00:05:32,666 --> 00:05:35,666
+Monolith forces you
+to scale everything at once.
+
+103
+00:05:35,733 --> 00:05:38,500
+So I had to scale the whole application
+all at once.
+
+104
+00:05:38,500 --> 00:05:41,400
+That could be a problem.
+I also have isolation.
+
+105
+00:05:41,400 --> 00:05:45,100
+I can't isolate symptoms of problems
+because everything's kind of hashed
+
+106
+00:05:45,100 --> 00:05:46,866
+together with microservices.
+
+107
+00:05:46,866 --> 00:05:50,200
+I can easily find out where thing
+where the problems are
+
+108
+00:05:50,200 --> 00:05:53,866
+and isolate the microservice
+that's causing the problem, right?
+
+109
+00:05:54,200 --> 00:05:56,933
+I can even downgrade gracefully if I need
+
+110
+00:05:56,933 --> 00:06:00,733
+to, in order to keep things running,
+
+111
+00:06:00,733 --> 00:06:04,900
+but maybe even at a segregated,
+service level agreement.
+
+112
+00:06:05,966 --> 00:06:06,533
+Right.
+
+113
+00:06:06,533 --> 00:06:09,300
+Other
+things that microservices can help with
+
+114
+00:06:09,300 --> 00:06:12,166
+is I can scale the services independently.
+
+115
+00:06:12,166 --> 00:06:15,733
+I can provide process level isolation
+if required.
+
+116
+00:06:16,166 --> 00:06:19,300
+And I can, do for poor,
+
+117
+00:06:20,966 --> 00:06:25,333
+port forwarding gracefully to handle
+degradation and timeouts and callbacks.
+
+118
+00:06:25,333 --> 00:06:28,933
+And I can scale independently without
+without good
+
+119
+00:06:28,933 --> 00:06:32,100
+resilient
+patterns, though failures can now cascade.
+
+120
+00:06:32,100 --> 00:06:35,100
+And we've seen this
+with microservice architectures
+
+121
+00:06:35,133 --> 00:06:39,100
+in the cloud service providers
+where we've had cascading failures
+
+122
+00:06:39,300 --> 00:06:42,266
+with one microservice
+and everyone highly dependent on it.
+
+123
+00:06:42,266 --> 00:06:45,266
+So you have to have good resilient
+patterns.
+
+124
+00:06:45,333 --> 00:06:48,333
+You have to look at the whole system
+architecture.
+
+125
+00:06:49,700 --> 00:06:50,000
+All right.
+
+126
+00:06:50,000 --> 00:06:52,566
+Another one is check and schema lock in.
+
+127
+00:06:52,566 --> 00:06:57,466
+So, one of the biggest problems
+that we have with mainframes
+
+128
+00:06:57,466 --> 00:07:01,233
+and moving off of mainframes
+is a tech lock in COBOL.
+
+129
+00:07:01,800 --> 00:07:02,633
+Right?
+
+130
+00:07:02,633 --> 00:07:07,666
+And it's not normally a big
+monolithic application sitting on its own.
+
+131
+00:07:07,966 --> 00:07:12,266
+It's a whole bunch of other small apps
+that were developed around it
+
+132
+00:07:12,666 --> 00:07:16,566
+that are all sharing the same schema,
+which basically created
+
+133
+00:07:16,566 --> 00:07:20,533
+a big monolithic
+or distributed monolithic masses.
+
+134
+00:07:20,533 --> 00:07:23,400
+What you got spaghetti for, right.
+
+135
+00:07:23,400 --> 00:07:29,500
+So understanding, the schema
+and the tech lock in is important.
+
+136
+00:07:29,900 --> 00:07:32,533
+If I'm locked into a schema
+where all the microservices
+
+137
+00:07:32,533 --> 00:07:36,433
+have to use the same schema
+and they can't migrate independently,
+
+138
+00:07:36,433 --> 00:07:41,033
+I just created another monolith
+and just a distributed monolith, right?
+
+139
+00:07:41,366 --> 00:07:41,733
+True.
+
+140
+00:07:41,733 --> 00:07:45,233
+Microservices lets
+you use different languages
+
+141
+00:07:45,233 --> 00:07:49,233
+for the different microservices,
+let you modernize incrementally.
+
+142
+00:07:50,366 --> 00:07:53,266
+Also I can change the,
+
+143
+00:07:53,266 --> 00:07:56,866
+type of database
+maybe I have on the back end
+
+144
+00:07:57,166 --> 00:08:00,666
+and I can even change schemas without it
+affecting,
+
+145
+00:08:00,666 --> 00:08:03,666
+other, microservices.
+
+146
+00:08:05,100 --> 00:08:05,733
+Okay.
+
+147
+00:08:05,733 --> 00:08:08,066
+Another big problem.
+
+148
+00:08:08,066 --> 00:08:10,766
+And we saw this in Conway's, law.
+
+149
+00:08:10,766 --> 00:08:13,166
+If you haven't listened to that lecture,
+go check it out
+
+150
+00:08:13,166 --> 00:08:15,466
+and that's misaligned boundaries in teams.
+
+151
+00:08:15,466 --> 00:08:20,133
+So this is when, teams are constantly
+in the same code areas
+
+152
+00:08:20,433 --> 00:08:25,600
+or a feature comes in
+that is spanning multiple microservices
+
+153
+00:08:25,600 --> 00:08:31,033
+need changes or,
+I don't know who owns the code, right.
+
+154
+00:08:31,033 --> 00:08:32,566
+For that microservice.
+
+155
+00:08:32,566 --> 00:08:35,933
+Then I know this is, a problem
+that I have.
+
+156
+00:08:36,133 --> 00:08:41,133
+You find this in monolithic, modules
+or modular monolithic
+
+157
+00:08:41,466 --> 00:08:44,900
+as well as in monolithic
+as well as in microservices.
+
+158
+00:08:45,100 --> 00:08:46,433
+What people think they've done
+
+159
+00:08:46,433 --> 00:08:50,200
+as a microservice, where they really have
+a modular monolith, right?
+
+160
+00:08:50,566 --> 00:08:53,133
+Or distributed monolith. Right.
+
+161
+00:08:53,133 --> 00:08:55,100
+So watch out for those sorts of things.
+
+162
+00:08:55,100 --> 00:08:57,933
+If you don't have good
+boundaries on your ownership.
+
+163
+00:08:59,733 --> 00:09:00,600
+All right.
+
+164
+00:09:00,600 --> 00:09:03,700
+What microservices can't do automagically.
+
+165
+00:09:04,433 --> 00:09:06,733
+Right. They don't fix stupid.
+
+166
+00:09:06,733 --> 00:09:11,000
+I hate to say it that way
+or poor engineering practices.
+
+167
+00:09:11,000 --> 00:09:14,833
+So if you have bad domain
+modeling and unclear requirements,
+
+168
+00:09:14,833 --> 00:09:16,566
+it won't fix that for you.
+
+169
+00:09:16,566 --> 00:09:20,466
+If you have bad engineering practices,
+it won't fix that for you either.
+
+170
+00:09:20,466 --> 00:09:25,233
+It may, it may, expose it
+earlier on in the development cycle.
+
+171
+00:09:25,666 --> 00:09:30,566
+But if, it may actually hide it as well
+late in the cycle.
+
+172
+00:09:30,800 --> 00:09:35,233
+So it'll catch a lot of things up front,
+but some more,
+
+173
+00:09:35,233 --> 00:09:39,900
+nuanced, coupling between, microservices
+
+174
+00:09:40,466 --> 00:09:45,100
+are not found until, once you go way
+past, deployment a lot of times.
+
+175
+00:09:45,100 --> 00:09:46,600
+So you got to watch out for that.
+
+176
+00:09:46,600 --> 00:09:50,433
+Also, it does not fix performance
+problems, without good
+
+177
+00:09:50,433 --> 00:09:53,500
+architectures and good algorithms
+for queries and things,
+
+178
+00:09:54,100 --> 00:09:57,300
+it, requires more observability.
+
+179
+00:09:57,866 --> 00:10:00,833
+So you gotta put that in.
+That's more work.
+
+180
+00:10:00,833 --> 00:10:01,833
+You have to do.
+
+181
+00:10:01,833 --> 00:10:06,566
+And it does not fix organizational
+dysfunction or misaligned incentives.
+
+182
+00:10:06,866 --> 00:10:09,466
+They amplify all of these things.
+
+183
+00:10:09,466 --> 00:10:14,000
+So the good news is, is
+you'll find these things, more readily.
+
+184
+00:10:14,000 --> 00:10:15,400
+They won't be hidden for years.
+
+185
+00:10:15,400 --> 00:10:16,500
+But bad news is,
+
+186
+00:10:16,500 --> 00:10:19,633
+is hopefully you find them early
+instead of late in the development cycle.
+
+187
+00:10:21,166 --> 00:10:21,733
+All right.
+
+188
+00:10:21,733 --> 00:10:27,000
+There are some costs
+to working in microservices, right?
+
+189
+00:10:27,266 --> 00:10:32,300
+If you've got a very large team,
+microservices allow you to very easily
+
+190
+00:10:32,466 --> 00:10:37,400
+segregate, your teams into, easily easy.
+
+191
+00:10:37,933 --> 00:10:41,700
+Ownership of certain modules
+or certain microservices.
+
+192
+00:10:41,700 --> 00:10:42,700
+Right.
+
+193
+00:10:42,700 --> 00:10:45,700
+Reasonable
+domain boundaries are great for that,
+
+194
+00:10:46,100 --> 00:10:47,100
+but you need to make sure
+
+195
+00:10:47,100 --> 00:10:50,100
+you have operational maturity,
+meaning you have good Cicd,
+
+196
+00:10:50,966 --> 00:10:53,966
+monitoring,
+traceability, secrets management.
+
+197
+00:10:53,966 --> 00:10:58,433
+All these are need to be mature
+to take real advantage of microservices.
+
+198
+00:10:58,800 --> 00:11:02,066
+The cost you're introducing
+are operational complexity,
+
+199
+00:11:02,366 --> 00:11:04,600
+distributed system issues like timeouts.
+
+200
+00:11:04,600 --> 00:11:07,700
+Debugging is much harder data consistency
+
+201
+00:11:07,700 --> 00:11:10,700
+challenges across multiple microservices.
+
+202
+00:11:10,866 --> 00:11:12,600
+And then it's harder to test and debug.
+
+203
+00:11:12,600 --> 00:11:15,700
+As I've already mentioned, there are
+some frameworks out there that help,
+
+204
+00:11:16,266 --> 00:11:20,433
+but it is very complex,
+especially if you're developing several
+
+205
+00:11:20,433 --> 00:11:23,966
+dozen microservices that are spanned
+across a cluster of machines.
+
+206
+00:11:23,966 --> 00:11:29,300
+It can be very difficult
+to, debug and handle timing issues.
+
+207
+00:11:29,533 --> 00:11:32,166
+Those tend to be the biggest issues.
+
+208
+00:11:32,166 --> 00:11:33,266
+All right.
+
+209
+00:11:33,266 --> 00:11:36,266
+In summary, microservices are great.
+
+210
+00:11:36,566 --> 00:11:38,333
+They can help with a lot of things.
+
+211
+00:11:38,333 --> 00:11:41,200
+They can help, with detangling
+
+212
+00:11:41,200 --> 00:11:44,200
+large code bases and segmenting them and
+
+213
+00:11:44,600 --> 00:11:47,600
+enforcing some good engineering practices.
+
+214
+00:11:48,033 --> 00:11:50,633
+You do have to look for,
+
+215
+00:11:50,633 --> 00:11:54,066
+coupled release cycles and coordination
+overhead that you have,
+
+216
+00:11:54,666 --> 00:11:57,666
+it can handle uneven scaling,
+
+217
+00:11:57,766 --> 00:12:00,466
+and the need for a better isolation.
+
+218
+00:12:00,466 --> 00:12:02,700
+You can handle those with, microservices.
+
+219
+00:12:02,700 --> 00:12:05,033
+Really well, you want to avoid,
+
+220
+00:12:06,566 --> 00:12:08,666
+tech and schema lock in.
+
+221
+00:12:08,666 --> 00:12:12,766
+And if you want true microservices,
+avoid the schema lock in.
+
+222
+00:12:12,966 --> 00:12:14,433
+I see people do this all the time
+
+223
+00:12:14,433 --> 00:12:18,133
+where they create a schema
+that all the microservices are using.
+
+224
+00:12:18,600 --> 00:12:21,366
+It's like, oh, but you've just created
+
+225
+00:12:21,366 --> 00:12:24,433
+coupling between them
+and you created a distributed monolith,
+
+226
+00:12:24,466 --> 00:12:28,800
+so you don't want to go that route
+and make sure that you, have aligned
+
+227
+00:12:28,800 --> 00:12:33,266
+your microservice architecture,
+with the system and team boundaries.
+
+228
+00:12:33,300 --> 00:12:34,000
+Right?
+
+229
+00:12:34,000 --> 00:12:36,266
+These are all important things to look at.
+
+230
+00:12:36,266 --> 00:12:39,466
+Remember, you're adding complexity
+and cost, but you're getting some gains.
+
+231
+00:12:39,466 --> 00:12:42,766
+So anytime you make architectural
+decisions, you've got to,
+
+232
+00:12:42,966 --> 00:12:46,666
+understand
+the gives in the takes on either side.
