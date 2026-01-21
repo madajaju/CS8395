@@ -1,5 +1,7 @@
 # Conway’s Law & Team Boundaries
 
+Video: https://youtu.be/bRhvIO9fMzk
+
 **Goal of this lecture**
 
 - Understand Conway’s Law at an architectural level

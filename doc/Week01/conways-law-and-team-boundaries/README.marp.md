@@ -8,6 +8,8 @@ theme: default
 
 # Conway’s Law & Team Boundaries
 
+Video: https://youtu.be/bRhvIO9fMzk
+
 **Goals**
 
 - Understand Conway’s Law at an architectural level
@@ -19,7 +21,9 @@ theme: default
 
 # What Is Conway’s Law?
 
-> “Organizations which design systems ... are constrained to produce designs which are copies of the communication structures of these organizations.”  
+![conwayslaw-Conway_s_Law__Org_Structure_Mirrors_Architecture.png](conwayslaw-Conway_s_Law__Org_Structure_Mirrors_Architecture.png)
+
+> “Organizations which design systems ...  produce designs which are copies of the communication structures of these organizations.”  
 > — Melvin Conway, 1968
 
 **Plain meaning**
@@ -30,8 +34,7 @@ theme: default
 
 **Key idea**
 
-- Show me your org chart and communication paths,  
-  and I can often predict your architecture.
+- Show me your org chart and communication paths, and I can often predict your architecture.
 
 ---
 
@@ -50,6 +53,10 @@ theme: default
 - Slower delivery and longer lead times
 - Unclear ownership and blame shifting
 
+--- 
+
+# Why It Matters for Architecture (cont)
+
 **When aligned:**
 
 - Faster, safer changes
@@ -59,6 +66,8 @@ theme: default
 ---
 
 # Good vs Bad Alignment
+
+![goodvbad-Good_vs_Bad_Alignment_of_Teams_and_Architecture.png](goodvbad-Good_vs_Bad_Alignment_of_Teams_and_Architecture.png){width=50%}
 
 **Good alignment**
 
@@ -79,6 +88,8 @@ theme: default
 
 # Inverse Conway Maneuver
 
+![inverse-Inverse_Conway_Maneuver__Shape_Teams_to_Match_Desired_Architecture.png](inverse-Inverse_Conway_Maneuver__Shape_Teams_to_Match_Desired_Architecture.png)
+
 **Definition**
 
 - **Inverse Conway Maneuver**:  
@@ -91,6 +102,10 @@ theme: default
 3. Adjust teams and responsibilities accordingly.
 4. Let communication patterns and code gradually realign.
 
+---
+
+# Inverse Conway Maneuver (cont)
+
 **Important**
 
 - You cannot “defeat” Conway’s Law.
@@ -100,6 +115,8 @@ theme: default
 
 # Symptoms of Misaligned Boundaries
 
+![symptoms-Feature_Journey_Across_Multiple_Teams__Misaligned_Boundaries_.png](symptoms-Feature_Journey_Across_Multiple_Teams__Misaligned_Boundaries_.png)
+ 
 Look for these warning signs:
 
 - A small feature requires **3–5 teams** to ship.
@@ -112,6 +129,8 @@ Look for these warning signs:
 ---
 
 # Designing Better Team Boundaries
+
+![valuestream-Teams_Aligned_to_Value_Streams.png](valuestream-Teams_Aligned_to_Value_Streams.png)
 
 **Principles**
 
@@ -138,6 +157,10 @@ Look for these warning signs:
 - “What architecture will naturally emerge from this new structure?”
 - “Are we creating bottlenecks or clarifying ownership?”
 
+---
+
+# Using Conway's Law in Practice (cont)
+
 **When diagnosing pain**
 
 - Slow delivery?
@@ -148,6 +171,8 @@ Look for these warning signs:
 ---
 
 # Key Takeaways
+
+![Keytakeaways-Sociotechnical_Design__Org_Structure_and_System_Architecture.png](Keytakeaways-Sociotechnical_Design__Org_Structure_and_System_Architecture.png)
 
 - System architecture tends to **mirror communication structures**.
 - Team boundaries are **architectural decisions** in disguise.

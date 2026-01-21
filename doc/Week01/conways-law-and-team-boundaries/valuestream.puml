@@ -1,0 +1,46 @@
+@startuml
+title Teams Aligned to Value Streams
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' Value stream across the top
+rectangle "Value Stream" as VS #ccffff {
+  rectangle "Discover" as Discover
+  rectangle "Sign Up" as SignUp
+  rectangle "Onboard" as Onboard
+  rectangle "Use Product" as Use
+  rectangle "Pay" as Pay
+}
+
+Discover -right-> SignUp
+SignUp -right-> Onboard
+Onboard -right-> Use
+Use -right-> Pay
+
+' Teams aligned to segments of the stream
+rectangle "Teams" as TEAMS #ffaa88 {
+  rectangle "Onboarding Team" as OnbTeam
+  rectangle "Product Team" as ProdTeam
+  rectangle "Billing Team" as BillTeam
+}
+
+' Vertical alignment using notes/arrows
+OnbTeam -up-> SignUp
+OnbTeam -up-> Onboard
+
+ProdTeam -up-> Use
+
+BillTeam -up-> Pay
+
+note bottom of TEAMS
+  Principles:
+  • Follow value streams\n
+  • Optimize for most changes\n
+    to be done by one team\n
+  • Limit cognitive load with\n
+    coherent domains
+end note
+@enduml

@@ -1,10 +1,8 @@
 # What Problems Do Microservices Solve?
 
-**Length:** 10–15 minutes  
-**Audience:** Developers & architects with basic backend experience  
-**Focus:** Understanding *which problems* microservices are actually good at solving, and when they are the wrong tool.
-
 ---
+
+Video: https://youtu.be/BFlediBkcPM
 
 ## 1. Setting the Stage
 

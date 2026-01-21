@@ -1,0 +1,37 @@
+@startuml
+title Conway's Law: Org Structure Mirrors Architecture
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam arrow {
+  Color Black
+}
+
+rectangle "Organization" as ORG  #ffffaa {
+  rectangle "Team A" as TeamA
+  rectangle "Team B" as TeamB
+  rectangle "Team C" as TeamC
+}
+
+rectangle "System Architecture" as SYS #ffaa88 {
+  rectangle "Service A" as ServiceA
+  rectangle "Service B" as ServiceB
+  rectangle "Service C" as ServiceC
+}
+
+TeamA -down-> ServiceA : communication\ninfluences design
+TeamB -down-> ServiceB
+TeamC -down-> ServiceC
+
+note top of ORG
+  Communication paths and
+  team boundaries on the left...
+end note
+
+note bottom of SYS
+  ...tend to show up as
+  system boundaries on the right.
+end note
+@enduml

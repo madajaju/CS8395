@@ -1,0 +1,36 @@
+@startuml
+title Feature Journey Across Multiple Teams (Misaligned Boundaries)
+
+skinparam sequence {
+  ArrowColor DarkGray
+  LifeLineBorderColor Black
+  LifeLineBackgroundColor White
+}
+
+participant "Team 1" as T1
+participant "Team 2" as T2
+participant "Team 3" as T3
+participant "Shared Service Team" as Shared
+
+== Small Feature Request ==
+
+autonumber
+
+actor User as U
+
+U -> T1 : Request small feature
+T1 -> T2 : Dependency / API change
+T2 -> Shared : Needs shared module update
+Shared -> T3 : Needs DB change / migration
+T3 -> Shared : Adjust shared schema
+Shared -> T2 : Update shared business logic
+T2 -> T1 : Integrate and test
+T1 -> U : Feature delivered\n(after many handoffs)
+
+note over T1,T3
+  Warning signs:
+  • 3–5 teams for a small change
+  • Many cross-team meetings
+  • Fuzzy ownership of shared modules
+end note
+@enduml

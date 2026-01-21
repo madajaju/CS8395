@@ -1,0 +1,67 @@
+@startuml
+title Good vs Bad Alignment of Teams and Architecture
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' === BAD ALIGNMENT ===
+rectangle "Bad Alignment\n(Teams by Technical Layer)" as BAD #ffaaaa {
+  rectangle "UI Layer\n(UI Team)" as UI
+  rectangle "API Layer\n(API Team)" as API
+  rectangle "DB Layer\n(DB Team)" as DB
+  rectangle "Infra Layer\n(Infra Team)" as INF
+}
+
+UI -down-> API
+API -down-> DB
+DB -down-> INF
+
+' Feature path across many teams
+UI -[dashed,thickness=2]-> API : "Feature X"
+API -[dashed,thickness=2]-> DB
+DB -[dashed,thickness=2]-> INF
+
+note top of BAD
+  Each feature cuts through
+  many teams and layers:
+  • More handoffs
+  • Slower feedback
+  • Layer-centric design
+end note
+
+' === GOOD ALIGNMENT ===
+rectangle "Good Alignment\n(Teams by Business Capability)" as GOOD #aaffaa {
+  rectangle "Payments Team" as PayTeam #ffccff {
+    rectangle "Payments UI" as PayUI
+    rectangle "Payments API" as PayAPI
+    rectangle "Payments DB" as PayDB
+  }
+
+  rectangle "Catalog Team" as CatTeam #ccccff {
+    rectangle "Catalog UI" as CatUI
+    rectangle "Catalog API" as CatAPI
+    rectangle "Catalog DB" as CatDB
+  }
+}
+
+PayUI -down-> PayAPI
+PayAPI -down-> PayDB
+
+CatUI -down-> CatAPI
+CatAPI -down-> CatDB
+
+' Feature stays mostly within one team
+PayUI -[dashed,thickness=2]-> PayAPI : "Feature X\n(Payments)"
+PayAPI -[dashed,thickness=2]-> PayDB
+
+note top of GOOD
+  Teams own capabilities
+  end-to-end:
+  • Fewer handoffs
+  • Faster change
+  • Domain-centric design
+end note
+
+@enduml

@@ -1,0 +1,946 @@
+Good afternoon, good evening. How's everyone doing today?
+6:12
+Hello. How are you? Hello. Good. How are you? All right. I see some old familiar faces.
+6:18
+And some new ones. I do like to see people's faces, just so you guys know. Uh we'll do cameras on on
+6:26
+the on these sessions on Thursdays. Um which we'll go over a little bit today.
+6:31
+Um we'll give a couple more minutes because I do believe there's eight 8 to
+6:37
+10 people um scheduled. Let me double check real quick.
+6:54
+All right, more people are joining. All right.
+7:00
+Well, then come on.
+7:06
+Phillip I recognize. How was everyone's Christmas uh
+7:14
+and New Year's break? Hopefully people got some time off.
+7:21
+Oh yeah, it was good. Lots of chasing the kids around. That's always fun. I spend my time
+7:27
+chasing my kids out. They are gone.
+7:33
+My wife and I are finally empty nesters. So, it's kind of nice.
+7:41
+So, let's see. I just logged in. Let's see how many other people we have. Well,
+7:48
+you guys obviously were able to see the the bright uh was it called? Brightpace.
+7:56
+Yes. All right. Let's see.
+8:03
+[Music] Okay.
+8:08
+We should uh we're expecting a couple more people then we'll get kicked off.
+8:17
+Wait, Tom has joined twice. Okay, that helps. Yeah, that's I guess adds to the count.
+8:24
+But the uh Yeah, sorry. I just I have my cell phone on one and one of the uh the big screen on the other.
+8:30
+No problem. Put the cell phone for the video. Um we'll we'll go ahead and get started.
+8:36
+Um now that we're a couple minutes after, um let me introduce myself uh real quick. Um I'm Dr. Darren Pulsifer.
+8:44
+Um, you can just call me uh Darren or Dr. Darren. No one can ever get my name
+8:50
+right all the time on my last name. Um, I've been teaching for at Vanderbilt for
+8:56
+over a year now. Um, I taught this class before, but I completely revamped it.
+9:02
+Um, because of uh a philosophy that I'm kind of taking um, and we had quite a bit of
+9:10
+success with with some adjustments, which uh, the people that had my class last semester, you're going to see some
+9:16
+of the adjustments this uh, semester to make uh, to make things better. And I think one of the reasons why we I've
+9:22
+changed things so so much is because of uh technology changes in the world
+9:28
+around generative AI specifically. And my goal that I have for you guys is
+9:36
+that first off when you're done with this that you can get jobs because that's important, right? because I know
+9:44
+I I've I've got uh 10 kids, so I know what it means to support a family and to
+9:50
+support yourselves. Um, and with the with everything that's going on, especially around computer science and
+9:58
+and software engineering, I think it's important that we up our game. So, you're going to find in this class,
+10:03
+we're going to up our game quite a bit and start thinking at a much higher level. um then um I'm not going to be
+10:10
+concerned about code as much as I am design patterns in architecture and
+10:17
+making sure that you guys make architectural decisions that are wise instead of just being able to
+10:23
+regurgitate an API from a language. Um and the reason I think the big shift is
+10:31
+because I can have generative AI do that for me all day long. That's that's what they're good at is regurgitation.
+10:38
+Um, so I'm going to try and up up up your game. Um, basically,
+10:43
+um, this course is microser scalable microser architectures and we're going to add some resilience and security in
+10:50
+there as well. Um, in the past, this class has been taught by some incredible, incredible computer
+10:57
+scientists that have written books and published papers and contributed to the
+11:02
+Java Spring framework. We're not covering Java Spring this time. uh if you want to you can um instead we're
+11:10
+going to talk about the design patterns and architectural decisions. It will be a multi- language um course. We'll be
+11:18
+working in um whatever languages you want frankly um as long as it can um handle the
+11:26
+design patterns. There will be some um what's the right word? There will be
+11:32
+some uh wise ways to choose things. In my last class, we had a student that
+11:38
+decided to make his life so much harder than it had to be. And those that are in the class know exactly who I'm talking
+11:44
+about. Um he learned a lot. He learned an awful lot. Um but he made his job a
+11:52
+lot harder. So I suggest looking at best practices and and
+11:58
+guidance in the lectures. they will help you uh make wise decisions um in in what
+12:04
+you decide to do. This may be uncomfortable for some of you guys because you're going to be used some of
+12:09
+your courses that you've had in the past, you're used to code already written for you and frameworks already
+12:15
+set up for you and test cases you need to pass. You're not getting any of that from me. None.
+12:22
+um because that in fact I took the core I took this
+12:28
+exact course um over the summer and I took the final assignment and I pumped
+12:34
+it into a juni which is a uh a genai on steroids with intelligj and it finished
+12:42
+the whole course all the assignments in 10 minutes
+12:48
+pass 100%. And I said, 'You know what?
+12:54
+I'm not gonna I'm not going to do that to you guys because I think um that would be if I if I just gave you the
+13:00
+same assignment, that would be a detriment to you. Um and I I just don't
+13:06
+think that's worth your time and your effort um to be able to regurgitate what a Genai can do for you. So, we're going
+13:13
+to focus a lot on architectural decisions in in Genai, and you'll see that in in the courses. and Eric and
+13:20
+Trisha and Philip have had my course uh not this course but uh last semester so
+13:26
+they know kind of the approach that I'm going to take. So any questions on that uh so far uh from you guys?
+13:36
+No. Okay. I I do I do have a a slide
+13:42
+presentation I will show. I normally Oh, go ahead, Philip. Actually, um I I do have a question perhaps
+13:48
+slightly in Jess but not totally. Um I I would love to hear again uh because I
+13:53
+think you discussed this last term how you would differentiate between uh what you're teaching us and vibe coding just
+14:00
+because that term has become a scourge on our industry. Yeah. So I'm going to teach you I'm
+14:08
+going to teach you how to direct a genai to help you make wise architecture
+14:13
+decisions. the code is secondary.
+14:21
+Um and one of the reasons why I say that is I truly believe that in the next five
+14:27
+years maybe maybe less than that there um that Gen AI will start um generating
+14:35
+machine code directly or a different kind of code that's not human readable
+14:41
+um but that is machine readable that can go to machine code and talk at the at
+14:48
+the microode level Um, I I truly believe that that could uh
+14:54
+that could happen. So, uh, no no problem to uh uh you go by Tom or Thomas.
+15:05
+Sorry, mute button. I go by Tom. All right. So, so Tom, I'll dive right in. Um, so you know what's on on track
+15:12
+and then we can have a discussion after that because I don't want you to miss uh kind of the meat of what we have planned
+15:18
+today. So, let me share my screen here. Does that answer your uh question, Philip?
+15:26
+Uh, yes. Thank you. All right. Philip will always uh challenge me,
+15:32
+which is exactly what I want to hear. So, all right. Um, so we'll talk about
+15:40
+course philosophy, uh, the course contents, uh, the structure of the lecture material, which you guys will
+15:46
+get used to, and then the assignments, and we'll talk about grading and how to set up your dev environment and all
+15:52
+that. Um, course philosophy. This one is really important. I don't see you guys
+15:59
+as coders. I see you as not even software developers. I see you more as
+16:04
+software engineers and architects and I'm going to treat you as such. You you guys are
+16:10
+all master students. So, um we're going to think at a lot um higher level than
+16:16
+um just script monkeys, right? Um if you want to learn a language, you're free to
+16:22
+do that on your own time, right? Um let's just put it that way. Okay? Um and
+16:28
+you will be learning a lot of new techniques and maybe even a new language during this course. Um we are going to
+16:35
+learn how to write concurrent and massively parallel microser architectures. Um it will require uh I
+16:44
+am going to I am going to have you guys using Docker uh which we'll talk about. Um but you do not need a cloud
+16:51
+environment to do this. You can run all this stuff on your uh desktops or
+16:56
+laptops. If you want to run it in a cloud and go hogwell crazy, you're more than welcome to do that as well because
+17:02
+we're going to focus on the different design patterns and architectures throughout this uh course. Okay.
+17:10
+Um one of the reasons why, and this this is really easy, just so
+17:15
+you guys know, I work at Intel Corporation. um that's my uh my full-time job. This
+17:23
+I'm doing because I enjoy teaching. And one thing I want to get across to you
+17:28
+guys is even though we're in a part of uh technology right now that's moving so
+17:34
+rapidly. Um, we've seen these before and there
+17:39
+have been several times that and I don't know if you guys know Moore's law but Moore's law basically says that every
+17:46
+two years the number of transistors doubles in the same amount of space. That's Moore's law. The ramifications of
+17:53
+Moore's law says that speed doubles every two years. Um, which in the long
+18:01
+term has really happened. We've been told several times by industry leaders
+18:08
+um that uh Moore's law is dead. And anytime someone says that there's a
+18:14
+major breakthrough and one um and the reason I bring this up is because this
+18:21
+shows you how rapidly things are growing. And because they're growing so rapidly,
+18:27
+we as software architects and software engineers need to understand
+18:34
+um that kind of growth so that we can architect systems that can last beyond a
+18:39
+year and a half or two years. Right? So understanding that technology
+18:45
+is going to advance even beyond um some of our architectures or some of our
+18:51
+coding that we've done our architectures still need to be sound and solid moving
+18:56
+forward. Uh some of the best examples of that there is an organization
+19:02
+um there there is an organization out there um called let's see if I get it right
+19:09
+DCMA they are in charge of all the defense contracts for the United States um
+19:16
+department of war right all of them um the software is the oldest piece of
+19:22
+software running in the world today it's written in cobalt and it is running on a mainframe
+19:30
+and it is almost 60 years old. So that architecture has withtood all
+19:37
+this change. They've tried several times to uh to migrate it off of the mainframe
+19:42
+onto something more modern and this is where things fell apart because the core
+19:48
+foundation of that architecture is solid but they built a spaghetti mess around it and they can't move it without
+19:54
+destroying everything. So we want to make sure that we're architecting things that can be extended easily but also
+20:01
+migrated as well. So we're going to work on on those types of architectures. Okay, that's why I bring up more as
+20:07
+well. Um let's go to the next slide here.
+20:13
+Oh, and I forgot to hit the record button. No, it's already recording, right?
+20:19
+I think I already set it up. Yeah, it says recording on my side. Okay, thank you. Thank you. Um, one one
+20:26
+thing I want to make sure that that we um look at in
+20:31
+in in this course is we're going to be doing a lot of things, but we're also going to be discussing a lot of things
+20:37
+because I I see there's a lot of real value in in our Thursday calls as these
+20:43
+not being just Darren lecturing, but us discussing. And um one change that we're going to
+20:51
+make this um semester over last semester, you'll see coming up when I
+20:56
+get to that slide. I don't want to jump ahead too too much, but I really want you guys to not worry about the coding
+21:03
+as much as your architecture and your design and that you're using best
+21:10
+practices, best methods that are known out there and maybe even creating some of your own. So, I'm trying to up your
+21:17
+game. um in in that which I've already kind of talked about. Um oh, Thursday
+21:22
+class time. So, a a little bit of a change from from last semester. Every
+21:28
+class that you attend and you have your camera on and you're engaged, you're going to get a 1% um you get one point
+21:35
+for the class. There are 14 classes. You have an opportunity to get 14%.
+21:42
+So, there's extra credit by attending class and participating. If you miss a class, this gives you an opportunity to
+21:47
+miss four classes, right? With no penalties, right? That's something that's that's new. But you
+21:54
+need to open your mouth. Um it's not me talking the whole time. I will literally
+22:00
+sit here and stare at you guys until you say something, right? Um the
+22:07
+reason why is because I expect you guys to come prepared to talk in class. There
+22:13
+are lectures that are out in GitHub uh that you can read. There will be videos
+22:18
+and audio um that you can listen to and I expect you guys to even uh crack open
+22:25
+your chat GBT or Claude or whatever LLM you want or do a Google search I don't
+22:32
+care but come to class ready to discuss uh what the lectures covered and the
+22:39
+concepts around them and even bring some world um experience into those. Uh so
+22:45
+the class schedule will be at the first 15 minutes I'll do a short lecture on one of the topics uh for the week
+22:54
+and then there's an hour of us discussing and I won't just have it us discussing the whole time. I'll I'll
+23:00
+have a couple activities that are breakout sessions, some question and answer type things and uh and but I
+23:07
+really want you guys to bring something to the table where we're learning, all of us are learning together, not just me
+23:15
+regurgitating a a bunch of slides because that's that's not fun for anyone um including
+23:23
+myself. Okay, any questions about that? Does that make sense?
+23:29
+All right, we're good. All right. Um, what we're going to cover, we're going to cover modern web um, programming
+23:36
+platforms. We're going to cover patterns for concurrency and parallel programming
+23:42
+in microser architectures. We're going to cover some of the development tools that are out there that help you with
+23:47
+this. Um, I will cover some um some Java Spring. It's an incredible platform if
+23:54
+you like working in the Java environment. But I will also cover nojs, go and rust as well and some of their
+24:03
+platforms um and the benefits of using them. Um we will also cover some
+24:09
+generative AI techniques and how to get the genai to and coersse the genai to
+24:16
+give you better responses and to interact with it in in a very productive
+24:21
+way. Um, some people in the past have had some hard times with Genai and have
+24:29
+trusted it implicitly and it's led them down the wrong path. So, u we're going to teach a lot about
+24:37
+how how to build up your um knowledge so that you can actually ask generative AI
+24:44
+important questions and that you can be critical in thinking on how those uh
+24:51
+responses are coming back. That's going to be um important. Okay.
+24:57
+um some of the key frameworks that we're going to be using. We're going to talk about streams, we're going to talk about
+25:03
+reactive streams and structured concurrency. Those are kind of the three big um design pattern uh groups that
+25:10
+we're going to talk about in in this course. Um you will be able to architect things that can handle millions of
+25:18
+messages um and in an effective way. And I'm talking millions of messages in minutes
+25:26
+um not in uh hours. So we're going to talk about some of those different architectural design patterns that can
+25:32
+handle that and how to scale up and scale down appropriately.
+25:39
+Um one of the one of the big modern web platforms out there is Spring Boot. Um I
+25:46
+will go over how it's architected and what the corlaries are in some other
+25:51
+languages but key um uh platforms that
+25:56
+we'll talk about is synchronous programming and asynchronous programming and the different uh types of um design
+26:04
+patterns we're going to see in them and also the benefits and the drawbacks to
+26:09
+each one. That's going to be very important when it comes to you designing and architecting your solution, right?
+26:17
+Based off of um you know the project that that you're going to uh work on. In
+26:24
+the past, we picked one project. Um I'm going to be more nice than that. I'm going to give you the option between
+26:30
+five different projects that you get to choose. I'm not going to be as bold as last class where you got to do whatever
+26:37
+you felt like. this one. I even I even have some starter data sets for you guys
+26:42
+um which will help out quite a bit, right? Um some of the pattern or or some
+26:48
+of the reasons why we want to use patterns um and we'll talk about how they interact with each other is
+26:54
+reusability. We know these work, why not use them? Maintainability. Uh these
+26:59
+patterns are well known and um easy to maintain, scalability, flexibility, and
+27:05
+then of course best practices. Um Doug Schmidt who taught this class before I started teaching it has written a great
+27:12
+book on design patterns. You can check out um that PDF uh that's that's right
+27:17
+there. I will send these slides out. They will be put up on Brightpace as well. So you guys can get access to
+27:23
+that. Uh Doug's a brilliant um software engineer. So u I I feel kind of uh
+27:30
+humbled to to take over his class like this uh because he left me with a lot of great stuff. So, uh, the development
+27:37
+environment will be using Git. You will hand your insight, uh, assignments into, um, GitHub or GitLab. I don't care which
+27:44
+one. I'll walk through how you submit assignments. Um, I use Intelligj. So,
+27:50
+you'll see a lot of the examples coming from Intelligj, but you can use any of the IDEs out there. Just make sure that
+27:56
+the IDE has some kind of code assistant in it that can read the repo that you're
+28:02
+currently in. This will help you because what happens is the code assistants are
+28:08
+really a generative AI. They're large language model that um use your repo as
+28:13
+a mini rag um which is retrieval augmented generation. So when you are
+28:18
+working through problems or coming up with your design and architecture, it will pull on the repo which has all the
+28:25
+lectures and all the notes to the lectures in there. So it'll make your lives a lot easier. Um I'm hoping.
+28:31
+Right. That's kind of the the idea behind it. Any questions on that so far?
+28:40
+No. Okay. Um, generative AI. Now, um,
+28:45
+this is a big this is a big thing for me. I actually, um, actually teach, uh, workshops on generative AI for
+28:52
+executives and also for, uh, common people, um, and for, um, also
+28:58
+professors. Um I I've taught at universities these uh one-day workshops
+29:04
+on generative AI. So I will be weaving some of that stuff that I teach in that workshop into the lectures and into our
+29:11
+discussions on Thursday. Some of the things that I've learned uh from working with um lots of organizations and and
+29:18
+lots of different techniques that are out there. One thing I want you guys all to realize, you cannot trust Gen AI
+29:26
+completely. And depending on which one you use, you can trust it even less.
+29:33
+Um, one of the reasons why is the algorithms are set up
+29:39
+um, specifically the public genis are set up to give you an answer
+29:47
+regardless of whether it knows the answer or not. It will give you an answer. So, it will make things up. And
+29:54
+if any of you have any kids, especially like five year olds and four year olds,
+30:00
+you know that's what they do, too. If they don't know something, they will make up an answer because they want to
+30:06
+please you. And that's about where we're at with Gen AI. It will rarely tell you
+30:13
+you're wrong. Um, it will rarely give an opinion unless you ask for it. So, we're
+30:20
+going to work through some different prompting techniques um to help us pull
+30:25
+out of the genai more information than we would normally get out of it to help
+30:31
+us make um uh design decisions and architectural decisions and then to help
+30:37
+us generate code uh effectively, right? Um that's one of the big differences
+30:43
+between vibe coding and what we're going to be uh working with u Philillip. So, I
+30:48
+hope that that helps. Um, like I mentioned earlier, all of the lectures,
+30:55
+even the transcript of today's um call, I will be putting into uh which is
+31:02
+different than last semester, I'll be putting into the repo. So, you'll be
+31:08
+getting the textbased transcripts of all this stuff. This will this will help if
+31:13
+you have questions on, hey, what went on in class last week? you'll have all that access to all that raw data and the LLM
+31:22
+can can uh find that information. Um, I do have a podcast. Um, if you want
+31:28
+to learn more about my philosophy around around this sort of stuff, uh, check out my podcast. That link is right there. I
+31:35
+do believe that link still works. If not, let me know and I'll I'll get you a new link. I just revamped the the
+31:40
+website. Um, and that might give you some insight into uh my philosophy around around this stuff.
+31:48
+and my philosophy changes. So, I'll just be honest with you. As I learn more things, I you know, I I'm I'm up for uh
+31:55
+making changes, right? Um the um oh,
+32:02
+I should remove the word Java out of here. The course is really broken into three major sections. Uh structured
+32:09
+concurrency and reactive systems. um synchronous and asynchronous web uh
+32:15
+communications and then software designing patterns, right? And you'll see that throughout the course and
+32:21
+you'll see it in the assignments as well. Okay? Um please make sure that you
+32:27
+review the modules um uh before class because we're going to discuss them in class. I'm not just going to lecture,
+32:34
+right? So, I expect you guys to come in ready to ask questions and and to debate
+32:39
+things together and to come up with great solutions together as as as a group.
+32:45
+Okay. Um, let's see. We went over some of this stuff.
+32:52
+Um, assessment philosophy. Here's another thing that might be new to some of you. There will not be written tests
+32:59
+in this class. There will be oral tests in this class. Uh there'll be a final.
+33:06
+Um it'll be an interview. It's like a job interview. It's it's not that painful obviously because three of my
+33:13
+previous students have come back. So I didn't scare them away too bad. But it's a half hour uh for the final
+33:21
+and we're doing a midterm uh a midterm uh um this year as well. So that will be
+33:28
+just you and I talking about what you learned so far this semester, talking about the projects that you're working
+33:34
+on and the direction you're headed. And we're going to have a discussion to talk
+33:40
+about um areas of improvement um where you think you could grow more
+33:45
+and and that's why we're doing the midterm, right? Um, so if you have a
+33:50
+hard time um with u oral exams, please let me know. Reach out to me and we'll
+33:56
+work something out. Um, I'm not that scary. I had uh one student last
+34:02
+semester was very worried about it, but we worked through it and and they they
+34:07
+did well in the class. So, um I have some techniques to help uh with that. Okay. One of the reasons why I got rid
+34:14
+of the written exams is frankly it's too tempting to use Gen AI to answer the
+34:20
+questions. So there's absolutely no way you can cheat in this class.
+34:26
+So you can try. You're not going to be able to, right? Because I've I've gotten rid of anything that let you cheat. Uh
+34:33
+so there there you go. All right. And so we're not doing anything written. Everything will be oral. Um, if you
+34:39
+think you're really good at deep fake video, um, I have a deep fake video
+34:45
+detector that we developed at Intel, so you won't get away with that one either.
+34:50
+So, I got you covered. Not a problem. Not a problem. Um, I do grade all of the um,
+34:58
+assessments, but I use I use Genai to grade it. I have a rubric. You guys will
+35:04
+see the rubric. I have some techniques that I use to grade your stuff. Um, this
+35:10
+semester we I am going to have a little um, uh, web client that I'll be hitting
+35:17
+your services with uh, to see how they perform. Um, so I'll be running that
+35:22
+against your stuff. Um, all your assignments will be handed in and I'll also need a Docker container uh, to to
+35:29
+run against. So we'll set that up. You'll see in in the first assignment how that's all going to work. Okay. So,
+35:36
+I'll be running a a simple client that will test your interfaces. Um, you'll
+35:42
+have all the data that you need uh uh to run it against. Um, so you should all be
+35:48
+in in good shape. Um, and I do use uh generative AI to run through all your
+35:53
+code, find problems and and grade it, right? So because I'm using Genai
+36:01
+um you get a very well as some of you have seen in the past it can be very
+36:07
+explicit on things that you can improve on. I expect you to learn from those things. Uh they're very good uh they're
+36:14
+very good at pointing out things specifically because of of the prompting
+36:19
+that I put in on the front end. Things I'm looking for specifically. Okay. assignments are due on Sundays, which is
+36:27
+horrible for me, by the way, but my students have have spoken and I have
+36:33
+listened. They're due Sunday at midnight on uh at midnight Tennessee time on the
+36:39
+day and and you'll you'll see in the in the assignments when they're due. Um there are five assignments. There are
+36:46
+four assignments in a final project, right? Um the first assignment is very
+36:51
+easy. It's setting up your environment and a baseline. It's just going to be can you uh set up a web service running
+36:59
+in a Docker container that I can attach to and I can do a health and I can I can
+37:04
+do one or two API calls to it, REST API calls. That's the first assignment. Um
+37:11
+that's a Z. A1 is um a little more than that. We're going to start um looking at
+37:18
+um uh implementing at least one service that deals with data. In that in that
+37:25
+one I'll be querying data. I'll be loading data and things like that. Then we'll move into integration and
+37:30
+persistence and resilience. Um I'm going to try and break your micros service. I have some really good
+37:37
+techniques to do that. Um especially since I'm getting your Docker containers. Then we're going to move on
+37:42
+to fully reactive and async pipelining and performance analysis. This is where
+37:48
+I'm going to throw several hundred clients. Um, and I have a whole server
+37:54
+farm behind me. I'm going to see how well your stuff uh can handle a bunch of clients just hammering your Docker
+38:01
+containers and your architecture. So, we'll do that. And then your capstone project is, hey, can we make this
+38:08
+production ready? Can we really make it resilient? Do I have observability? Can
+38:14
+I deploy a automatically deploy it? We'll be using um we can use Docker um
+38:23
+now I can't remember Docker Swarm. Thank you. We can use Docker Swarm for that
+38:28
+instead of going full-blown Kubernetes. Uh it's just a much easier platform to use. Um but if you guys want to use
+38:35
+Kubernetes, that's fine, too. So, those are those are kind of the details of the assignment. Um, there are five projects
+38:42
+to choose from that you get to choose. If you decide to switch projects partway
+38:48
+through, you're more than welcome to do that, but I think that just adds more time to what you need to do. Um, but the
+38:56
+projects are a movie and media recommener, an IoT smart home sensor platform. Trisha should love that
+39:03
+because she's already written one in the last class. um she'll just need to extend it a little bit. An online store,
+39:10
+shopping cart, a social news feed, and a food delivery and restaurant ordering system. So, those are the five projects.
+39:17
+You get to choose one of those projects you want to work work on. Um I do have a
+39:22
+bunch of synthetic data, both small, medium, and large. And I will be um
+39:29
+generating extra large uh for the final project which should have a million uh
+39:35
+data elements in it. That's what we're going after. Okay. I'm not providing you any starter code at all. Um that's
+39:44
+something you're going to have to learn how to do on your own. Uh and I've given you plenty of information on how to do
+39:49
+that. And Genai can generate a lot of that stuff for you. or you can pick whatever platform you wish to pick to do
+39:56
+that. This is where research from you guys is going to become important. You guys need to figure that out. Right?
+40:03
+This is where your architecture heads come in. Right? I I don't need to provide code for you that uh something
+40:10
+else can generate. Um this is how uh grading is going to happen. Um the first
+40:16
+four assignments are worth 10 points each uh which is 40. The final project's
+40:22
+worth 25. Uh the final exam, the interview will be worth 20%.
+40:28
+Um the weekly participation I already brought up is 10% but you have a you have a 4% kicker on that one if you
+40:34
+attend all the classes. And there will be a midterm as well um
+40:40
+which is worth five points. Right? This is a check-in with me. It's a half hour. I will um put together a calendar um
+40:48
+invite uh so that you guys um can um schedule that um starting next week.
+40:55
+You'll be able to schedule that'll be sometime in March, right? Um and I am doing a little bit of traveling but I
+41:02
+will be calling into these Thursday meetings no matter where in the world I am. Um and sometimes it might be in
+41:09
+India. In fact, I got a lot of travel. We almost had Trisha last semester in
+41:15
+New Zealand. We were all jealous, but she uh she didn't get
+41:20
+having me submit a visa for Australia, but everything's still pending. So,
+41:26
+work travel. Um I understand work travel because I have it too. Um that's why I gave a
+41:32
+little bit of slack, but I will dial in at three in the morning if I need to uh to be with you guys because I I think
+41:39
+we're going to have a lot of fun uh this semester. um submitting assignments. All the
+41:44
+assignments must be submitted through Brightpace and all I need is a link to
+41:50
+your um GitHub repo. That's all I need. Um I do it does need to be you do need
+41:57
+to put it in in time in Brightpace. The assignments are all in there already. Um
+42:04
+and I do check the time stamp on the repo. So don't just slide it in at at
+42:09
+midnight and then keep working on it past it because I will go to your time
+42:14
+stamp because I can do that in GitHub and whatever you checked in and committed before midnight is what I'm
+42:20
+going to take. Okay. Um I do tell people check in whatever you got. Even if it
+42:28
+fails, you're still going to get points, right? Um, another thing that I want to make sure that you guys do
+42:35
+is if you're having a conversation with a genai to help you make design
+42:40
+decisions, capture those, put those into your repo. Say, "Here's my conversation.
+42:46
+Here's how I made design decisions. I want to read that." That to me is more
+42:52
+important than the code that gets generated. Philip, go ahead. I was just going to say um to the point
+42:58
+of getting points for something that doesn't work, I believe last term I got
+43:03
+at least 90% on something that like didn't even fully run. So, um and you
+43:09
+probably remember this, but I was just going to say for for everyone else in the room, lest anyone not take that seriously, my my thing just like didn't
+43:15
+work because I did not provision resources properly or there was some something that was basically a total
+43:21
+showstopper. And I mean, yeah. So, I mean that that is like more true than you might think.
+43:26
+Yeah. And and because I I'm more concerned about are you guys learning the architectural
+43:32
+concepts and and the design principles more so than did your code compile? You
+43:38
+guys don't even compile code anymore. What am I talking about? Did your code work completely correctly? I'm more
+43:44
+concerned is the design pattern correct? We can work through the code issues later, right? and and eventually you
+43:51
+will have to, right? Um because we do need we do need the final project to actually run, right? Okay. Any qu I do
+44:01
+not take late assignments. There's no dog ate my homework. There's nothing like that. I just don't I just don't
+44:07
+have time to do late assignment uh regrading. Um especially since things
+44:12
+are handed in on a Sunday night. I used to have them handed in on a Friday, so I had all day Saturday to grade. Um but
+44:20
+not anymore. It's because I love my students so much. So um typically I have
+44:26
+the grading done within three or four days. Um okay.
+44:32
+Okay. Um key here, stay on top of the modules and the assignments. Don't get too far behind. There's a lot of
+44:39
+content. We're going to go through a lot, right? Um so also remember that the
+44:45
+assignments build on top of each other. um join any discussions in the Brightpace group. We didn't do a great
+44:51
+job on this last semester because I think our discussions on Thursdays kind of displaced a lot of that. But that is
+44:58
+a good place uh to uh share information is in Brightpace as well. If you do have
+45:04
+any questions, just send me an email. Um I I I tend to check the Vanderbilt email
+45:10
+every day, so at least once a day. So um I I I'll normally get back to you. You
+45:16
+can always reach out to me uh uh as well. Um I'll I'll give some other information where you guys can reach out
+45:22
+to me. Okay. Any questions from you guys?
+45:30
+No questions. The uh so I was I was looking at the the Brightpace uh the Brightpace site
+45:36
+and I'm not seeing any of the modules. Sorry if I missed that. They're they're
+45:42
+not they're not in there yet and you won't see a lot in the bright space.
+45:48
+Most of the modules you're going to see in the GitHub repo. Got it.
+45:53
+And so what I will put on the week on the weekly modules is I'll put um maybe
+46:00
+I should just I I'll go through and I'll put a link on those weekly modules to the to the modules in the GitHub repo.
+46:07
+That'll be the easiest way to do it. And the reason I do the GitHub repo is because I can add that as a LLM rag um
+46:15
+in your development environments. When things I can't really do much with them, right?
+46:23
+Um so I hope that helps, Tom. No, that that that uh that absolutely
+46:29
+does. And and then for the GitHub repo, where are we finding that? I'm gonna
+46:37
+send I'm gonna send out an email. Got it. Yep. I'll send out an email to the whole team with the link.
+46:43
+Um the um this this is week zero by the way. Week one, which starts next uh this
+46:50
+week. The lectures are up there. Um only one video is done uh so far. The other
+46:55
+videos will be coming um uh on Saturday more than likely. The videos are only
+47:02
+about 15 20 minutes tops. Um most of uh most of the information is in the
+47:09
+lecture notes and also in the PowerPoint presentation which is in an a markdown
+47:14
+language format. So they're easy to read, they're easy for an LLM to take
+47:20
+advantage of as well. So good questions. Any other questions?
+47:29
+All right. Uh Tom, I know you had to go grab your wife, try to get through that quickly. Um
+47:36
+thank you. Um so we do have a little bit more time and I do want you guys to share a little
+47:44
+bit. Um some of you guys know each other already, but some of you don't. So, just
+47:51
+give me a couple minutes on who you are and uh if you're working right now, if
+47:57
+you're a full-time student, what what you'd like to be called.
+48:02
+We've had I've we've had people who put their name down and they don't want to be called that. So, um let's start with
+48:09
+Eric. I already know Eric from my last class. So, Eric, go ahead and introduce yourself for everyone.
+48:14
+Sure. Hi everyone. I'm Eric Farber Agger. I work as a principal application developer for Vanderbilt University
+48:20
+Medical Center. Uh mostly in a EHR derived research. So I'm I'm in data all
+48:26
+the time. Haven't worked too much with microservices. So I'm excited to to learn a little bit more about this. Um
+48:32
+yeah, about me. I've got um two kids, four and two. I've got three cats. I
+48:38
+live in Nashville, Tennessee. Um and I've been doing programming for about 15
+48:43
+years now. So uh was excited to get back to school. Well, this will be my my last semester hopefully. Fingers crossed if I
+48:49
+can pass I pass this one. But uh last semester. Oh, okay. You got to pass this class.
+48:56
+Yeah. Yeah. It's in your hands. It's in my hands or mine, I guess I should say.
+49:01
+Effective. Yes. Um we had two students last semester that um graduated. So um so it is
+49:08
+doable. It is doable. Yeah. So yeah. Thanks, Eric. All right. Um, is it
+49:14
+Martina? Yeah, it's Martina. All right, Martina
+49:19
+Nik. Uh, most people don't get my last name right, but um, hi everyone. Um, I
+49:25
+was out for about a year um, out of school. I became a full-time mom. Um,
+49:33
+I'm Congratulations. Thank you. I'm a full-time software engineer. I work for a company called
+49:38
+Civic Eye. Um so we make software basically for um uh police officers, law
+49:46
+enforcement, um prosecutors um all over the country. Um a little bit
+49:53
+about me. Um I'm originally from Eastern Europe. Um I'm fluent in three human
+49:59
+languages. Um and I live in Chattanooga, Tennessee. So
+50:05
+wait, three human which human languages? So I'm fluent in German and I'm fluent
+50:10
+in Serbo Croatian and English and English. That's awesome. That is
+50:16
+awesome. So I'm guessing you're from that area from Serbia. I'm I'm a Bosnian Croat. Yeah.
+50:23
+Oh, that is awesome. That is awesome. So I like languages.
+50:29
+Well, great. All right. Uh Tom, you're up next if you're still there.
+50:34
+I am. I just tried to get off mute. Can you guys hear me? Yep. Yeah, we can. Yeah. And apologize. So, this will be
+50:40
+from the car, but uh so Tom Gaffffne um I guess I I
+50:45
+uh have worked for the last oh gosh uh getting close to 20 years now. Still not
+50:50
+quite, but uh in financial services. So, started uh well started my career in in
+50:55
+private equity, real estate, private equity, but that was in 2007. And if you guys may remember, it wasn't the best
+51:00
+time to be in real estate. Um after that kind of yeah shortly moved into uh a
+51:06
+commodities trading role. Um have sort of kept that over the last uh few years
+51:11
+kind of bouncing around to a couple of different firms. Spent the last 10 years at kind of a mid-size financial services
+51:18
+firm. Um but as part of that I guess maybe about 15 years ago I'm started to
+51:23
+get pretty interested into you know the different kind of financial modeling and things that we could build. you know, starting like, you know, I feel like a
+51:29
+lot of people do things like VBA is kind of a a gateway programming drug, uh, moving into kind of Python, R, um, you
+51:37
+know, over the years kind of took a series of courses through Stanford to kind of kind of bulk up some of my
+51:44
+computer science, uh, University of Washington, kind of same thing. And then, yeah, sort of took the opportunity
+51:49
+here at Vanderbilt to, uh, to really sort of formalize all that, uh, education into, uh, the M's program. So,
+51:56
+uh, working on a few projects at work right now that hopefully that or that this has already been really kind of,
+52:01
+uh, impactful in. We're we're building kind of an operational platform to manage our our physical commodity
+52:07
+trading. Uh, it's called the CTRM commodity trading and risk management system. Definitely uh, some of the ad
+52:12
+hoc modeling. So, yeah, I guess it's me in a nutshell. Um, born and raised in Alaska, kind of live in Seattle today,
+52:19
+live kind of all around the country. He went to school in Philadelphia, spent some time in DC, Houston, San Francisco.
+52:26
+Uh, and then one son who's uh about 12 days old. Um, so freshly minted.
+52:34
+That's awesome. Congratulations on that. All right, Trisha. Yeah, Trisha, you're up next.
+52:41
+Hello. I'm Trisha Brown. I'm currently a software engineer for Boeing on um the
+52:47
+vehicle training systems. Um, I've been working there for about 4 years. Uh, and
+52:53
+currently living in St. Louis, Missouri. Um, but I was born and raised in Nashville, Tennessee, and Vanderbilt was
+52:59
+a big part of the family for me. I have a lot of family and friends that are alums. So, I figured if Boeing's paying
+53:06
+for me to get the degree, and the price tag not on me, I'm gonna do it. So, that's awesome, Trisha. And welcome
+53:13
+back. Uh, all right, Philip, your last but not least. Well, uh, I'm Philip
+53:19
+Ikeamp, uh, resident of Nashville, Tennessee. Um, in my final course, uh,
+53:24
+so along with Eric, I will be, uh, hopefully graduating at the end of this term. Uh, and, uh, and yeah, I, um, I do
+53:32
+basically like ID consulting, software design, basically whatever my, uh, firm,
+53:37
+uh, NT data has me doing on client work. Um, also in the very early stages of a
+53:44
+potential startup, but you know, uh, kind of like throwing spaghetti at the wall and hoping it sticks, but we'll
+53:50
+see. Uh, and, uh, yeah. Um, I guess, uh,
+53:55
+I don't know how much else to say, what else is useful to say other than that, um, yeah, I was probably, uh, quite, uh,
+54:04
+relatively vivacious last term. So, we'll see if I, uh, have a repeat performance. I'm hoping so, Philip. You
+54:10
+always you always did a great job at questioning uh which is to me the best way to learn is that we talk together,
+54:17
+we learn together through um mutual experiences that that we have. So, I
+54:23
+appreciate that, Philip. All right, guys. Um you have any questions for me at all
+54:31
+besides why my phone is ringing off the hook? Philip knows why my phone's ringing off the hook. It is my birthday
+54:36
+today. So, and I do have 10 kids and they're all calling me. So,
+54:44
+I'm gonna be on the phone for the next couple hours uh after this class. So,
+54:50
+um but happy birthday. Well, thank you very much. Um so, um I
+54:56
+will I will post up on Brightpace the GitHub GitHub repo and also um I'll send
+55:04
+an email out to out to everyone. Um and uh we'll um also post the transcript of
+55:10
+this into the repo. You will see um updates to the repo every week as I am
+55:16
+going through and recording the lectures for uh for that week. Um I tried to say
+55:22
+I was going to do it over the Christmas break, but there is too much chaos going on over here um at my house when um
+55:29
+several of the kids came home. um which the house kind of shutters when they all
+55:34
+start rolling home with their with their kids. So um
+55:39
+I understand uh work life balance that it is out of balance especially when you're in school. I got my PhD while I
+55:46
+was working full-time and had uh during COVID when seven of my ten kids came
+55:54
+back home during COVID um and we'd already gotten rid of most of them. So
+55:59
+it was it was a crazy time. So So I understand a working professional
+56:05
+working professional students um um and hopefully this course uh will give you
+56:11
+enough time to use some things in your own jobs as well as um get some value
+56:18
+out of it um for for your careers long term. All right guys, that's all I got uh for
+56:24
+today. Um, next week you'll only get 15 minutes out of me and the rest is you
+56:30
+guys. So, we're gonna have a lot of fun next uh next week. So, take a look at
+56:35
+those lectures. Like I said, um the uh the text is already up there. An email
+56:41
+will go out and the rest of the uh the videos will be up uh by Saturday.
+56:49
+Okay. All right, guys. Thank you so much and I look forward to a great uh a great
+56:56
+semester. Thank you. Thank you. Thank you and happy birthday. Bye. Thanks. Bye.
+

@@ -1,0 +1,52 @@
+@startuml
+title Inverse Conway Maneuver: Shape Teams to Match Desired Architecture
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' Target architecture (top)
+rectangle "Target Architecture" as ARCH #ffffaa {
+  rectangle "Domain A Service" as DomA
+  rectangle "Domain B Service" as DomB
+  rectangle "Domain C Service" as DomC
+}
+
+' Team structure (bottom)
+rectangle "Team Structure" as ORG #ffaa88 {
+  rectangle "Team A\n(owns Domain A)" as TeamA
+  rectangle "Team B\n(owns Domain B)" as TeamB
+  rectangle "Team C\n(owns Domain C)" as TeamC
+}
+
+DomA -down[hidden]-> DomB
+DomB -down[hidden]-> DomC
+
+TeamA -down[hidden]-> TeamB
+TeamB -down[hidden]-> TeamC
+
+' Mapping architecture to teams
+DomA -down-> TeamA
+DomB -down-> TeamB
+DomC -down-> TeamC
+
+note right of ARCH
+  1. Start from desired
+     architecture: domains,
+     services, modules.
+end note
+
+note right of ORG
+  2. Design teams so that
+     ownership mirrors those
+     architectural boundaries.
+end note
+
+legend right
+  You cannot defeat Conway's Law,
+  but you can:
+  • Ignore it and suffer, or
+  • Use it on purpose.
+endlegend
+@enduml

@@ -1,0 +1,27 @@
+/* Global slide background and text color */
+.reveal {
+    background-color: #123456;
+    color: #ffffff;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+    color: #ffee88;
+}
+
+.reveal h1 {
+    font-size: 3em;
+    color: #ffee88;
+}
+.reveal h2 {
+    font-size: 3em;
+    color: #ffee88;
+}
+.reveal p {
+    font-size: 1.5em;
+    color: #ffffff;
+}

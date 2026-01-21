@@ -1,0 +1,42 @@
+@startuml
+title Sociotechnical Design: Org Structure and System Architecture
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' Organization / social layer
+rectangle "Organization (Communication & Teams)" as ORG #ffaa88 {
+  rectangle "Team A" as TeamA
+  rectangle "Team B" as TeamB
+  rectangle "Team C" as TeamC
+}
+
+TeamA -right-> TeamB : coordination
+TeamB -right-> TeamC : coordination
+TeamC -left-> TeamA : occasional\ncommunication
+
+' System / technical layer
+rectangle "System Architecture (Code & Services)" as SYS #ccffff {
+  rectangle "Service A" as ServiceA
+  rectangle "Service B" as ServiceB
+  rectangle "Service C" as ServiceC
+}
+
+ServiceA -right-> ServiceB
+ServiceB -right-> ServiceC
+
+' Mapping between layers
+TeamA -down..> ServiceA
+TeamB -down..> ServiceB
+TeamC -down..> ServiceC
+
+note right
+  Architecture is a sociotechnical design:
+  • Top: people and communication
+  • Bottom: code and services
+  Changes in one layer
+  influence the other.
+end note
+@enduml

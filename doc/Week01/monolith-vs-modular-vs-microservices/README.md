@@ -1,8 +1,6 @@
 # Monolith vs Modular vs Microservices
 
-**Length:** 10–15 minutes  
-**Audience:** Developers/architects with basic understanding of web or backend systems  
-**Goal:** Provide a clear mental model and vocabulary for talking about system decomposition choices.
+Video: https://youtu.be/V_GqZK3H0gw
 
 ---
 

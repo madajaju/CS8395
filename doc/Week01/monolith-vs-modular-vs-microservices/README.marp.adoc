@@ -1,0 +1,595 @@
+= Monolith vs Modular vs Microservices
+:icons: font
+:customcss: ./custom.css
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/V_GqZK3H0gw
+
+== Monolith vs Modular vs Microservices
+
+*Goals*
+
+- Build a clear vocabulary for system decomposition
+- Understand monolith, modular monolith, and microservices
+- Recognize when each style fits
+- Identify key risks and tradeoffs
+
+== Monolith vs Modular vs Microservices (diagram)
+
+[plantuml, monolith-vs-modular-vs-microservices-overview, svg]
+----
+@startuml
+title High-Level Comparison: Monolith vs Modular Monolith vs Microservices
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam shadowing false
+
+rectangle "Monolith" as Mono {
+  rectangle "Application\n(code + UI + API + domain)" as MonoApp
+  database  "Shared DB" as MonoDB
+}
+
+MonoApp -down-> MonoDB
+
+rectangle "Modular Monolith" as ModMono {
+  frame "Application" {
+    rectangle "Module A\n(e.g. Users)" as ModA
+    rectangle "Module B\n(e.g. Orders)" as ModB
+    rectangle "Module C\n(e.g. Billing)" as ModC
+  }
+  database "Shared DB\n(owned tables per module)" as ModDB
+}
+
+ModA -down-> ModDB
+ModB -down-> ModDB
+ModC -down-> ModDB
+
+rectangle "Microservices" as Micro {
+  rectangle "User Service" as SUser
+  rectangle "Order Service" as SOrder
+  rectangle "Billing Service" as SBill
+  database "User DB" as DBUser
+  database "Order DB" as DBOrder
+  database "Billing DB" as DBBill
+}
+
+SUser -down-> DBUser
+SOrder -down-> DBOrder
+SBill -down-> DBBill
+
+Mono -- ModMono
+ModMono -- Micro
+
+note bottom
+  Same problem space, different decomposition and deployment choices.
+end note
+@enduml
+----
+
+[.columns]
+== Why This Topic Matters
+
+[.column]
+--
+*Modern systems outlive their original design:*
+
+- They grow in *features*, *teams*, and *traffic*
+- Architecture that works for *1 team / 1 year* may fail for *5 teams / 5 years*
+- "Let's use microservices" is often a slogan, not a reasoned decision
+--
+
+[.column]
+--
+*We'll compare three styles:*
+
+1. *Monolith* – one deployable unit, tightly coupled codebase
+2. *Modular monolith* – one deployable unit, strong internal module boundaries
+3. *Microservices* – many deployable units, network-connected
+
+Outcome: choose structure *based on context*, not fashion.
+--
+
+[.columns]
+== Monolith
+
+[.column]
+--
+*Definition*
+
+- Most or all code in a *single runtime unit*
+- One process, one artifact, often one shared database
+- Strong tendency toward *tight coupling* over time
+--
+
+[.column]
+[plantuml, monolith-architecture, svg]
+----
+@startuml
+title Monolith: One Deployable Unit
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam shadowing false
+
+node "Monolithic Application" as Mono {
+  rectangle "UI" as UI
+  rectangle "Business Logic" as BL
+  rectangle "Data Access" as DAL
+}
+
+UI -down-> BL
+BL -down-> DAL
+
+database "Shared Database" as DB
+DAL -down-> DB
+
+note right of Mono
+  Key properties:
+  • Single process / artifact
+  • Often one shared DB
+  • Tight coupling over time
+  • Cannot deploy parts independently
+end note
+@enduml
+----
+
+== Monolithic (cont)
+
+[.columns]
+[.column]
+--
+*Key property*
+
+[quote]
+You can't deploy one part without deploying the whole.
+
+*Pros*
+
+- Simple deployment and operations
+- Great for small teams and early-stage products
+- Easy local development (one repo, one process)
+--
+
+[.column]
+--
+*Cons*
+
+- Can become a "*big ball of mud*" if not structured
+- Harder to scale parts independently
+- Refactoring risk grows with size
+--
+
+[.columns]
+== Modular Monolith
+
+[.column]
+--
+*Definition*
+
+- Still *one deployable unit*, but:
+- Clear *internal modules* around business capabilities
+- Explicit interfaces between modules
+- Limited direct access to other modules' internals
+--
+
+[.column]
+--
+[plantuml, modular-monolith-architecture, svg]
+----
+@startuml
+title Modular Monolith: Many Logical Modules, One Deployment
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam shadowing false
+
+node "Application (single deployable)" as App {
+  package "User Module" as User {
+    rectangle "User API" as UserAPI
+    rectangle "User Domain" as UserDom
+  }
+
+  package "Orders Module" as Orders {
+    rectangle "Orders API" as OrdersAPI
+    rectangle "Orders Domain" as OrdersDom
+  }
+
+  package "Billing Module" as Billing {
+    rectangle "Billing API" as BillAPI
+    rectangle "Billing Domain" as BillDom
+  }
+}
+
+UserAPI -down-> UserDom
+OrdersAPI -down-> OrdersDom
+BillAPI -down-> BillDom
+
+UserAPI -[dashed]-> OrdersAPI : public interface
+OrdersAPI -[dashed]-> BillAPI : public interface
+
+database "Shared DB\n(with table ownership per module)" as DB
+App -down-> DB
+
+note right of App
+  • One deployable unit
+  • Clear internal module boundaries
+  • Explicit interfaces between modules
+  • Easier path to later extraction
+    into microservices
+end note
+@enduml
+----
+--
+
+[.columns]
+== Modular Monolith (cont)
+
+[.column]
+--
+Think of it as:
+
+[quote]
+"Many logical services, one physical deployment."
+
+*Pros*
+
+- Keeps monolith's operational simplicity
+- Better maintainability and refactorability
+- Clearer ownership and team boundaries inside one codebase
+- Easier migration path to microservices later
+--
+
+[.column]
+--
+*Cons*
+
+- Still one failure and deployment unit
+- Requires discipline to keep boundaries clean
+--
+
+[.columns]
+== Microservices
+
+[.column]
+--
+*Definition*
+
+- Multiple *independently deployable services*
+- Own codebase, process/container
+- Preferably own datastore / schema
+- Communicate over the network
+- HTTP/REST, gRPC, messaging, events
+--
+
+[.column]
+--
+[plantuml, microservices-architecture, svg]
+----
+@startuml
+title Microservices: Independently Deployable Services
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam shadowing false
+
+rectangle "User Service" as UserSvc {
+  rectangle "User API" as UserAPI
+  rectangle "User Logic" as UserLogic
+}
+database "User DB" as UserDB
+
+rectangle "Order Service" as OrderSvc {
+  rectangle "Order API" as OrderAPI
+  rectangle "Order Logic" as OrderLogic
+}
+database "Order DB" as OrderDB
+
+rectangle "Billing Service" as BillingSvc {
+  rectangle "Billing API" as BillAPI
+  rectangle "Billing Logic" as BillLogic
+}
+database "Billing DB" as BillDB
+
+UserAPI -down-> UserLogic
+UserLogic -down-> UserDB
+
+OrderAPI -down-> OrderLogic
+OrderLogic -down-> OrderDB
+
+BillAPI -down-> BillLogic
+BillLogic -down-> BillDB
+
+UserAPI -right-> OrderAPI : HTTP / gRPC / events
+OrderAPI -right-> BillAPI : HTTP / gRPC / events
+
+note bottom
+  Key properties:
+  • Many deployable units
+  • Each owns its code and data
+  • Communicate over the network
+  • Independent deploy & scale
+end note
+@enduml
+----
+--
+
+[.columns]
+== Microservice (cont)
+
+[.column]
+--
+*Key property*
+
+[quote]
+Each service can be built, deployed, and scaled *independently*.
+
+*Pros*
+
+- Strong alignment with *team boundaries*
+- Independent release cycles and scaling
+- Potential for better fault isolation
+--
+
+[.column]
+--
+*Cons*
+
+- Much higher *operational complexity*
+- Network failures, timeouts, retries, versioning
+- Easy to create a slow, fragile "*distributed monolith*"
+--
+
+[.columns]
+== Comparing on Key Dimensions
+
+[.column]
+--
+*Deployment & Ops*
+
+- *Monolith / Modular*: single artifact, simpler ops, scale whole app
+- *Microservices*: many artifacts, complex ops, scale hotspots only
+--
+
+[.column]
+--
+*Code & Coupling*
+
+- *Monolith*: risk of big ball of mud, hidden DB coupling
+- *Modular Monolith*: explicit module boundaries, enforced contracts
+- *Microservices*: physical separation, coupling via APIs and data contracts
+--
+
+[.column]
+--
+*Data & Transactions*
+
+- *Monolith*: one DB, easy ACID across features, blurry ownership
+- *Modular Monolith*: one DB, clearer table ownership per module
+- *Microservices*: per-service data, no easy distributed ACID, need sagas & eventual consistency
+--
+
+== Comparing (cont)
+
+[plantuml, styles-comparison-dimensions, svg]
+----
+@startuml
+title Comparing Styles on Key Dimensions
+
+class Monolith {
+  Deployment: Single artifact
+  Ops: Simple
+  Data: One shared DB
+  Coupling: High risk over time
+}
+
+class ModularMonolith {
+  Deployment: Single artifact
+  Ops: Simple
+  Data: Shared DB, clearer ownership
+  Coupling: Reduced via modules
+}
+
+class Microservices {
+  Deployment: Many artifacts
+  Ops: Complex
+  Data: Per-service data
+  Coupling: Via APIs and contracts
+}
+
+Monolith -[hidden]- ModularMonolith
+ModularMonolith -[hidden]- Microservices
+
+note bottom of Monolith
+  + Easy ACID across features
+  - Blurry ownership
+end note
+
+note bottom of ModularMonolith
+  + Enforced internal boundaries
+  + Better refactorability
+end note
+
+note bottom of Microservices
+  + Scale hotspots only
+  - Need sagas / eventual consistency
+end note
+@enduml
+----
+
+[.columns]
+== When Each Style Fits
+
+[.column]
+--
+*Monolith*
+
+- New product, *small team*, fast iteration
+- Requirements changing rapidly
+- Want minimal infra/ops overhead
+--
+
+[.column]
+--
+*Modular Monolith*
+
+- Multiple devs/teams, but:
+- One deployment is still fine
+- Want *clean architecture* and clearer ownership
+- Might evolve to microservices later
+--
+
+[.column]
+--
+*Microservices*
+
+- Many teams needing *independent* deploys
+- Large, complex system with distinct scaling needs
+- Org has the *operational maturity* (CI/CD, observability, SRE-style practices)
+--
+
+== Comparison
+
+[plantuml, when-each-style-fits, svg]
+----
+@startuml
+title When Each Style Fits
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam shadowing false
+
+package "Context" {
+  rectangle "Small team\nNew product" as C1
+  rectangle "Growing teams\nStill manageable size" as C2
+  rectangle "Many teams\nLarge, complex system" as C3
+}
+
+package "Preferred Style" {
+  rectangle "Monolith" as S1
+  rectangle "Modular Monolith" as S2
+  rectangle "Microservices" as S3
+}
+
+C1 -down-> S1
+C2 -down-> S2
+C3 -down-> S3
+
+note right of S1
+  • Fast iteration
+  • Minimal infra/ops
+end note
+
+note right of S2
+  • Clear ownership
+  • Single deploy still OK
+end note
+
+note right of S3
+  • Independent deploys
+  • Org has operational maturity
+end note
+@enduml
+----
+
+== Common Pitfalls
+
+- *Premature microservices*
+- Tiny team + many services = time spent on boilerplate and debugging, not features
+
+- *Shared database microservices*
+- Multiple services directly share one schema → effectively a distributed monolith
+
+- *Over-modularized monolith*
+- Hundreds of tiny modules with little business meaning → confusion and slowdown
+
+*Guideline*
+
+[quote]
+Create boundaries around *business capabilities*, not just technical layers.
+
+== Evolving Your Architecture
+
+*Monolith → Modular Monolith*
+
+- Identify major *domains* (users, billing, orders, catalog)
+- Group code into domain modules
+- Enforce rules about who can call whom
+
+*Modular Monolith → Microservices*
+
+- Choose a well-bounded, high-value module
+- Expose a stable internal API, then move it out as a service
+- Gradually repeat where benefits outweigh costs
+
+== Evolving (cont)
+[plantuml, architecture-evolution, svg]
+----
+@startuml
+title Evolving Architecture: Monolith → Modular Monolith → Microservices
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam arrow {
+  Color DarkGray
+}
+skinparam shadowing false
+
+rectangle "Monolith" as M {
+  rectangle "Big Ball of Code" as BigCode
+  database "Shared DB" as MDB
+}
+BigCode -down-> MDB
+
+rectangle "Modular Monolith" as MM {
+  package "Users Module" as UMod
+  package "Orders Module" as OMod
+  package "Billing Module" as BMod
+  database "Shared DB\n(with table ownership)" as MMDB
+}
+UMod -down-> MMDB
+OMod -down-> MMDB
+BMod -down-> MMDB
+
+rectangle "Microservices" as MS {
+  rectangle "User Service" as USvc
+  rectangle "Order Service" as OSvc
+  rectangle "Billing Service" as BSvc
+  database "User DB" as UDB
+  database "Order DB" as ODB
+  database "Billing DB" as BDB
+}
+USvc -down-> UDB
+OSvc -down-> ODB
+BSvc -down-> BDB
+
+M -right-> MM : "Identify domains\nand create modules"
+MM -right-> MS : "Extract well-bounded\nmodules into services"
+
+note bottom
+  Meta-rule:
+  Choose the simplest architecture
+  that works today, but structure it
+  so you can evolve tomorrow.
+end note
+@enduml
+----
+
+*Meta-rule*
+
+[quote]
+Choose the *simplest architecture* that solves today's problems, +
+but design with enough *modularity* to evolve for tomorrow.

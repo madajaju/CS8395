@@ -56,7 +56,6 @@ Video: [https://youtu.be/20nYpzybp14](https://youtu.be/20nYpzybp14)
     * Use the computer hardware in an efficient manner
 
 ![page_10_img_3.png](page_10_img_3.png)
-
 ---
 ## Operating System Definition
 
