@@ -1,0 +1,381 @@
+= Cookies, Sessions, and CSRF
+
+:toc: no
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Cookies, Sessions, and CSRF
+
+* Focus: how web apps keep user state, and how CSRF abuses that model
+* Theme: identity, sessions, and secure interactions on the web
+
+== Outcomes
+
+By the end, you should be able to:
+
+* Explain how HTTP cookies work at an architectural level
+* Explain how server-side sessions represent authentication state
+* Describe what CSRF is and how it abuses browser behavior
+* Identify risks and tradeoffs in cookie/session configuration
+* Compare key CSRF mitigation strategies
+
+== Why Cookies and Sessions Exist
+
+* HTTP is stateless: the server does not remember prior requests
+* Real apps need continuity:
+** Same user across multiple requests
+** Logged-in state and personalization
+* Cookies and sessions provide:
+** A way to persist state across requests
+** A way to represent “who is this user?”
+* CSRF abuses automatic cookie sending by browsers
+
+== Big Picture (Diagram)
+
+[plantuml,cookies-big-picture,svg,width=100%, max-height=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor User
+rectangle "Browser" as Browser
+rectangle "Web App\n(Server)" as Server
+
+User --> Browser : Clicks / submits forms
+Browser --> Server : HTTP requests\n+ Cookies (if any)
+Server --> Browser : Responses\n+ Set-Cookie headers
+
+note bottom of Browser
+  Browser stores cookies
+  per domain and path, and
+  sends them automatically
+end note
+@enduml
+----
+
+== Cookies: What They Are
+
+* Small pieces of data stored by the browser per domain
+* Sent automatically with matching requests
+* Defined via HTTP headers:
+** Server → Browser: `Set-Cookie: ...`
+** Browser → Server: `Cookie: ...`
+* Common uses:
+** Session identifiers
+** “Remember me” or preferences
+
+[.columns]
+== Cookie Attributes
+
+[.column]
+--
+* Key attributes (conceptual):
+
+* `Secure`
+** Only send cookie over HTTPS
+** Helps prevent leakage over HTTP
+
+* `HttpOnly`
+** Not accessible via JavaScript
+** Limits impact of many XSS attacks
+--
+
+[.column]
+--
+* More attributes:
+
+* `SameSite`
+** Controls sending cookies on cross-site requests
+** Very important for CSRF defense
+* `Domain` and `Path`
+** What host(s) and URLs receive the cookie
+* `Expires` / `Max-Age`
+** How long the browser should keep the cookie
+--
+
+== Sessions: Concept
+
+* Session = server-side data structure for user state
+* Contains:
+** User identity / auth state
+** Sometimes roles and permissions
+** Other per-user state (cart, wizard, etc.)
+* Keyed by a random session ID
+* Session ID is usually stored in a cookie
+
+== Sessions: Pattern
+
+* Server creates a new session:
+** Key: `session_id`
+** Value: user-related state
+* Server sends cookie:
+** `Set-Cookie: session_id=<random>; HttpOnly; Secure; ...`
+* Browser sends cookie on later requests
+* Server looks up session by `session_id` for each request
+
+== Sessions: Storage Tradeoffs
+
+* In-memory per node
+** Simple, but hard with many app instances
+* Shared store (cache / DB)
+** Central place for session state
+** Works across multiple servers
+* Stateless (e.g., JWT-based)
+** No server session store
+** More complexity in token design & validation
+
+== Sessions: Flow Diagram
+
+[plantuml, session-flow1, svg, width=100%, max-height=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor User
+participant "Browser" as B
+participant "Web App\n(Server)" as S
+database "Session Store" as Store
+
+User -> B : Login form
+B -> S : POST /login\n(credentials)
+S -> Store : Create session\n(session_id, user state)
+Store --> S : OK
+S --> B : Set-Cookie: session_id=...
+
+== subsequent request ==
+User -> B : Click "Profile"
+B -> S : GET /profile\nCookie: session_id=...
+S -> Store : Lookup session_id
+Store --> S : User state
+S --> B : Profile page
+@enduml
+----
+
+== Risks: Session Hijacking
+
+* Attacker obtains valid `session_id`:
+** Through XSS stealing cookies
+** Via network interception (no HTTPS)
+** Through logs or other leaks
+* With `session_id`, attacker:
+** Can impersonate the user
+** Until session is expired or destroyed
+
+[.columns]
+== Session Hijacking & Mitigation
+
+[.column]
+--
+* Risks: Session Hijacking
+
+* Attacker obtains valid `session_id`:
+** Through XSS stealing cookies
+** Via network interception (no HTTPS)
+** Through logs or other leaks
+
+* With `session_id`, attacker:
+** Can impersonate the user
+** Until session is expired or destroyed
+--
+
+[.column]
+--
+* Mitigating Session Hijacking
+
+* Use HTTPS for all authenticated traffic
+* Mark session cookies:
+** `Secure`
+** `HttpOnly`
+* Use strong, random session IDs
+* Regenerate session ID on login and privilege changes
+--
+
+== Session Fixation & Mitigation
+
+* Risks: Session Fixation
+
+* Attacker sets or influences victim’s session ID
+* Victim logs in using that session
+* Server binds identity to that session ID
+* Attacker reuses same session ID to act as victim
+
+== Mitigating Session Fixation
+
+* Regenerate session ID after login
+* Do not accept session IDs from URLs or external inputs
+* Avoid exposing session IDs in:
+** Query parameters
+** Public links and logs
+
+== CSRF: Core Idea
+
+* Browser automatically adds cookies to matching domains
+* Attacker tricks user’s browser into sending a request:
+** To a site where the user is logged in
+* Server receives:
+** Valid cookies and session
+** A request that appears to be from the user
+* State-changing action occurs without user’s intent
+
+== CSRF: Scenario
+
+* User logged into `bank.example` in one tab
+* User visits `evil.example` in another tab
+* `evil.example` sends a POST to:
+** `https://bank.example/transfer`
+** With attacker-chosen parameters
+* Browser includes `bank.example` cookies
+* Bank executes transfer if no CSRF defenses exist
+
+== CSRF: Key Conditions
+
+* Victim is authenticated to target via cookies/session
+* Target endpoint:
+** Changes state (e.g., transfer, update)
+** Does not require extra verification
+* Browser will send cookies automatically:
+** Even when request originates from another site
+
+== CSRF: Attack Diagram
+
+[plantuml, csrf-attack, svg, width=100%, max-height=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+left to right  direction
+
+actor User
+rectangle "Browser" as B
+rectangle "Bank Site\n(bank.example)" as Bank
+rectangle "Attacker Site\n(evil.example)" as Evil
+
+User --> B : Login to bank.example
+B --> Bank : Auth request\n(no cookies yet)
+Bank --> B : Response + Set-Cookie: session_id=...
+User --> B : Visit evil.example
+B --> Evil : GET / (evil page)
+Evil --> B : HTML with hidden form\nPOST to bank.example/transfer
+B --> Bank : POST /transfer\nCookie: session_id=...
+Bank --> B : Transfer completed
+
+@enduml
+----
+
+== CSRF Tokens: Concept & Why They Work
+
+* CSRF Tokens: Concept
+
+* Server generates random, secret CSRF token
+* Tied to:
+** User
+** Or user’s session
+* Token added to:
+** Forms (hidden field)
+** Or custom headers set by JavaScript
+* Server checks token on state-changing requests
+
+
+== CSRF Tokens: Why They Work
+
+* Attacker site can:
+** Trigger a cross-site request
+** Not read the response (same-origin policy)
+* Attacker site cannot:
+** Read user’s CSRF token
+** Correctly guess the secret token
+* Without valid token:
+** Server rejects dangerous request
+
+== CSRF Tokens: Diagram
+
+[plantuml, csrf-token-flow, svg, width=100%, max-height=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor User
+participant "Browser" as B
+participant "Web App\n(Server)" as S
+
+User -> B : Load form page
+B -> S : GET /settings
+S -> B : HTML form + CSRF token
+
+User -> B : Submit form
+B -> S : POST /settings\nCookie: session_id\nForm: csrf_token=XYZ
+S -> S : Validate session_id and csrf_token
+S --> B : Success or error
+
+@enduml
+----
+
+[.columns]
+== SameSite & Additional Defenses
+
+[.column]
+--
+* SameSite Cookies
+
+* `SameSite` controls sending cookies on cross-site requests
+* `SameSite=Lax`:
+** Send on top-level navigations
+** Block on many cross-site POSTs and iframes
+* `SameSite=Strict`:
+** Only send on same-site requests
+** Strong CSRF protection, some UX impact
+* `SameSite=None; Secure`:
+** Required for some cross-site SSO flows
+** Must also set `Secure`
+--
+
+[.column]
+--
+* Additional CSRF Defenses
+
+* Re-authentication or step-up auth for critical actions
+* Use custom headers for APIs + CSRF tokens
+* Make high-risk operations multi-step where possible
+* Monitor for unusual patterns of sensitive actions
+--
+
+[.columns]
+== Cookies vs Other Storage & Putting It Together
+
+[.column]
+--
+* Cookies vs Other Storage
+
+* Cookies:
+** Automatically sent by browser
+** Very convenient for classic web apps
+** Also primary surface for CSRF
+
+* Local/session storage:
+** Not automatically sent
+** Common in SPAs for tokens
+** Changes CSRF vs XSS tradeoffs
+--
+
+[.column]
+--
+* Putting It Together
+
+* Typical secure pattern:
+** Session cookie for logged-in state
+** Cookie is `Secure`, `HttpOnly`, and uses `SameSite`
+* CSRF protection on state-changing endpoints:
+** CSRF tokens in forms or headers
+* Extra confirmation for high-risk actions:
+** Transfers, password changes, etc.
+--
+
+== Summary
+
+* Cookies allow browsers to remember and send state per domain
+* Sessions use cookies to represent who the user is on the server
+* CSRF tricks the browser into sending authenticated, unwanted requests
+* Defenses:
+** Harden cookies (`Secure`, `HttpOnly`, `SameSite`)
+** Use CSRF tokens and appropriate headers
+** Design important flows with explicit user intent

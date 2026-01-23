@@ -19,12 +19,13 @@ async function traverseAndConvert(dir) {
     if (entry.isDirectory()) {
       await traverseAndConvert(fullPath);
     }
-    else if (entry.isFile() && entry.name.endsWith('.marp.md')) {
+    else if (entry.isFile() && entry.name.endsWith('.marp.adoc')) {
       const dirname = path.dirname(fullPath);
       const outHTML = path.resolve(dirname, fullPath.replace(/\.marp\.md$/, '.html'));
         const outPdf = path.resolve(dirname, fullPath.replace(/\.marp\.md$/, '.ppt'));
       if(!fs.existsSync(outHTML)) {
           console.log(`⏳  Generating HTML for ${fullPath}`);
+          /*
           const result = spawnSync(
               'npx marp --pptx --theme ./doc/default.scss --allow-local-files ' +
               `-o "${outPdf}" "${fullPath}"`,
@@ -36,6 +37,7 @@ async function traverseAndConvert(dir) {
           } else {
               console.log(`✅  ${outPdf} created.`);
           }
+           */
 
           fs.mkdirSync(path.resolve(dirname, '.output'), { recursive: true });
           fs.copyFileSync(path.resolve('./doc', "custom.css"), path.resolve(dirname, '.output', "custom.css"));

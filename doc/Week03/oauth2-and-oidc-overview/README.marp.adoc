@@ -1,0 +1,298 @@
+= OAuth2 and OIDC Overview
+
+:toc: no
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== OAuth2 and OIDC Overview
+
+* Focus: what problems OAuth2/OIDC solve, main roles and flows
+* Theme: delegated access and identity in modern systems
+
+== Outcomes
+
+By the end, you should be able to:
+
+* Explain the main roles and concepts in OAuth2 and OIDC
+* Describe a typical OAuth2/OIDC login + API call sequence
+* Recognize when OAuth2 vs OIDC vs simpler mechanisms apply
+* Identify key token types (access, refresh, ID) and their purpose
+* Call out major risks and tradeoffs in OAuth2/OIDC designs
+
+== Why OAuth2 and OIDC?
+
+* Modern apps often need to:
+** Let users log in via an IdP
+** Let apps call APIs *on behalf of a user*
+** Support many client types (web, SPA, mobile, backend)
+** Delegate limited access (scopes)
+* Without standards:
+** Passwords shared with many apps
+** Each app rolls its own login/session model
+** Hard to centralize MFA, risk checks, policies
+
+[.columns]
+== OAuth2 vs OIDC (High-Level)
+
+
+[.column]
+--
+* *OAuth 2.0*
+** Framework for *delegated authorization*
+** “App X can call API Y for user Z, with scopes S”
+** Defines roles, tokens, grant types
+--
+
+[.column]
+--
+* *OpenID Connect (OIDC)*
+** Identity layer *on top of* OAuth2
+** “App X can trust that user Z logged in at IdP I”
+** Adds ID tokens, user info, discovery
+--
+
+== Core Roles (OAuth2)
+
+* *Resource Owner*
+** Usually the user who owns the data
+* *Client*
+** App requesting access on user’s behalf
+** Web app, SPA, mobile, service, etc.
+* *Authorization Server*
+** Authenticates user
+** Issues tokens to the client
+* *Resource Server*
+** API hosting protected resources
+** Validates tokens, enforces authorization
+
+== Core Roles Diagram
+
+[plantuml, oauth-roles, svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor "Resource Owner\n(User)" as User
+rectangle "Client\n(App)" as Client
+rectangle "Authorization Server\n(IdP)" as AS
+rectangle "Resource Server\n(API)" as RS
+
+User -> Client : Uses app
+Client -> AS : Request authorization\n(redirect / back-channel)
+AS -> User : Authenticate & consent
+AS --> Client : Tokens (access, ID, refresh)
+Client -> RS : API calls\n+ access token
+RS --> Client : Protected data
+@enduml
+----
+
+[.columns]
+== Tokens Overview
+
+
+[.column]
+--
+* *Access Token*
+** For calling APIs
+** Contains or references scopes, audience, expiry
+** “What can this client do?”
+--
+
+[.column]
+--
+* *Refresh Token*
+** Long-lived; kept by client
+** Used to get new access tokens
+** Sent only to auth server, not APIs
+
+* *ID Token (OIDC)*
+** JWT about the user
+** For the *client app*, not APIs
+** `sub`, `name`, `email`, `auth_time`, etc.
+--
+
+== OAuth2: What It Is / Isn’t
+
+* OAuth2 is a framework for auth flows:
+** Roles, token types, grant types
+* It does *not* fully define:
+** Token formats (JWT is common but not required)
+** How user authentication is implemented
+** How user identity is represented
+* OIDC and related specs fill in:
+** Identity, claims, discovery, user info
+
+== Common Grant Types (Conceptual)
+
+* *Authorization Code + PKCE*
+** For browser-based and native apps
+** User is redirected to authorization server
+** Client exchanges a code for tokens
+** Modern, secure default for user-facing apps
+* *Client Credentials*
+** Machine-to-machine, no user
+** Client authenticates itself to auth server
+** Gets access token as *client identity*
+
+== OIDC: Why Add It?
+
+* OAuth2 focuses on *authorization*:
+** “Can this client call this API for this user?”
+* Apps also need:
+** To log users in
+** Standard identity claims (ID, email, etc.)
+** Sessions based on trusted identity
+* OIDC:
+** Reuses OAuth2 flows
+** Adds ID tokens, user info, discovery metadata
+
+[.columns]
+== ID Tokens vs Access Tokens
+
+
+[.column]
+--
+* *ID Token (OIDC)*
+** For the *client application*
+** Who the user is, when they authenticated, which IdP
+** Used to establish the user’s session
+--
+
+[.column]
+--
+* *Access Token*
+** For *APIs / resource servers*
+** Grants access to resources with certain scopes
+** Structure is for the API, not the UI
+--
+
+== Login + API Call: High-Level Flow
+
+[plantuml, oidc-flow, svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor "User" as U
+participant "Client App" as C
+participant "Authorization Server\n(OIDC Provider)" as AS
+participant "API (Resource Server)" as API
+
+U -> C : 1. Access app (no session)
+C -> AS : 2. Redirect for login\n(Auth Code + PKCE)
+AS -> U : 3. Login & consent UI
+AS --> C : 4. Redirect with\nauthorization code
+C -> AS : 5. Exchange code\nfor tokens
+AS --> C : ID token + access token\n(+ refresh token)
+C -> C : 6. Create local session\nfrom ID token
+C -> API : 7. API call\nAuthorization: Bearer access_token
+API --> C : Protected resource
+@enduml
+----
+
+== Architectural Separation
+
+* *Authorization Server / IdP*
+** Central login, MFA, policies
+** Issues tokens and ID info
+* *Client Apps*
+** Do *not* handle passwords directly
+** Consume ID token and manage sessions
+* *APIs / Resource Servers*
+** Validate access tokens
+** Enforce scopes and permissions
+
+== When OAuth2/OIDC Fits Well
+
+* Multiple apps/APIs needing SSO
+* Integration with enterprise IdPs or social logins
+* Microservices:
+** Consistent token validation across services
+* Native/SPAs:
+** Should not handle passwords directly
+** Need tokens to reach back-end APIs
+
+== When Simpler May Suffice
+
+* Single app, no external IdPs, limited scope:
+** Local username/password + sessions may be okay
+* Internal-only, non-user flows:
+** API keys or mTLS for *service* identity
+* But:
+** Starting with OAuth2/OIDC can reduce migration pain later
+** Especially if you expect growth or external integration
+
+== Risks: Complexity & Misconfiguration
+
+* Ecosystem is powerful *and* complex
+* Risks:
+** Incorrect redirects, scopes, or audiences
+** Token leaks via URLs, logs, or front-channel
+** Skipped validation (issuer, audience, expiry)
+* Mitigation:
+** Use vetted libraries and provider guidance
+** Prefer Auth Code + PKCE, avoid legacy flows
+** Always validate signature, `iss`, `aud`, `exp`
+
+[.columns]
+== Token Lifetime & Revocation
+
+
+[.column]
+--
+* *Short-lived tokens*
+** Lower impact if stolen
+** Require refresh or re-auth
+--
+
+[.column]
+--
+* *Long-lived tokens*
+** Fewer round-trips
+** Higher risk if leaked
+** Harder to revoke early
+--
+
+* JWTs are hard to revoke:
+** Use short lifetimes + refresh tokens
+** Or introspection / revocation lists
+
+== Front-Channel vs Back-Channel
+
+* *Front-channel*
+** Browser redirects, URLs, query params
+** Visible in history, logs, intermediaries
+* *Back-channel*
+** Direct server-to-server calls
+** Safer for tokens and secrets
+* Good practice:
+** Use front-channel for short-lived codes
+** Exchange codes for tokens via back-channel
+
+== Connecting to Sessions & Tokens
+
+* Identity & Sessions:
+** OIDC supplies identity (ID token)
+** App converts that into its session model
+* Cookies & CSRF:
+** Web apps may store tokens or session IDs in cookies
+** Still need CSRF and cookie hardening
+* Tokens & Certificates:
+** OAuth2 tokens = one type of token
+** TLS/certs secure the channel; OAuth2/OIDC secure *who* is on it
+* Error Contracts:
+** APIs must respond clearly to token errors and scope issues
+
+== Summary
+
+* OAuth2: delegated authorization framework
+* OIDC: identity layer on top of OAuth2 (ID tokens, user info)
+* Key pieces:
+** Roles: resource owner, client, auth server, resource server
+** Tokens: access, refresh, ID
+** Flows: mainly Auth Code + PKCE, Client Credentials
+* Use for:
+** SSO, multi-app ecosystems, microservice APIs
+** External IdP integration, secure native/SPAs
+* Design carefully around:
+** Flow choice, token lifetimes, validation, and where tokens travel

@@ -1,0 +1,371 @@
+= Identity and Session Concepts
+
+:toc: no
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Identity and Session Concepts
+
+* Focus: identity, authentication, authorization, and sessions
+* Theme: how we know *who* is calling and how we remember them
+
+== Outcomes
+
+By the end, you should be able to:
+
+* Distinguish identity, authentication, and authorization
+* Explain what a session is and why it exists
+* Differentiate user identity vs service identity
+* Describe how identity is propagated across requests
+* Identify key risks and tradeoffs in session design
+
+== Why Identity and Sessions Matter
+
+* Modern systems: many users, devices, and services
+* For most operations we need:
+** *Who is this?* (identity)
+** *Can they do this?* (authorization)
+** *How do we remember them?* (session)
+* HTTP and many protocols are stateless
+* Identity + sessions provide continuity over time
+
+[.columns]
+== Identity vs Authentication vs Authorization
+
+
+[.column]
+--
+
+*Identity*
+
+* “Who or what is this?”
+* User, device, service
+* Has attributes/claims (name, email, role)
+
+--
+
+[.column]
+--
+*Authentication (AuthN)*
+
+* Proves the claimed identity
+* Passwords, tokens, biometrics
+* Output: “this is user 123”
+
+*Authorization (AuthZ)*
+
+* What the identity is allowed to do
+* Depends on roles, permissions, context
+--
+
+== Identity, AuthN, AuthZ (Diagram)
+
+[plantuml, id-auth-diagram, svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor "User" as U
+rectangle "Login / Identity Provider" as IdP
+rectangle "Application / API" as App
+
+U -> IdP : Provide credentials\n(password, SSO, etc.)
+IdP -> IdP : Authenticate user
+IdP --> App : Identity + claims\n(e.g. userId=123, roles)
+App -> App : Authorization checks\n“Can user 123 do X?”
+App --> U : Allowed or denied\n+ result
+@enduml
+----
+
+== What Is a Session?
+
+* HTTP is stateless: server forgets between requests
+* Session = link between:
+** An identity (user or client)
+** A series of interactions over time
+* Session may track:
+** Who is logged in
+** When they authenticated
+** Security context (MFA, risk level)
+
+[.columns]
+== Session vs Identity
+
+
+[.column]
+--
+* *Identity*
+** Stable identifier
+** “This is Alice (userId=123)”
+** Exists independently of a login
+--
+
+[.column]
+--
+* *Session*
+** “This ongoing interaction is Alice”
+** Time-bounded
+** Includes login time, expiry, context
+** Can be revoked or renewed
+--
+
+== Typical Web Session Flow
+
+[plantuml, web-session-flow, svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor User
+participant "Browser" as B
+participant "Web App\n(Server)" as S
+
+User -> B : Open login page
+B -> S : GET /login
+S --> B : Login form
+
+User -> B : Submit credentials
+B -> S : POST /login\n(username, password)
+S -> S : Validate credentials\n(create session)
+S --> B : 200 OK\nSet-Cookie: session_id=...
+
+User -> B : Click "Profile"
+B -> S : GET /profile\nCookie: session_id=...
+S -> S : Lookup session\n(identify user)
+S --> B : Profile page
+@enduml
+----
+
+[.columns]
+== Ways to Represent a Session
+
+
+[.column]
+--
+* *Opaque session ID*
+** Cookie holds random `session_id`
+** Server stores session in DB/cache
+** Simple to reason about
+--
+
+[.column]
+--
+* *Self‑contained token (e.g., JWT)*
+** Token carries identity + claims
+** Signed; server verifies signature
+** Little or no server session state
+--
+
+== Session Lifetime and Expiry
+
+* Sessions should be time‑bounded
+* Typical controls:
+** Idle timeout (no activity for X minutes)
+** Absolute timeout (max lifetime)
+* Tradeoffs:
+** Longer = better UX, more risk if stolen
+** Shorter = safer, more re‑auth prompts
+* Some apps use “remember me” for longer, lower‑risk sessions
+
+[.columns]
+== User Identity vs Service Identity
+
+
+[.column]
+--
+* *User identity*
+** Represents a human
+** Login accounts, SSO users
+** Has profile + roles/groups
+--
+
+[.column]
+--
+* *Service / client identity*
+** Represents software
+** Microservices, batch jobs, external clients
+** API keys, client certs, client credentials
+--
+
+== Combining User and Service Identity
+
+[plantuml, user-service-identity,svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor "End User" as User
+rectangle "Frontend Service" as FE
+rectangle "Backend Service" as BE
+
+User -> FE : HTTP request\n(user session)
+FE -> FE : Identify user\n(userId=123)
+FE -> BE : API call\n+ userId=123\n+ caller=frontend-service
+BE -> BE : Check user + service\npermissions
+BE --> FE : Result
+FE --> User : Response
+@enduml
+----
+
+* Backend sees:
+** Which service is calling
+** On behalf of which user
+* Enables fine‑grained auth and auditing
+
+== Propagating Identity: Browser Apps
+
+* Identity/session often carried via:
+** Cookies (session IDs or tokens)
+** Sometimes headers (for APIs)
+* Browser automatically sends cookies:
+** To matching domains/paths
+* Benefits:
+** Seamless navigation
+* Risks:
+** CSRF, session hijacking, cookie theft
+
+== Propagating Identity: APIs and Services
+
+* Identity commonly sent in:
+** `Authorization` headers (e.g., `Bearer <token>`)
+** Client certificates (mTLS)
+** Signed requests (HMAC schemes)
+* Design choice:
+** Expose full user identity to downstream?
+** Or only service identity and trust upstream?
+
+[.columns]
+== Identity and Trust Boundaries
+
+[.column]
+--
+[plantuml, trust-boundary, svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+left to right direction
+
+actor "External Client" as Client
+rectangle "API Gateway\n(Trust boundary)" as GW
+rectangle "Service A" as A
+rectangle "Service B" as B
+
+Client -> GW : HTTPS + token
+GW -> GW : Validate token\n(identity, signature)
+GW -> A : Internal call\nuser claims + svc identity
+A -> B : Internal call\n(optional user claims)
+
+note top of GW
+  Gateway is the entry point
+  that validates external identity
+end note
+@enduml
+----
+--
+
+[.column]
+--
+*Gateway:*
+
+* Verifies external identity once
+* Forwards trusted claims internally
+--
+
+== Risks: Session Hijacking
+
+* Attacker steals valid session ID or token
+* Can impersonate the user until:
+** Session expires
+** Or is revoked
+* Common causes:
+** XSS stealing cookies/tokens
+** Insecure transport (no HTTPS)
+** Logging secrets by mistake
+
+== Mitigating Session Hijacking
+
+* Use HTTPS for all authenticated traffic
+* Harden cookies:
+** `Secure`, `HttpOnly`, and appropriate `SameSite`
+* Keep tokens short‑lived
+* Regenerate session IDs:
+** On login
+** On privilege changes
+* Avoid storing tokens where XSS can easily read them
+
+[.columns]
+== Single vs Multiple Sessions
+
+[.column]
+--
+*Single session per user*
+
+* Simple to manage
+* Easy to “log out everywhere”
+* Less flexible for multi‑device usage
+--
+
+[.column]
+--
+*Multiple concurrent sessions*
+
+* Better for multi‑device / multi‑browser
+* Need per‑device tracking
+* More complex revocation and monitoring
+--
+
+[.columns]
+== Stateful vs Stateless Sessions
+
+[.column]
+--
+*Stateful (server‑side)*
+
+* Server stores session data
+* Easy to revoke centrally
+* Needs shared store to scale horizontally
+--
+
+[.column]
+--
+*Stateless (token‑based)*
+
+* Little/no server session store
+* Easy to scale out
+* Harder to revoke; prefer short lifetimes
+--
+
+== How This Connects to the Week
+
+*Cookies & CSRF:*
+
+* Use sessions heavily in browsers
+* Show how automatic cookies help and hurt
+
+*API keys, tokens, certificates:*
+
+* Concrete ways to represent identity
+* And secure communication
+
+*OAuth2 / OIDC:*
+
+* Standard ways to issue and validate identities
+* Across apps and organizations
+
+*Error contracts:*
+
+* Include identity/session context in logs and traces
+
+== Summary
+
+* Identity = *who*; AuthN = *prove it*; AuthZ = *what can they do?*
+* Sessions tie an identity to a sequence of requests over time
+* User identity and service identity are both important
+* Identity is propagated via cookies, headers, tokens, certs
+
+*Session design balances:*
+
+* Security (hijacking, revocation)
+* Usability (re‑auth frequency)
+* Scalability (stateful vs stateless)

@@ -1,0 +1,296 @@
+= API Keys, Tokens, and Certificates
+
+:toc: no
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+
+// Optional: uncomment if you're using Asciidoctor Reveal.js or similar
+// :revealjs_theme: simple
+
+== Goals for This Lecture
+
+* Understand where API keys, tokens, and certificates fit in a cloud architecture
+* Explain each mechanism at an architectural level
+* Recognize when to use each
+* Identify key risks and tradeoffs
+* Connect them to other identity and security concepts in the course
+
+[.columns]
+== Big Picture: Where Do They Fit?
+
+[.column]
+--
+* Distributed systems must answer:
+** *Who are you?* (identity)
+** *Are you allowed to do this?* (authorization)
+** *Can I trust this connection?* (confidentiality & integrity)
+* Mechanisms:
+** *API keys* – caller identification, coarse access
+** *Tokens* – claims about identity and permissions
+** *Certificates* – secure channels, machine/service identity
+--
+[.column]
+--
+[plantuml, big-picture, svg, width=100% ]
+----
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor #555555
+}
+
+actor User
+
+rectangle "Client App\n(Web/Mobile)" as Client
+rectangle "API Gateway / Frontend" as Gateway
+rectangle "Backend Services" as Backend
+rectangle "External API\n(3rd Party)" as External
+
+User --> Client : User actions
+Client --> Gateway : HTTPS\n(TLS: certificates)
+Gateway --> Backend : HTTPS\n(TLS: certificates)\n+ tokens
+Gateway --> External : HTTPS\n(TLS) + API key
+
+@enduml
+----
+--
+
+== API Keys: Concept
+
+* *Secret string* issued by a service to a client
+* Sent on *every request* (typically in a header)
+* Service looks up key to identify the caller
+* Common for:
+** Public / paid APIs
+** Simple service-to-service (S2S) calls
+** Scripts, CLIs, batch jobs
+
+== API Keys: Strengths and Limits
+
+* Strengths:
+** Very simple to issue and verify
+** Easy to integrate
+** Works without a full identity system
+* Limitations:
+** Often acts like a “password for the API”
+** Usually long-lived and broad in scope
+** No built-in user identity or fine-grained permissions
+
+== API Keys: Good Practices
+
+* Treat API keys as *secrets* (no source control, no logs)
+* Scope per *client*, per *environment*
+* Use least privilege (read-only vs read-write)
+* Support rotation and revocation
+* Prefer headers over query parameters
+
+== API Keys: Flow Diagram
+
+[plantuml, api-key-flow, svg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor "Client App" as Client
+rectangle "Public API" as API {
+  rectangle "API Key Store" as Store
+}
+
+Client -> API : HTTPS request\nHeader: X-API-Key: <key>
+API -> Store : Lookup key
+Store --> API : Key status, scope
+API --> Client : Allow or deny\n(based on key + scope)
+
+@enduml
+----
+
+== Tokens: Concept
+
+* Structured data issued by an *authorization server*
+* Represents:
+** Subject (user or client)
+** Permissions (scopes/roles)
+** Lifetime (issued-at, expiry)
+* Presented to APIs as *proof of authorization*
+* Forms: opaque tokens, JWTs, etc.
+
+== Tokens: Typical Uses
+
+* OAuth2 / OIDC:
+** Access tokens for APIs
+** ID tokens for user identity
+* Microservices where:
+** User identity is important
+** Authorization is fine-grained
+** Central identity provider is used
+
+== Tokens: Strengths
+
+* Richer semantics than API keys:
+** Who the subject is
+** What they can do (scopes/roles)
+** When the token is valid
+* Short-lived by design
+* Issued centrally, consumed by many services
+
+== Tokens: Risks and Good Practices
+
+* Risks:
+** Bearer token: whoever has it can use it
+** Poor lifetime choices (too long / too short)
+** Sensitive data stored inside token
+* Good practices:
+** Keep tokens short-lived
+** Use scopes/claims for least privilege
+** Validate issuer, audience, expiry, signature
+** Protect signing keys; rotate regularly
+
+== Tokens: High-Level Flow
+
+[plantuml, token-flow, svg, width=100%]
+----
+@startuml
+skinparam participantStyle rectangle
+
+actor User
+participant "Client App" as Client
+participant "Auth Server\n(IdP)" as IdP
+participant "Resource Server\n(API)" as API
+
+User -> Client : 1. Login / access request
+Client -> IdP : 2. Authorization request
+IdP --> Client : 3. Access token\n(+ ID token)
+Client -> API : 4. HTTPS request\nAuthorization: Bearer <token>
+API -> IdP : 5. (Optional) Introspection / key fetch
+IdP --> API : Token status / keys
+API --> Client : 6. Response if token valid
+
+@enduml
+----
+
+== Certificates: Concept
+
+* Digitally signed document binding:
+** Public key ↔ identity (host, org, service)
+* Issued and signed by a Certificate Authority (CA)
+* Used in:
+** HTTPS (server certificates)
+** Mutual TLS (mTLS: client + server certs)
+* Works at the *transport layer*
+
+== Certificates: Uses and Strengths
+
+* Uses:
+** Prove server identity (e.g., `api.example.com`)
+** Encrypt traffic between client and server
+** Authenticate services to each other (mTLS)
+* Strengths:
+** Strong, well-understood cryptography
+** Independent of application protocol
+** Scales with automated cert management
+
+== Certificates: Operational Concerns
+
+* Issuance, renewal, and revocation
+* Protecting private keys
+* Correct TLS configuration (versions, ciphers)
+* Correct validation:
+** Trust chain
+** Hostname / SAN
+** Expiry
+
+== Certificates: TLS Handshake
+
+[plantuml, tls-handshake, svg, width=100%]
+----
+@startuml
+skinparam sequence {
+  ArrowColor #333333
+  LifeLineBorderColor #555555
+}
+
+participant "Client" as C
+participant "Server" as S
+
+C -> S : ClientHello\n(Start TLS)
+S --> C : ServerHello + Certificate
+C -> C : Validate certificate\n(CA, hostname, expiry)
+C -> S : Key exchange / secrets
+S --> C : Encrypted confirmation
+C -> S : Application data (encrypted)
+S --> C : Application data (encrypted)
+
+@enduml
+----
+
+== Comparing Mechanisms
+
+* API keys:
+** Simple client identification
+** Long-lived, coarse scope
+* Tokens:
+** Rich claims, short-lived
+** Central to OAuth2/OIDC architectures
+* Certificates:
+** Secure channels, machine/service identity
+** Basis for HTTPS and mTLS
+
+== Comparison Table
+
+[cols="2,3,3,3", options="header"]
+|===
+|Aspect
+|API Keys
+|Tokens
+|Certificates
+
+|Primary purpose
+|Identify caller / basic auth
+|User/client identity & rights
+|Service/client identity; secure channel
+
+|Typical lifetime
+|Long-lived
+|Short-lived
+|Medium (days–months)
+
+|Operational complexity
+|Low
+|Medium
+|High
+|===
+
+== Architectural Guidance
+
+* Choose based on:
+** Who/what is calling (user vs service)
+** Needed assurance level
+** Ability to rotate credentials
+* Typical pattern:
+** Certificates/TLS for transport security
+** Tokens for user/client identity and authorization
+** API keys for simple or 3rd-party integrations
+
+== Failure and Risk View
+
+* If an API key is stolen:
+** Attacker can call API until key is revoked
+* If a token is stolen:
+** Attacker can act as that user/client until expiry
+* If a private key is stolen:
+** Attacker may impersonate service or decrypt traffic
+* Mitigations:
+** Short lifetimes, rotation, revocation
+** Secure storage and monitoring
+
+== Summary
+
+* *API keys* – simple, coarse, good for basic client identification
+* *Tokens* – rich, time-bounded claims; central in modern auth
+* *Certificates* – secure channels and machine identity via TLS/mTLS
+* Robust systems usually *combine* these:
+** TLS for transport
+** Tokens for identity/authorization
+** API keys where simplicity or legacy demands it

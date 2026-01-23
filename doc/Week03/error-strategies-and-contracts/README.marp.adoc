@@ -1,0 +1,426 @@
+= Error Strategies and Contracts
+
+:toc: no
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Error Strategies and Contracts
+
+* Focus: how services represent and communicate failures
+* Theme: reliability and clarity in distributed systems
+
+
+By the end, you should be able to:
+
+* Explain what an error contract is architecturally
+* Recognize common error-handling patterns for services
+* Distinguish client, server, and transient failures
+* Map errors to appropriate HTTP status codes
+* Identify risks and tradeoffs in error strategies
+
+== Why Errors Need a Strategy
+
+* In distributed systems, failure is *normal*
+* Networks can:
+** Drop, delay, or reorder requests
+** Partition or time out
+* Services can:
+** Be slow, overloaded, or misconfigured
+* Without a strategy:
+** Inconsistent errors
+** Confused clients and painful debugging
+
+== What Is an Error Contract?
+
+* A shared agreement on how errors are:
+** Classified
+** Represented
+** Communicated
+* Covers:
+** HTTP codes (for REST)
+** Error body structure
+** Client expectations (retry, fix, escalate)
+* Goal: predictable, actionable failures
+
+== Error Categories (High Level)
+
+* **Client errors** – caller’s fault
+** Bad input, missing data
+** Invalid state transitions
+* **Server errors** – our fault
+** Bugs, misconfig, unhandled exceptions
+* **Transient / environmental**
+** Network timeouts, partial outages
+** Overloaded dependencies
+
+[.columns]
+=== Error Categories and Client Action
+
+[.column]
+--
+* Client errors
+** Caller is usually at fault
+** Bad input or invalid state
+** Change the request before retrying
+--
+
+[.column]
+--
+* Server & transient errors
+** Server errors → fix the service
+** Transient/dependency errors → may retry
+** Use backoff, limits, and fallbacks
+--
+
+== HTTP Status Codes: Overview
+
+* HTTP codes are part of the contract
+* 2xx: success
+* 4xx: client errors
+* 5xx: server errors
+* Clients infer:
+** Rough cause of failure
+** Whether retry may help
+** Whether to prompt user to fix input
+
+== HTTP Status Codes: (1/2)
+
+|===
+|Satus |Name |Category | Typical Meaning
+|200
+|OK
+|Success
+|Request succeeded; body has result.
+
+|201
+|Created
+|Success
+|New resource created; often `Location` header.
+
+|204
+|No Content
+|Success
+|Success with no response body (e.g., DELETE).
+
+|400
+|Bad Request
+|Client
+|Malformed request; basic validation failed.
+
+|401
+|Unauthorized
+|Client
+|Missing/invalid auth; client not authenticated.
+|===
+
+== Common HTTP Status Codes (2/2)
+
+|===
+|Status |Name |Category |Typical meaning
+
+|403
+|Forbidden
+|Client
+|Authenticated but not allowed to do this.
+
+|404
+|Not Found
+|Client
+|Resource missing or not visible to caller.
+
+|409
+|Conflict
+|Client
+|Conflicts with current state (e.g., version).
+
+|422
+|Unprocessable Entity
+|Client
+|Semantically invalid; domain-level validation.
+
+|429
+|Too Many Requests
+|Client
+|Rate limited; caller should back off.
+
+|500
+|Internal Server Error
+|Server
+|Unexpected failure; generic “we broke”.
+|===
+
+== Common HTTP Status Codes (3/3)
+
+|===
+|Status |Name |Category |Typical meaning
+
+|502
+|Bad Gateway
+|Server
+|Upstream returned invalid/bad response.
+
+|503
+|Service Unavailable
+|Server
+|Temporarily overloaded or down; often retryable.
+
+|504
+|Gateway Timeout
+|Server
+|Upstream did not respond in time.
+|===
+
+[.columns]
+=== Using 4xx and 5xx
+
+[.column]
+--
+* 4xx (client errors)
+** Caller is usually at fault
+** Do not retry unchanged requests
+** Good for validation, auth, business rules
+--
+
+[.column]
+--
+* 5xx (server errors)
+** Service or dependency failed
+** May succeed later with retry
+** Always use limits and backoff
+** Treat persistent 5xx as incidents
+--
+
+== Error Bodies: Shape and Fields
+
+* Beyond status codes, define body structure
+* Useful fields:
+** Stable error `code` (e.g., `USER_NOT_FOUND`)
+** Human-readable `message`
+** `details` (invalid fields, constraints)
+** `correlationId` / trace ID
+** Optional `retryable` hint
+* Use a *consistent* shape across services
+
+[.columns]
+== Error Body Diagram
+
+[.column]
+--
+[plantuml, error-bodysvg, width=100%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+rectangle "HTTP Error Response" {
+  rectangle "status: 404" as Status
+  rectangle "code: USER_NOT_FOUND" as Code
+  rectangle "message: User does not exist" as Msg
+  rectangle "details: { field: userId }" as Details
+  rectangle "correlationId: abc-123" as Corr
+}
+
+Status -[hidden]-> Code
+Code -[hidden]-> Msg
+Msg -[hidden]-> Details
+Details -[hidden]-> Corr
+@enduml
+----
+--
+[.column]
+--
+* HTTP status + structured error body
+* Stable, machine-readable error codes
+* Correlation IDs and details support observability
+--
+
+[.columns]
+== Service-to-Service Error Flow
+
+
+[.column]
+--
+[plantuml,svc-error-flow, svg, width=80%]
+----
+@startuml
+skinparam componentStyle rectangle
+
+actor "Client" as C
+rectangle "Service A" as A
+rectangle "Service B" as B
+
+C -> A : Request
+A -> B : Downstream call
+B --> A : 503 Service Unavailable\n+ error body
+A -> A : Decide retry / fallback\nor propagate
+A --> C : Error response\n(mapped code + body)
+@enduml
+----
+--
+
+[.column]
+--
+* HTTP status + structured error body
+* Stable, machine-readable error codes
+* Correlation IDs and details support observability
+--
+
+== Validate Early
+
+* Validate input at API boundary:
+** Required fields
+** Formats and ranges
+** Domain invariants
+* On failure:
+** Return 4xx with clear error body
+* Benefits:
+** Faster feedback
+** Less downstream load
+** Clearer client behavior
+
+== Map Internal Errors to Contract
+
+* Internal code throws diverse exceptions
+* Boundary layer:
+** Catches internal errors
+** Classifies (client / server / transient)
+** Maps to HTTP status + error body
+* Avoid leaking:
+** Stack traces
+** Class names
+** Sensitive data
+
+[.columns]
+== Retries, Fallbacks, Circuit Breakers
+
+
+[.column]
+--
+* Retries (transient issues)
+** Timeouts, 503s, some network failures
+** Use exponential backoff + jitter
+--
+
+[.column]
+--
+* Fallbacks & circuit breakers
+** Fallbacks: cached or degraded data
+** Circuit breakers: fail fast when downstream is unhealthy
+** Periodically test recovery before closing
+--
+
+== Retry Safety and Idempotency
+
+* Only retry when operation is:
+** Idempotent (safe to repeat)
+** Or explicitly designed for retries
+* Risky to retry:
+** Non-idempotent updates
+** Payments and side effects
+* Strategy:
+** Mark which operations can be retried
+** Design APIs to support idempotency where possible
+
+== Properties of a Good Error Contract
+
+* Consistent across endpoints and services
+* Uses stable, documented error codes
+* Actionable by the client:
+** Fix request, retry, or show message
+* Observable:
+** Correlation IDs
+** Metrics by code and status
+* Does *not* leak internals or secrets
+
+[.columns]
+== Error Code Categories
+
+
+[.column]
+--
+* Category families:
+** `VALIDATION_*`
+** `AUTH_*`
+** `BUSINESS_*`
+** `DEPENDENCY_*`
+** `INTERNAL_*`
+--
+
+[.column]
+--
+* Examples:
+** `VALIDATION_MISSING_FIELD`
+** `AUTH_FORBIDDEN`
+** `BUSINESS_LIMIT_EXCEEDED`
+** `DEPENDENCY_TIMEOUT`
+** `INTERNAL_UNEXPECTED_ERROR`
+--
+
+[.columns]
+== Risks: Over-Reliance on Retries
+[.column]
+--
+* Pros
+** Hide brief glitches from users
+** Fewer visible failures
+--
+
+[.column]
+--
+* Risks
+** Thundering herd during outages
+** Duplicate non-idempotent actions
+** Mask deeper reliability issues
+** Mitigate with limits, backoff, monitoring
+--
+
+== Risks: Leaky Abstractions
+
+* Returning low-level errors directly:
+** DB error codes
+** Stack traces
+** Internal hostnames
+* Problems:
+** Tight client coupling to internals
+** Security exposure
+** Harder to evolve APIs
+* Mitigation:
+** Map to contract-level errors
+** Log details server-side only
+
+== Risks: Inconsistent Formats
+
+* Different services:
+** Different shapes and field names
+** Different uses of same HTTP codes
+* Consequences:
+** Complex client logic and parsing
+** Hard to build shared tooling/SDKs
+* Mitigation:
+** Define a shared error contract standard
+** Use libraries/middleware to enforce it
+
+== Putting It Together: Reference Pattern
+
+* At boundary:
+** Validate inputs; return clear 4xx on failure
+* Inside:
+** Classify errors: client, server, transient
+** Map to HTTP code + error body
+* For dependencies:
+** Use retries, fallbacks, circuit breakers
+** Only where safe and intentional
+* For observability:
+** Correlation IDs and structured logs
+** Metrics by HTTP status and error code
+
+== Summary
+
+* Errors are a *designed* part of your API, not an afterthought
+* HTTP codes give coarse category; bodies give useful detail
+* Distinguish:
+** Client errors – fix the request
+** Server errors – fix the service
+** Transient errors – retry/fallback with care
+* Consistent, actionable error contracts:
+** Improve client behavior
+** Simplify debugging and operations

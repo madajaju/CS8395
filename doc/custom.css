@@ -14,14 +14,45 @@
 }
 
 .reveal h1 {
-    font-size: 3em;
+    font-size: 2em;
     color: #ffee88;
 }
 .reveal h2 {
-    font-size: 3em;
+    font-size: 2em;
     color: #ffee88;
 }
 .reveal p {
     font-size: 1.5em;
     color: #ffffff;
+}
+
+/* Make slide content left-aligned and top-aligned */
+.imageblock img {
+    max-height: 80vh;
+    max-width: 80vw;
+}
+
+.reveal .slides {
+  text-align: left;           /* horizontal alignment for text */
+}
+
+/* Override reveal.js centering */
+.reveal .slides section {
+  position: absolute;         /* keep positioning, but change offsets */
+  top: 0 !important;          /* move content up */
+  left: 0 !important;         /* align to the left */
+  transform: none !important; /* remove the 50% centering translate */
+  margin: 20px 60px;          /* optional: add some padding from edges */
+}
+
+/* If you’re nesting vertical slides, this helps too */
+.reveal .slides section > section {
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+}
+
+/* Optional: slightly narrower content for nicer layout */
+.reveal .slides section {
+  width: 80%;                 /* keep some right margin */
 }
