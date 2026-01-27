@@ -1,0 +1,130 @@
+= Memory Management
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+== Why Memory Management?
+* **CPU Access:** Instructions must be in memory to execute.
+* **Efficiency:** Optimizing what stays in RAM vs. moves to disk.
+* **Isolation:** Preventing processes from accessing each other's space.
+
+[.columns]
+== Outcomes
+[.column]
+* Logical vs. Physical memory.
+* The role of the MMU.
+
+[.column]
+* Paging and Virtual Memory.
+* Page replacement & thrashing.
+
+[.columns]
+== 1. Logical vs. Physical
+[.column]
+--
+### Physical Memory
+* Actual RAM hardware.
+* Divided into **frames**.
+--
+
+[.column]
+--
+### Logical Memory
+* The program's "view."
+* Divided into **pages**.
+--
+
+== 2. The MMU
+**Memory Management Unit** (Hardware)
+
+[plantuml, mmu-mapping, svg]
+----
+@startuml
+skinparam handwritten false
+skinparam defaultTextAlignment center
+
+node "CPU" {
+  [Logical Address] as LA
+}
+
+LA -right-> [MMU] : "Translation Request"
+
+package "Physical RAM" {
+  frame "Frame 0" as F0
+  frame "Frame 1" as F1
+  frame "Frame 2" as F2
+}
+
+[MMU] -right-> F1 : "Physical Address"
+
+note top of LA : Program's View\n(Pages)
+note bottom of [MMU] : Uses Page Table\nfor lookup
+@enduml
+----
+
+* Performs **address translation**.
+* Maps logical addresses to physical addresses in RAM.
+* Enables non-contiguous memory allocation.
+
+== 3. Paging and Virtual Memory
+
+[plantuml, virtual-memory, svg]
+----
+@startuml
+skinparam defaultTextAlignment center
+
+package "Logical Pages" {
+  [Page 0]
+  [Page 1]
+  [Page 2]
+}
+
+package "Disk (Swap Space)" {
+  [Page 2 on Disk] as P2D
+}
+
+package "Physical Frames" {
+  [Frame 1 (Page 0)] as F1
+  [Frame 4 (Page 1)] as F4
+}
+
+[Page 0] -down-> F1
+[Page 1] -down-> F4
+[Page 2] .down.> P2D : "Not in RAM\n(Page Fault)"
+@enduml
+----
+
+* **Paging:** Fixed-size mapping (pages -> frames).
+* **Virtual Memory:** Allows programs to be larger than physical RAM.
+* **Demand Paging:** "Lazy loading" pages only when accessed.
+* **Page Faults:** OS fetches missing pages from disk.
+
+== 4. Copy-on-Write (COW)
+* Used during process forking.
+* Parent and child **share the same pages** initially.
+* A page is copied **only if written to**.
+* Makes process creation fast and efficient.
+
+== 5. Page Replacement
+When RAM is full:
+
+* **Modify (Dirty) Bit:** Only changed pages write back to disk.
+* **Thrashing:** Excessive swapping collapses performance.
+* **Goal:** Evict the "best" page to minimize future faults.
+
+== 6. Real-World: The "Friday Night" Lag
+* **Scenario:** Massive player login for an online event.
+* **System Impact:** RAM fills up; OS starts **swapping** to disk.
+* **Result:** Page Faults cause "lag" as the CPU waits for the slow disk.
+
+== 7. Tie-in: Assignment A1
+* **Memory Footprint:** Compare Java (JVM) vs. Go/Python/Node.
+* **Resource Constraints:** How does your language choice affect performance on a tiny cloud instance?
+* **Observation:** Mention any "lag" or memory usage in your Step 5 documentation.
+
+== 8. Summary
+* A balancing act between a simple address space and complex hardware reality.
+* Understanding these concepts leads to **memory-friendly** code.
+* Critical for system stability under load.

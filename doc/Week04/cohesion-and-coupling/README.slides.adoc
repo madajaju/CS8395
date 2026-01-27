@@ -1,0 +1,97 @@
+= Cohesion and Coupling
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+== The Golden Rule
+> **Aim for High Cohesion and Low Coupling.**
+
+These are the yardsticks for measuring service boundary quality.
+
+[.columns]
+== Outcomes
+[.column]
+* Define cohesion and coupling.
+* Recognize high cohesion / low coupling.
+
+[.column]
+* Identify risks of poor design.
+* Understand the relationship between the two.
+
+== 1. Cohesion
+"Things that belong together, stay together."
+
+* **High Cohesion:** Service does one thing well (SRP).
+** *Example:* Payment Service (only payments).
+* **Low Cohesion:** Multiple unrelated responsibilities.
+** *Example:* "Management Service" (users + catalog + email).
+
+== Why Cohesion Matters
+* **Simplicity:** Easier to understand, test, and maintain.
+* **Isolated Change:** Change payments without breaking emails.
+
+== 2. Coupling
+"How much do we depend on others?"
+
+[plantuml, cohesion-coupling, svg]
+----
+@startuml
+skinparam componentStyle uml2
+skinparam defaultTextAlignment center
+
+package "High Cohesion / Low Coupling" {
+  [Order Service] as Order
+  [Payment Service] as Payment
+  Order -right-> Payment : "REST API / Event"
+  note bottom of Payment : Focused: Only handles\nprocessing & gateways
+}
+
+package "Low Cohesion / High Coupling" {
+  [Management Service] as Mgmt
+  database "Shared DB" as DB
+  [Other Service] as Other
+  Mgmt -down-> DB
+  Other -down-> DB
+  note bottom of Mgmt : Unfocused: Users,\nCatalog, Emails
+  note right of DB : <font color=red>Tight Coupling</font>\nvia Schema
+}
+@enduml
+----
+
+* **Low (Loose) Coupling:** Services change independently via stable APIs.
+* **High (Tight) Coupling:** Change in one forces change in another.
+** *Example:* Shared database tables.
+
+== Types of Coupling to Avoid
+[.columns]
+--
+[.column]
+* **Implementation:** Depending on internals.
+* **Temporal:** Requiring all services online at once.
+
+[.column]
+* **Deployment:** Must deploy together.
+* **Domain:** Models are too intertwined.
+--
+
+== 3. The Relationship
+**Low cohesion often leads to high coupling.**
+
+* If a service lacks a clear purpose, it must reach into others' logic.
+* This creates a web of tight dependencies.
+
+== 4. Real-World: The "User" Service Trap
+* **Scenario:** A service handles Auth + Profile + Billing.
+* **Problem:** Billing updates require re-deploying the Auth logic (high risk).
+* **Fix:** Extract Billing. Now both are **highly cohesive**.
+
+== 5. Tie-in: Assignment A1
+* **Step 0 Check:** Does your service have more than 1 responsibility?
+* **Step 1 Check:** Does your OpenAPI spec leak database field names? (Implementation Coupling).
+
+== 6. Summary
+* **Cohesion** ensures services are "Small" (focused).
+* **Low Coupling** ensures services are "Autonomous" (independent).
+* Rippling changes indicate a failure in one of these two metrics.

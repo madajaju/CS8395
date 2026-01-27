@@ -1,0 +1,114 @@
+= Program Slicing & Service Boundaries
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+== Introduction
+* **Purpose:** Decompose a monolith or large problem space into discrete microservices.
+* **Technique:** "Slicing" based on data flow and responsibilities.
+
+[.columns]
+== Outcomes
+[.column]
+* Define "Program Slicing" in architecture.
+* Identify natural service boundaries.
+
+[.column]
+* Apply slicing to domain models.
+* Understand tradeoffs and risks.
+
+== 1. What is Program Slicing?
+* **Traditional SE:** Simplifying programs by focusing on subsets of behavior.
+* **Microservices Metaphor:**
+** Identify **vertical slices** of functionality.
+** Separate concerns for independent change.
+** Shift from "Layered" (horizontal) to "Service" (vertical).
+
+== 2. Horizontal vs. Vertical Slicing
+
+[plantuml, slicing-comparison, svg]
+----
+@startuml
+skinparam handwritten false
+skinparam packageStyle rect
+skinparam defaultTextAlignment center
+
+package "Horizontal Slicing (Monolith)" {
+  [UI Layer] as UIH
+  [Business Logic] as BLH
+  [Data Layer] as DLH
+  UIH -down-> BLH
+  BLH -down-> DLH
+  note right of UIH: Features are mixed\nin every layer
+}
+
+package "Vertical Slicing (Microservices)" {
+  package "Catalog" {
+    [UI/API] as UIC
+    [Logic] as BLC
+    [Data] as DLC
+    UIC -down-> BLC
+    BLC -down-> DLC
+  }
+  package "Ordering" {
+    [UI/API] as UIO
+    [Logic] as BLO
+    [Data] as DLO
+    UIO -down-> BLO
+    BLO -down-> DLO
+  }
+}
+@enduml
+----
+
+[.columns]
+=== Comparison Details
+[.column]
+--
+### Horizontal (The Old Way)
+* **Layers:** UI -> Logic -> Data.
+* **Problem:** Every feature touches every layer.
+* **Result:** Tight coupling between unrelated features.
+--
+
+[.column]
+--
+### Vertical (The New Way)
+* **Slices:** Catalog, Ordering, Payment.
+* **Benefit:** Each slice owns its UI, Logic, and Data.
+* **Result:** Team autonomy and faster deployment.
+--
+
+== 3. Finding the "Gaps" (Boundaries)
+[.columns]
+--
+[.column]
+1. **Business Capabilities:** Bounded Context (DDD).
+2. **Data Ownership:** Source of truth.
+
+[.column]
+3. **Change Patterns:** What changes together?
+4. **Team Structure:** Conway's Law.
+--
+
+== 4. Risks and Tradeoffs
+* **Over-Slicing (Nano-services):** Network overhead, distributed transaction hell.
+* **Under-Slicing (Distributed Monolith):** Hard to scale, "god services."
+* **Data Duplication:** Managing eventual consistency and read models.
+
+== 5. Real-World: Amazon's "Two-Pizza Teams"
+* **Before:** Giant Bookstore Monolith.
+* **After:** Sliced into **Recommendations**, **Inventory**, **Checkout**.
+* **Result:** The Recommendations team can deploy updates without waiting for Checkout's security audits.
+
+== 6. Tie-in: Assignment A1
+* **Goal:** Define one logical microservice.
+* **The Check:** Is it a **vertical slice**?
+* **Avoid:** Creating a "horizontal" service (e.g., just a "Database Wrapper") that lacks business logic.
+
+== 7. Summary
+* Find the right **seams** in the application.
+* Slice vertically along business capabilities.
+* Aim for high cohesion and loose coupling.

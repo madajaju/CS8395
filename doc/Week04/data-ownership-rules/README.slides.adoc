@@ -1,0 +1,121 @@
+= Data Ownership Rules
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+== The Principle
+**"Database per Service"**
+
+In true microservices, each service **must** own its own data.
+
+[.columns]
+== Outcomes
+[.column]
+* Explain Database per Service.
+* Identify problems with shared DBs.
+
+[.column]
+* Discuss cross-boundary access.
+* Handle referential integrity.
+
+== 1. Private Data
+* No service accesses another's database directly.
+* **API Access Only:** Ask via GET/POST or subscribe to events.
+* The database is an **internal detail**, not a public interface.
+
+== 2. Why No Shared Databases?
+
+[plantuml, data-ownership, svg]
+----
+@startuml
+skinparam database {
+  BackgroundColor<<Private>> LightBlue
+}
+skinparam componentStyle uml2
+
+package "Service Ownership" {
+  [Order Service] as Order
+  database "Order DB" <<Private>> as ODB
+  Order -down-> ODB
+
+  [Catalog Service] as Catalog
+  database "Catalog DB" <<Private>> as CDB
+  Catalog -down-> CDB
+}
+
+Order .right.> Catalog : "1. Request via API"
+Catalog -[#blue]right-> Order : "2. Response"
+
+note top of ODB : No direct access\nfrom Catalog
+note top of CDB : No direct access\nfrom Order
+@enduml
+----
+
+Shared DBs = **Public Enemy Number One**
+
+* **Schema Lock-in:** Changes in Service A break Service B.
+* **Performance Interference:** "Noisy Neighbor" queries.
+* **Security:** Harder to enforce "least privilege."
+
+== 3. Dealing with "Foreign" Data
+How do we get data we don't own?
+
+[.columns]
+--
+[.column]
+### Option A: API Calls
+* Service A calls Service B's API.
+* *Pros:* Fresh data.
+* *Cons:* Temporal coupling, latency.
+
+[.column]
+### Option B: Replication
+
+[plantuml, replication, svg]
+----
+@startuml
+skinparam componentStyle uml2
+
+[Catalog Service] as Catalog
+database "Catalog DB" as CDB
+[Order Service] as Order
+database "Order DB" as ODB
+queue "Event Bus" as Bus
+
+Catalog -down-> CDB
+Catalog -right-> Bus : "ProductPriceChanged"
+Bus -right-> Order : "Event"
+Order -down-> ODB : "Save Local Copy"
+
+note bottom of ODB : Local Projection\nof Catalog Data
+@enduml
+----
+
+* Service B publishes an event.
+* Service A saves a local projection.
+* *Pros:* No temporal coupling, fast.
+* *Cons:* Eventual consistency.
+--
+
+== 4. Referential Integrity
+* No cross-database Foreign Keys.
+* Integrity is the **responsibility of the application**.
+* Use logic to handle deletes or accept partial inconsistency.
+
+== 5. Real-World: Netflix Title Metadata
+* **Metadata Service:** Owns titles/descriptions.
+* **Playback Service:** Needs titles to show "Now Playing."
+* **The "Netflix Way":** Playback service caches its own metadata.
+* **Result:** If Metadata Service crashes, you can still watch your movie.
+
+== 6. Tie-in: Assignment A1
+* **Step 2 (Diagram):** Must show your service's dedicated DB.
+* **The Challenge:** How do you handle "foreign" IDs (like `user_id`) in your schema?
+* **Reflection:** Will you use API calls or replication?
+
+== 7. Summary
+* Data ownership is the foundation of autonomy.
+* Enforce strict boundaries at the data layer.
+* Services must be able to evolve their schemas independently.
