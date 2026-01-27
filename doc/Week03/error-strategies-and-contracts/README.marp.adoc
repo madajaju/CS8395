@@ -6,6 +6,8 @@
 
 == Error Strategies and Contracts
 
+Video: https://youtu.be/6tftXjPXDic
+
 * Focus: how services represent and communicate failures
 * Theme: reliability and clarity in distributed systems
 

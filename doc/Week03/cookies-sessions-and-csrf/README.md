@@ -1,6 +1,6 @@
 # Cookies, Sessions, and CSRF
 
-**Length:** 10–15 minutes
+Video: https://youtu.be/0WWW9REc_q8
 
 **Purpose:** Introduce how web apps maintain user state using cookies and sessions, why that matters for security, and how CSRF exploits this model.
 

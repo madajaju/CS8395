@@ -1,6 +1,6 @@
 # Error Strategies and Contracts
 
-**Length:** 10–15 minutes
+Video: https://youtu.be/6tftXjPXDic
 
 **Purpose:** Introduce how services should represent and communicate errors, why explicit error contracts matter in distributed systems, and the tradeoffs of different error-handling strategies.
 

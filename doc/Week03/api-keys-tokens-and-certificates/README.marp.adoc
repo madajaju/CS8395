@@ -5,6 +5,8 @@
 :revealjs_height: "100%"
 
 
+Video: https://youtu.be/zJHqFYMYEjA
+
 // Optional: uncomment if you're using Asciidoctor Reveal.js or similar
 // :revealjs_theme: simple
 

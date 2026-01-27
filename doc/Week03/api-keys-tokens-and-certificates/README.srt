@@ -1,0 +1,1585 @@
+﻿1
+00:00:00,000 --> 00:00:00,166
+All right.
+
+2
+00:00:00,166 --> 00:00:04,666
+In this lecture I'm going to talk about
+API keys, tokens and certificates
+
+3
+00:00:04,666 --> 00:00:07,666
+and the differences between them.
+
+4
+00:00:08,466 --> 00:00:11,833
+So the goal is to understand
+what those differences are.
+
+5
+00:00:11,866 --> 00:00:15,533
+Explain each mechanism
+an architectural level
+
+6
+00:00:15,766 --> 00:00:18,400
+and then recognize
+when they use each coin.
+
+7
+00:00:18,400 --> 00:00:21,400
+And then identify
+any key risks or trade offs like we do
+
+8
+00:00:21,500 --> 00:00:24,766
+in any of these architectural decisions
+that we make.
+
+9
+00:00:26,300 --> 00:00:28,700
+So first, the most important thing is
+
+10
+00:00:28,700 --> 00:00:31,700
+to figure out where all these things fit
+in, right?
+
+11
+00:00:32,000 --> 00:00:35,233
+So distributed systems
+and microservice architectures,
+
+12
+00:00:35,666 --> 00:00:38,900
+remember
+we have to first identify who you are.
+
+13
+00:00:39,100 --> 00:00:42,633
+We have to authorize
+if you're allowed to do something.
+
+14
+00:00:42,900 --> 00:00:45,033
+And then can I trust it. Right.
+
+15
+00:00:45,033 --> 00:00:48,833
+Can I trust the connection that I'm
+with as confidential and integrity.
+
+16
+00:00:49,166 --> 00:00:51,533
+And then there's different mechanisms
+to do that.
+
+17
+00:00:51,533 --> 00:00:54,566
+API keys were the color
+
+18
+00:00:55,000 --> 00:00:58,500
+API keys are where the caller identified.
+
+19
+00:00:58,733 --> 00:00:59,900
+And it gives me course,
+
+20
+00:01:01,000 --> 00:01:02,033
+course access.
+
+21
+00:01:02,033 --> 00:01:06,700
+So I can say you're allowed
+to do certain things with the API.
+
+22
+00:01:06,733 --> 00:01:10,033
+And each API has a set of keys. Right.
+
+23
+00:01:10,400 --> 00:01:14,066
+A token claims the identity
+
+24
+00:01:14,366 --> 00:01:19,066
+of an individual
+or a, services coming in.
+
+25
+00:01:19,300 --> 00:01:21,633
+And the permissions
+that they're allowed to do.
+
+26
+00:01:21,633 --> 00:01:23,700
+So. Token contains our identity
+
+27
+00:01:23,700 --> 00:01:26,700
+and the permissions
+that they're allowed to do certain things.
+
+28
+00:01:27,066 --> 00:01:29,433
+And then certificates are secure
+
+29
+00:01:29,433 --> 00:01:32,433
+channels
+where machine and service identity
+
+30
+00:01:32,600 --> 00:01:38,200
+and where they can exchange certificates
+between, two different things.
+
+31
+00:01:38,200 --> 00:01:41,200
+So we'll go over these in more depth.
+
+32
+00:01:41,566 --> 00:01:43,533
+The key here is that
+
+33
+00:01:43,533 --> 00:01:46,533
+if I've got a, user action,
+
+34
+00:01:46,866 --> 00:01:49,566
+I'm going to say,
+
+35
+00:01:49,566 --> 00:01:52,400
+authenticate the user
+so I know who they are.
+
+36
+00:01:52,400 --> 00:01:56,600
+Then I'm going to authorize
+what they're able to do.
+
+37
+00:01:56,600 --> 00:01:59,600
+And that typically is all handled
+in the API gateway.
+
+38
+00:01:59,833 --> 00:02:05,233
+That then communicates to the backend
+services that I need to do the work with.
+
+39
+00:02:07,700 --> 00:02:08,033
+Okay.
+
+40
+00:02:08,033 --> 00:02:10,300
+Let's talk in depth about API keys.
+
+41
+00:02:10,300 --> 00:02:15,800
+So first it's a secret string
+that's issued by a service to a client.
+
+42
+00:02:16,166 --> 00:02:18,500
+Now a client could be a person
+or another machine.
+
+43
+00:02:18,500 --> 00:02:19,233
+Right.
+
+44
+00:02:19,233 --> 00:02:22,866
+It's sent on every request,
+typically in the header
+
+45
+00:02:23,433 --> 00:02:26,000
+and typically in something
+called the bearer.
+
+46
+00:02:26,000 --> 00:02:30,800
+And so if, if,
+you want to access my service, I'm
+
+47
+00:02:31,100 --> 00:02:35,533
+going to give you a key that says, hey,
+here's a key that you can always access.
+
+48
+00:02:36,000 --> 00:02:37,066
+That service.
+
+49
+00:02:37,066 --> 00:02:38,633
+So that's kind of how it works. Right.
+
+50
+00:02:38,633 --> 00:02:41,866
+So whoever has the key
+can access the service to.
+
+51
+00:02:41,866 --> 00:02:43,400
+I know who they are.
+
+52
+00:02:43,400 --> 00:02:45,800
+I do not I only know that
+
+53
+00:02:45,800 --> 00:02:48,833
+they're using a secret string
+that I gave them.
+
+54
+00:02:48,833 --> 00:02:50,833
+They're using a key that I gave them.
+
+55
+00:02:50,833 --> 00:02:54,666
+So if someone were to grab that key
+and use it somewhere
+
+56
+00:02:54,666 --> 00:02:57,666
+else, I would have no idea, 
+what happened there.
+
+57
+00:02:57,833 --> 00:03:00,200
+So that's kind of how it works.
+
+58
+00:03:00,200 --> 00:03:00,766
+Okay.
+
+59
+00:03:00,766 --> 00:03:03,333
+There's lots of different types of keys
+that are out there.
+
+60
+00:03:03,333 --> 00:03:06,766
+Typically, it's used for public and paid
+APIs.
+
+61
+00:03:07,033 --> 00:03:12,233
+It's simple service to service type
+of calls, scripts, classes, batch scripts.
+
+62
+00:03:12,233 --> 00:03:15,033
+These these sorts of things
+all the time. These keys.
+
+63
+00:03:15,033 --> 00:03:15,466
+Right.
+
+64
+00:03:15,466 --> 00:03:17,633
+So that's where you have to be
+very careful with your keys.
+
+65
+00:03:17,633 --> 00:03:20,066
+They should be stored in a secure vault.
+
+66
+00:03:20,066 --> 00:03:21,800
+Not in open text.
+
+67
+00:03:21,800 --> 00:03:25,800
+Sitting in your, 
+sitting in your environment
+
+68
+00:03:25,800 --> 00:03:28,666
+somewhere on file or whatever
+the case may be.
+
+69
+00:03:28,666 --> 00:03:31,900
+Someone hacks your system now,
+they have your keys and they can act as,
+
+70
+00:03:32,400 --> 00:03:35,066
+you, they can act
+
+71
+00:03:35,066 --> 00:03:38,000
+not as just as you, but they can access
+
+72
+00:03:38,000 --> 00:03:41,300
+any of the APIs that you've been given
+access to with these keys.
+
+73
+00:03:43,233 --> 00:03:43,533
+Okay.
+
+74
+00:03:43,533 --> 00:03:47,633
+Some of the strings, they're very simple
+to issue and to verify.
+
+75
+00:03:47,966 --> 00:03:49,033
+I give you a key.
+
+76
+00:03:49,033 --> 00:03:53,233
+It works in in the key in the
+to unlock, the API.
+
+77
+00:03:53,266 --> 00:03:55,266
+So it's really easy to integrate.
+
+78
+00:03:55,266 --> 00:03:58,266
+It works,
+without full identity in the system.
+
+79
+00:03:58,266 --> 00:04:00,366
+So it's very easy to do.
+
+80
+00:04:00,366 --> 00:04:02,700
+But there are some limitations.
+
+81
+00:04:02,700 --> 00:04:06,033
+They often act
+like a password, for the API.
+
+82
+00:04:06,033 --> 00:04:09,233
+So if someone infiltrates that password
+now, they have access.
+
+83
+00:04:09,700 --> 00:04:12,533
+They usually are long
+lived with a broad scope.
+
+84
+00:04:12,533 --> 00:04:17,533
+I have access to your application
+instead of individual microservices.
+
+85
+00:04:17,900 --> 00:04:20,900
+And it's hard to revoke keys. Right?
+
+86
+00:04:20,900 --> 00:04:23,266
+Once they're out,
+I can change it, but then.
+
+87
+00:04:23,266 --> 00:04:27,333
+So they typically are long lasting
+and there's no built in user identity
+
+88
+00:04:27,333 --> 00:04:30,333
+as I've already explained.
+
+89
+00:04:30,566 --> 00:04:30,800
+All right.
+
+90
+00:04:30,800 --> 00:04:33,800
+The best practices treat them as secrets,
+
+91
+00:04:33,900 --> 00:04:37,100
+scoped them per client or per environment.
+
+92
+00:04:37,100 --> 00:04:39,966
+If you can use least privilege.
+
+93
+00:04:39,966 --> 00:04:42,300
+So read only versus read right.
+
+94
+00:04:42,300 --> 00:04:47,000
+You should distinguish between the two
+and support rotation and revocation.
+
+95
+00:04:47,000 --> 00:04:48,700
+If you can. Right.
+
+96
+00:04:48,700 --> 00:04:52,266
+Since you're architecting these systems,
+you absolutely should be looking
+
+97
+00:04:52,266 --> 00:04:53,933
+for these sorts of things.
+
+98
+00:04:53,933 --> 00:04:57,400
+And also don't put them into query
+strings.
+
+99
+00:04:57,400 --> 00:04:58,933
+Put them into the headers.
+
+100
+00:04:58,933 --> 00:05:00,600
+That's a preferred way to do it.
+
+101
+00:05:01,566 --> 00:05:02,366
+Okay.
+
+102
+00:05:02,366 --> 00:05:06,133
+So typically what happens for issuing
+
+103
+00:05:06,133 --> 00:05:10,600
+keys is
+I have an API key store in my public API.
+
+104
+00:05:10,600 --> 00:05:15,933
+I look up the key, I check the status,
+and then I go, yep, I gave that key out.
+
+105
+00:05:16,400 --> 00:05:18,500
+Someone came in with the key.
+
+106
+00:05:18,500 --> 00:05:23,266
+They have access to, the application
+that I want them to have access to.
+
+107
+00:05:23,800 --> 00:05:25,633
+And there you go. Right.
+
+108
+00:05:25,633 --> 00:05:27,266
+So I issue the key.
+
+109
+00:05:27,266 --> 00:05:30,500
+They access the key, it comes back in
+pretty straightforward and simple.
+
+110
+00:05:31,833 --> 00:05:32,666
+All right.
+
+111
+00:05:32,666 --> 00:05:35,133
+Let's talk about tokens right now.
+
+112
+00:05:35,133 --> 00:05:38,200
+Tokens a little bit different
+because it has more information in it.
+
+113
+00:05:38,633 --> 00:05:42,766
+It's structured data
+that's issued by an authorization server.
+
+114
+00:05:43,166 --> 00:05:43,600
+All right.
+
+115
+00:05:43,600 --> 00:05:46,600
+So typically this is going to be
+another microservice sitting out there
+
+116
+00:05:46,666 --> 00:05:49,666
+that authorizes access.
+
+117
+00:05:50,200 --> 00:05:50,766
+Right.
+
+118
+00:05:50,766 --> 00:05:55,166
+So an authorization server,
+it typically represents a subject
+
+119
+00:05:55,400 --> 00:05:58,900
+which is the identity of the user
+or the client.
+
+120
+00:05:59,433 --> 00:06:02,633
+It has permissions in their scopes
+roles, whatever
+
+121
+00:06:02,633 --> 00:06:05,933
+permission scheme
+you decide to use and a lifetime.
+
+122
+00:06:05,933 --> 00:06:10,433
+When is it going to expire, when was
+it issued and when is it going to expire?
+
+123
+00:06:10,633 --> 00:06:13,266
+This is all jammed into that token.
+
+124
+00:06:13,266 --> 00:06:14,833
+So all this information's in.
+
+125
+00:06:14,833 --> 00:06:18,800
+That token
+when it's sent right is presented to APIs
+
+126
+00:06:18,866 --> 00:06:20,866
+as proof of authorization.
+
+127
+00:06:20,866 --> 00:06:24,500
+So I am authorized
+to perform these things,
+
+128
+00:06:24,500 --> 00:06:27,400
+and it's all contained inside
+at the bundle. There.
+
+129
+00:06:27,400 --> 00:06:29,133
+There's there's different options here.
+
+130
+00:06:29,133 --> 00:06:35,100
+The most popular is JWT, which is is
+used in a lot of protocols out there.
+
+131
+00:06:35,100 --> 00:06:36,933
+But you can also have opaque tokens.
+
+132
+00:06:36,933 --> 00:06:38,300
+You can have your old things.
+
+133
+00:06:38,300 --> 00:06:42,466
+It's basically an encrypted string, 
+with all this stuff in it.
+
+134
+00:06:42,466 --> 00:06:44,900
+There's lots of different
+techniques that you can use.
+
+135
+00:06:46,166 --> 00:06:46,766
+Okay.
+
+136
+00:06:46,766 --> 00:06:48,100
+Typical uses.
+
+137
+00:06:48,100 --> 00:06:52,266
+I'm sure you have heard of OAuth
+two or Oidc.
+
+138
+00:06:52,633 --> 00:06:55,733
+Those are access tokens for APIs.
+
+139
+00:06:56,300 --> 00:06:59,200
+They're ID tokens for user identity.
+
+140
+00:06:59,200 --> 00:07:03,433
+And they're great for microservices
+when user identity is important.
+
+141
+00:07:03,566 --> 00:07:08,700
+When I know who's accessing it,
+maybe I'm keying off who's accessing it,
+
+142
+00:07:08,700 --> 00:07:12,466
+like in the order entry system
+or in an inventory system where,
+
+143
+00:07:12,766 --> 00:07:16,833
+this user has specific, data
+that they're allowed
+
+144
+00:07:16,833 --> 00:07:20,466
+to see, maybe their own waters
+or maybe their own work.
+
+145
+00:07:20,933 --> 00:07:22,566
+In the inventory system,
+
+146
+00:07:22,566 --> 00:07:25,500
+when you have those sorts of things,
+this is a good way to go.
+
+147
+00:07:25,500 --> 00:07:28,233
+Also, authorization is very fine grained.
+
+148
+00:07:28,233 --> 00:07:34,266
+I can, depending on your architecture,
+you can pin this down to certain
+
+149
+00:07:34,266 --> 00:07:38,833
+types of data, certain rows of data
+in a database, certain documents,
+
+150
+00:07:39,866 --> 00:07:41,300
+and certain
+
+151
+00:07:41,300 --> 00:07:44,600
+functions that can be performed
+on, on the data, certain API
+
+152
+00:07:44,633 --> 00:07:47,633
+calls.
+
+153
+00:07:47,833 --> 00:07:48,200
+Okay.
+
+154
+00:07:48,200 --> 00:07:49,433
+Some of the strengths.
+
+155
+00:07:49,433 --> 00:07:52,033
+It has richer semantics than API keys.
+
+156
+00:07:52,033 --> 00:07:56,700
+As I mentioned before, a key I don't know
+who's turning the key right in the door.
+
+157
+00:07:56,733 --> 00:07:57,500
+Right.
+
+158
+00:07:57,500 --> 00:08:00,500
+With tokens, I know who the subject is,
+
+159
+00:08:00,700 --> 00:08:05,533
+what they can do when the token was given
+and how long it's given for.
+
+160
+00:08:05,533 --> 00:08:11,100
+So this really fits well into zero
+trust architectures as far as time
+
+161
+00:08:11,100 --> 00:08:14,100
+based access is is critical for that.
+
+162
+00:08:14,900 --> 00:08:17,033
+They're typically short lived by design.
+
+163
+00:08:17,033 --> 00:08:20,600
+We're talking
+maybe a half hour, maybe 15 minutes,
+
+164
+00:08:21,000 --> 00:08:23,733
+maybe it's a one time shot.
+
+165
+00:08:23,733 --> 00:08:23,966
+Right?
+
+166
+00:08:23,966 --> 00:08:26,200
+There's lots of different options
+for this.
+
+167
+00:08:26,200 --> 00:08:29,866
+A lot of times
+people will go send out tokens,
+
+168
+00:08:30,133 --> 00:08:34,633
+they'll they'll want a token that lasts,
+you know, 3 or 4 days or whatever.
+
+169
+00:08:34,900 --> 00:08:38,866
+It all depends on what your application is
+and how secure you want your system.
+
+170
+00:08:40,166 --> 00:08:42,500
+And the tokens are typically issued
+
+171
+00:08:42,500 --> 00:08:46,433
+centrally and consumed by lots of, 
+lots of different servers.
+
+172
+00:08:46,433 --> 00:08:47,733
+So I typically will have.
+
+173
+00:08:47,733 --> 00:08:51,766
+And I'll authorization service
+that is generating these tokens.
+
+174
+00:08:52,100 --> 00:08:55,100
+And then also checking against them.
+
+175
+00:08:55,966 --> 00:09:00,266
+Hey, here's some of the, the risks,
+and some good practices.
+
+176
+00:09:00,633 --> 00:09:02,100
+Bearer tokens.
+
+177
+00:09:02,100 --> 00:09:05,166
+Whoever has it can use it.
+
+178
+00:09:05,333 --> 00:09:07,400
+So that is another issue, right?
+
+179
+00:09:07,400 --> 00:09:11,233
+If you're not keeping, track,
+but because,
+
+180
+00:09:11,233 --> 00:09:17,500
+they're time bound, you know,
+you're not going to have
+
+181
+00:09:17,500 --> 00:09:22,700
+that key out there for a long time,
+but you have to decide lifetime choices.
+
+182
+00:09:22,700 --> 00:09:23,833
+How long are they going to last?
+
+183
+00:09:23,833 --> 00:09:26,366
+If it's too long,
+then you give access longer.
+
+184
+00:09:26,366 --> 00:09:30,200
+If it's too short, you're
+spending too much time authorizing over
+
+185
+00:09:30,200 --> 00:09:34,266
+and over again, by hitting the OAuth
+server and, and all this stuff.
+
+186
+00:09:34,266 --> 00:09:37,800
+Some good practices
+keep the Tor token short lived.
+
+187
+00:09:37,800 --> 00:09:43,633
+You have to define what short lived is,
+use scopes claims for lease privileges,
+
+188
+00:09:44,000 --> 00:09:48,066
+and then validate the issuer,
+the audience expiry and signature,
+
+189
+00:09:48,366 --> 00:09:51,900
+and then protect signing keys
+and rotate them regularly
+
+190
+00:09:52,100 --> 00:09:57,100
+because you're going to sign these tokens
+and make sure that,
+
+191
+00:09:57,100 --> 00:10:00,966
+that no one can just generate
+these tokens, willy nilly.
+
+192
+00:10:02,033 --> 00:10:02,533
+Okay.
+
+193
+00:10:02,533 --> 00:10:06,066
+Because that is another concern
+if you don't rotate your signing keys,
+
+194
+00:10:06,266 --> 00:10:10,333
+if someone could figure that out,
+they can start issuing their own keys and
+
+195
+00:10:10,333 --> 00:10:14,933
+and spoofing you and becoming, you,
+very easily, very quickly.
+
+196
+00:10:16,766 --> 00:10:18,966
+Okay, so here's the high level flow.
+
+197
+00:10:18,966 --> 00:10:24,033
+A user will log in and, and access,
+with an access request,
+
+198
+00:10:24,533 --> 00:10:27,233
+and then an authorization
+request comes out
+
+199
+00:10:27,233 --> 00:10:30,233
+to an authorization server, server.
+
+200
+00:10:30,333 --> 00:10:33,333
+It will send back an access token.
+
+201
+00:10:33,733 --> 00:10:36,633
+Then the client application will then send
+
+202
+00:10:36,633 --> 00:10:40,333
+that access token in, through the bearer.
+
+203
+00:10:40,800 --> 00:10:43,566
+It typically
+that's in the header of, of your,
+
+204
+00:10:43,566 --> 00:10:46,733
+https call.
+
+205
+00:10:47,233 --> 00:10:52,466
+And then I'm going to go and 
+check that against the resource server.
+
+206
+00:10:52,733 --> 00:10:56,800
+And if the token's good
+then I can go ahead and give the response
+
+207
+00:10:56,800 --> 00:11:00,533
+back or, or run the application,
+whatever the case may be.
+
+208
+00:11:01,466 --> 00:11:04,166
+So a little more than before.
+
+209
+00:11:04,166 --> 00:11:04,433
+Right.
+
+210
+00:11:04,433 --> 00:11:07,933
+Because I'm passing the token back
+and then sending the token
+
+211
+00:11:07,933 --> 00:11:11,133
+in where before I get a key,
+I just boom, get the key.
+
+212
+00:11:11,133 --> 00:11:14,266
+So you can see there's
+a little bit of overhead involved here
+
+213
+00:11:14,266 --> 00:11:15,333
+that you have to deal with.
+
+214
+00:11:16,966 --> 00:11:17,533
+Okay.
+
+215
+00:11:17,533 --> 00:11:19,333
+Let's talk about certificates.
+
+216
+00:11:19,333 --> 00:11:21,800
+So the concept here is
+that I've got a certificate.
+
+217
+00:11:21,800 --> 00:11:24,733
+It's digitally signed document.
+
+218
+00:11:24,733 --> 00:11:29,533
+It's it's tied with a bind public key
+and an identity.
+
+219
+00:11:30,100 --> 00:11:34,933
+So, typically in the identity, it's
+not just the identity of the person,
+
+220
+00:11:34,933 --> 00:11:40,233
+but probably the host, the,
+the host that they, are accessing it
+
+221
+00:11:40,233 --> 00:11:42,166
+through an organization,
+
+222
+00:11:42,166 --> 00:11:45,833
+a service, whatever the case may be,
+it has all that identity built in.
+
+223
+00:11:46,366 --> 00:11:49,533
+It's issued
+and signed by a certificate authority.
+
+224
+00:11:49,733 --> 00:11:52,966
+This is someone outside of both the,
+
+225
+00:11:53,300 --> 00:11:58,666
+authority, service that you have
+and the client stuff.
+
+226
+00:11:58,700 --> 00:12:02,666
+This is a third party that's saying, hey,
+I'm going to issue these certificates.
+
+227
+00:12:03,266 --> 00:12:06,200
+And and so both people, our game,
+
+228
+00:12:06,200 --> 00:12:10,433
+that certificate from me,
+right, is typically used in a https,
+
+229
+00:12:11,433 --> 00:12:13,300
+server certificates,
+
+230
+00:12:13,300 --> 00:12:16,300
+mutual TLS client server certs,
+
+231
+00:12:16,666 --> 00:12:19,266
+and it works at the transport layer.
+
+232
+00:12:19,266 --> 00:12:22,100
+So not at the application layer.
+All right.
+
+233
+00:12:22,100 --> 00:12:26,866
+So it's I'm going to encrypt data
+going across my transport layer.
+
+234
+00:12:27,166 --> 00:12:30,900
+So I'm going to have that concept
+of that CERT certificate there.
+
+235
+00:12:31,433 --> 00:12:32,033
+Right.
+
+236
+00:12:32,033 --> 00:12:36,166
+The idea here is that
+if you're given a public key
+
+237
+00:12:36,166 --> 00:12:39,166
+with the right identity,
+you're able to decrypt
+
+238
+00:12:39,200 --> 00:12:43,166
+and get access to the data
+that I'm needing at the transport layer.
+
+239
+00:12:44,533 --> 00:12:45,266
+Right?
+
+240
+00:12:45,266 --> 00:12:48,733
+Typically it's used to, 
+prove server identity.
+
+241
+00:12:49,133 --> 00:12:52,466
+Ever for example, both
+
+242
+00:12:52,466 --> 00:12:56,500
+software server
+and also hardware servers as well.
+
+243
+00:12:56,500 --> 00:12:57,266
+We see that a lot.
+
+244
+00:12:57,266 --> 00:13:01,700
+It it's used also to encrypt
+traffic between client and server,
+
+245
+00:13:02,233 --> 00:13:05,833
+authenticate services to each other.
+
+246
+00:13:05,833 --> 00:13:08,500
+So, I can authenticate.
+
+247
+00:13:08,500 --> 00:13:12,200
+You're a service or a server
+and you're a server
+
+248
+00:13:12,200 --> 00:13:14,866
+and you know about each other,
+you're using a third parties.
+
+249
+00:13:14,866 --> 00:13:16,266
+Say, I know about both of you.
+
+250
+00:13:16,266 --> 00:13:20,000
+You two can talk to each other
+where before it was kind of one way.
+
+251
+00:13:20,300 --> 00:13:21,533
+I want to talk to you.
+
+252
+00:13:21,533 --> 00:13:24,533
+And you go, oh, I know who you are, but
+
+253
+00:13:24,800 --> 00:13:28,266
+what if the client needs to know that I'm
+actually talking to the right thing?
+
+254
+00:13:29,400 --> 00:13:31,733
+So you don't want someone to spoof
+you there?
+
+255
+00:13:31,733 --> 00:13:36,233
+So it's, it's
+a, it's a very common pattern
+
+256
+00:13:36,233 --> 00:13:40,600
+that you see in high secure and server
+to server, types of communications.
+
+257
+00:13:40,733 --> 00:13:41,766
+Right.
+
+258
+00:13:41,766 --> 00:13:45,433
+It's very strong,
+well-understood cryptography.
+
+259
+00:13:45,433 --> 00:13:48,200
+It's independent application protocol.
+
+260
+00:13:48,200 --> 00:13:51,800
+It scales with automated cert management.
+
+261
+00:13:52,200 --> 00:13:54,900
+It doesn't scale well, is automated
+
+262
+00:13:54,900 --> 00:13:58,100
+because you're issuing all these, 
+certifications.
+
+263
+00:13:58,100 --> 00:13:58,900
+Right?
+
+264
+00:13:58,900 --> 00:14:04,666
+It's it's used in almost every public
+server out there that uses agency types.
+
+265
+00:14:04,666 --> 00:14:07,833
+I have to have a certain cert, cert
+
+266
+00:14:07,833 --> 00:14:10,833
+in order to, run in that protocol.
+
+267
+00:14:10,900 --> 00:14:15,300
+So and that's typically, 
+creating certs through, a third party,
+
+268
+00:14:15,300 --> 00:14:18,300
+certification, service.
+
+269
+00:14:19,600 --> 00:14:20,300
+Okay.
+
+270
+00:14:20,300 --> 00:14:22,233
+Here's some operational concerns.
+
+271
+00:14:22,233 --> 00:14:26,300
+Insurance and renewal
+and revocation, can be difficult.
+
+272
+00:14:26,300 --> 00:14:28,600
+And key rotation is another thing.
+
+273
+00:14:28,600 --> 00:14:31,466
+I've got to protect the private
+keys that are generated.
+
+274
+00:14:32,600 --> 00:14:33,800
+I also have to make sure
+
+275
+00:14:33,800 --> 00:14:37,033
+I understand the TLS configuration
+and versions,
+
+276
+00:14:37,533 --> 00:14:41,666
+and ciphers and all that stuff,
+and make sure that I have
+
+277
+00:14:41,666 --> 00:14:45,966
+correct validation of those certs
+as, as I'm coming through.
+
+278
+00:14:45,966 --> 00:14:46,200
+Right.
+
+279
+00:14:46,200 --> 00:14:51,200
+So those are some things you build in
+more operational, capacity
+
+280
+00:14:51,200 --> 00:14:54,200
+to do that in your services that you have.
+
+281
+00:14:55,400 --> 00:14:55,700
+All right.
+
+282
+00:14:55,700 --> 00:14:57,166
+So it kind of works like this.
+
+283
+00:14:57,166 --> 00:15:00,900
+This is a typical TLS handshake.
+
+284
+00:15:01,333 --> 00:15:04,333
+A client says hello to the server.
+
+285
+00:15:04,533 --> 00:15:07,533
+The server?
+
+286
+00:15:07,533 --> 00:15:10,300
+The server sends back a hello cert.
+
+287
+00:15:10,300 --> 00:15:13,300
+It validates the certificate.
+
+288
+00:15:13,333 --> 00:15:16,333
+And then it says, okay, you are who you
+
+289
+00:15:16,400 --> 00:15:20,600
+who I think you are,
+and then will exchange keys and secrets,
+
+290
+00:15:21,166 --> 00:15:24,733
+and then it will now, encrypt
+on the server side.
+
+291
+00:15:25,566 --> 00:15:30,700
+The, the data that gets sent over
+the application data is encoded
+
+292
+00:15:31,000 --> 00:15:34,533
+and the application data
+is encrypted coming back.
+
+293
+00:15:35,300 --> 00:15:38,333
+So a lot of handshakes
+going on there, but,
+
+294
+00:15:38,400 --> 00:15:41,900
+it is much more secure
+than the other, methods that we use.
+
+295
+00:15:42,300 --> 00:15:44,600
+But more operational overhead.
+
+296
+00:15:46,400 --> 00:15:46,700
+Okay.
+
+297
+00:15:46,700 --> 00:15:48,366
+So let's compare the differences.
+
+298
+00:15:48,366 --> 00:15:51,600
+API keys are simple client identification.
+
+299
+00:15:51,900 --> 00:15:54,500
+Long live course scope tokens.
+
+300
+00:15:54,500 --> 00:15:58,266
+Rich claims, shorter lived central OAuth,
+
+301
+00:15:58,633 --> 00:16:03,766
+OAuth two or oh IDC architectures,
+and then certificates are
+
+302
+00:16:03,766 --> 00:16:07,400
+primarily used for secure
+channels, machine to machine identity.
+
+303
+00:16:07,700 --> 00:16:12,200
+And it's the basis for TLS and Https.
+
+304
+00:16:12,700 --> 00:16:18,033
+So the certificates you see
+primarily used for attestation and
+
+305
+00:16:18,033 --> 00:16:21,833
+also for comms at the transport layer,
+that's
+
+306
+00:16:21,833 --> 00:16:24,833
+where you primarily use them.
+
+307
+00:16:26,166 --> 00:16:26,900
+Okay.
+
+308
+00:16:26,900 --> 00:16:30,866
+Here's just another comparison table
+that you should be looking at.
+
+309
+00:16:31,433 --> 00:16:35,066
+The primary purpose, 
+typical long, lifetime,
+
+310
+00:16:35,600 --> 00:16:38,733
+long lived for API
+keys, short lived for tokens,
+
+311
+00:16:39,000 --> 00:16:43,200
+medium days or months for certs,
+and then operational complexity.
+
+312
+00:16:43,200 --> 00:16:48,500
+The lowest is API keys, medium for tokens
+and then higher for certificates.
+
+313
+00:16:48,866 --> 00:16:50,833
+But certificates are more secure.
+
+314
+00:16:54,166 --> 00:16:54,500
+All right.
+
+315
+00:16:54,500 --> 00:16:58,500
+So when you choose what this is
+where you've got to use,
+
+316
+00:16:58,866 --> 00:17:03,800
+some intuition
+and you've got to, play the trade offs.
+
+317
+00:17:03,800 --> 00:17:08,033
+How much is going to cost in CPU cycles
+and your time.
+
+318
+00:17:08,533 --> 00:17:11,133
+Right. Who's calling? What services?
+
+319
+00:17:11,133 --> 00:17:16,600
+You could have, you could use all three
+in the same architecture.
+
+320
+00:17:16,666 --> 00:17:18,366
+I've seen it before.
+
+321
+00:17:18,366 --> 00:17:20,433
+So you you got to look at that.
+
+322
+00:17:20,433 --> 00:17:23,433
+Do you have the ability
+to rotate credentials as you need to?
+
+323
+00:17:23,766 --> 00:17:27,900
+You know, typically what we see in this
+pattern is certs are used for transport.
+
+324
+00:17:27,900 --> 00:17:32,566
+Layer tokens are used for use your client
+identity and authorization.
+
+325
+00:17:32,866 --> 00:17:36,666
+And API keys are typically used
+for simple third party integrations.
+
+326
+00:17:36,933 --> 00:17:40,300
+But we're seeing more organizations
+kind of move away from that even
+
+327
+00:17:40,300 --> 00:17:43,866
+because they're not as secure,
+and they'll move into tokens instead.
+
+328
+00:17:43,866 --> 00:17:44,266
+For that.
+
+329
+00:17:46,900 --> 00:17:49,900
+Okay, what if an API token is stolen?
+
+330
+00:17:50,033 --> 00:17:53,000
+An attacker can call any API
+
+331
+00:17:53,000 --> 00:17:56,000
+they want and tell us is revoked, right?
+
+332
+00:17:56,100 --> 00:18:00,866
+If a token is stolen, the attacker can act
+as a user client until expiry.
+
+333
+00:18:00,866 --> 00:18:04,266
+So that's where you want
+a shorter, lifetime on those.
+
+334
+00:18:04,700 --> 00:18:08,233
+If a private key is stolen,
+the attacker can impersonate a service
+
+335
+00:18:08,233 --> 00:18:10,566
+and decrypt track traffic all day long.
+
+336
+00:18:10,566 --> 00:18:11,833
+All right.
+
+337
+00:18:11,833 --> 00:18:14,833
+And that's one of the biggest concerns
+with, like, quantum computing.
+
+338
+00:18:14,900 --> 00:18:18,466
+They can they can hack those private keys
+that in theory,
+
+339
+00:18:18,466 --> 00:18:20,600
+that's that's what's going to happen.
+All right.
+
+340
+00:18:20,600 --> 00:18:23,800
+Some things you can do to mitigate
+all of these shorter
+
+341
+00:18:23,800 --> 00:18:27,500
+lifetimes, rotate
+your keys and revocation.
+
+342
+00:18:27,500 --> 00:18:32,000
+So if someone's outside of,
+the time frame revoke their key,
+
+343
+00:18:33,066 --> 00:18:35,633
+blow it
+away, don't let it be there anymore.
+
+344
+00:18:35,633 --> 00:18:39,233
+And then make sure that you're
+securely storing these API keys
+
+345
+00:18:39,566 --> 00:18:42,566
+and that you're monitoring, 
+what's going on?
+
+346
+00:18:43,533 --> 00:18:45,066
+Okay. That's it.
+
+347
+00:18:45,066 --> 00:18:49,266
+That's a lot to unpack
+in this one lecture, but,
+
+348
+00:18:49,266 --> 00:18:50,566
+now you've got the information
+
+349
+00:18:50,566 --> 00:18:53,800
+you need to make good design decisions
+for your architecture.

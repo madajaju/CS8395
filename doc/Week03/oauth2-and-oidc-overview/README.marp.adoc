@@ -6,6 +6,8 @@
 
 == OAuth2 and OIDC Overview
 
+Video:  https://youtu.be/L6UrFWzA8rc
+
 * Focus: what problems OAuth2/OIDC solve, main roles and flows
 * Theme: delegated access and identity in modern systems
 

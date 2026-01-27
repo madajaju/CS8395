@@ -1,0 +1,1696 @@
+﻿1
+00:00:00,000 --> 00:00:00,300
+Okay.
+
+2
+00:00:00,300 --> 00:00:03,300
+We're going to talk about
+er strategies and contracts.
+
+3
+00:00:03,566 --> 00:00:08,233
+That we're going to focus on how services
+can represent and communicate failures.
+
+4
+00:00:08,833 --> 00:00:13,600
+Between each other or even between server
+and a client or user.
+
+5
+00:00:13,600 --> 00:00:14,200
+Right.
+
+6
+00:00:14,200 --> 00:00:17,833
+So by the end you should be able
+to explain what is an ER contract.
+
+7
+00:00:18,266 --> 00:00:21,966
+And you should be able to recognize
+common error handling techniques
+
+8
+00:00:22,300 --> 00:00:26,300
+to distinguish between client server
+and transient failures,
+
+9
+00:00:26,633 --> 00:00:30,000
+and then map errors to appropriate Http
+status codes.
+
+10
+00:00:30,400 --> 00:00:30,633
+Right.
+
+11
+00:00:30,633 --> 00:00:34,233
+And then identify any risk and trade offs
+in your ER strategies,
+
+12
+00:00:34,233 --> 00:00:37,866
+which we always try and do when we're
+architecting these types of systems.
+
+13
+00:00:39,366 --> 00:00:39,866
+Okay.
+
+14
+00:00:39,866 --> 00:00:42,366
+Why do we need an er strategy.
+
+15
+00:00:42,366 --> 00:00:44,833
+Why not just use a try catch block.
+
+16
+00:00:44,833 --> 00:00:46,500
+Right. And and catch errors on. Yeah.
+
+17
+00:00:46,500 --> 00:00:50,933
+Well that's an interesting question
+because you're dealing with microservices.
+
+18
+00:00:51,100 --> 00:00:54,300
+You've got things in the middle
+on one thing in the middle is called that
+
+19
+00:00:54,300 --> 00:00:55,600
+network.
+
+20
+00:00:55,600 --> 00:00:59,866
+And the network has a tendency
+to drop or delay or reorder requests.
+
+21
+00:00:59,866 --> 00:01:01,833
+The requests go in in different orders.
+
+22
+00:01:03,133 --> 00:01:04,466
+They can time out.
+
+23
+00:01:04,466 --> 00:01:08,300
+There's a whole bunch of things
+that can go wrong in that API call
+
+24
+00:01:08,300 --> 00:01:12,600
+where if it's all in a monolithic,
+you don't run into those issues
+
+25
+00:01:13,166 --> 00:01:16,666
+while you're all in the same memory space,
+you're all in the same CPU.
+
+26
+00:01:17,533 --> 00:01:20,866
+You're not you don't have drop and delay
+and reorder requests problems.
+
+27
+00:01:20,933 --> 00:01:24,066
+Right, are very, very rare
+unless you're doing like
+
+28
+00:01:24,066 --> 00:01:27,233
+super API type programing,
+but which we're not.
+
+29
+00:01:27,233 --> 00:01:27,933
+Do it right.
+
+30
+00:01:27,933 --> 00:01:30,666
+But with these microservices
+you have a network in the middle.
+
+31
+00:01:30,666 --> 00:01:34,633
+So we got a we got to deal with
+how do I handle er situations.
+
+32
+00:01:35,100 --> 00:01:35,700
+Right.
+
+33
+00:01:35,700 --> 00:01:36,933
+And they're inconsistent.
+
+34
+00:01:36,933 --> 00:01:38,966
+Everything's very asynchronous.
+
+35
+00:01:38,966 --> 00:01:42,233
+So I got to deal with this
+in a different way.
+
+36
+00:01:42,733 --> 00:01:44,300
+It's very hard to debug as well.
+
+37
+00:01:44,300 --> 00:01:47,300
+So I need to make sure I'm
+giving enough information.
+
+38
+00:01:47,633 --> 00:01:50,066
+If I have two microservices
+talking to each other
+
+39
+00:01:50,066 --> 00:01:53,066
+and there's an error,
+I need to know where the error is at
+
+40
+00:01:53,266 --> 00:01:54,666
+and and how to deal with it.
+
+41
+00:01:55,900 --> 00:01:56,466
+Okay.
+
+42
+00:01:56,466 --> 00:01:58,133
+So that's what an error contract is.
+
+43
+00:01:58,133 --> 00:01:59,733
+It's just a shared agreement
+
+44
+00:01:59,733 --> 00:02:03,433
+on how errors are classified,
+represented and communicated.
+
+45
+00:02:04,433 --> 00:02:07,633
+It covers Http codes for Rest
+
+46
+00:02:08,000 --> 00:02:13,166
+and er body
+structure, and client expectations on.
+
+47
+00:02:13,166 --> 00:02:16,166
+And whereas I'm going to retry
+fix it or escalate it.
+
+48
+00:02:16,233 --> 00:02:16,966
+Right.
+
+49
+00:02:16,966 --> 00:02:20,266
+The goal here is to have predictable
+actionable failures.
+
+50
+00:02:20,266 --> 00:02:25,133
+When something bad happens I know what
+to do instead of just guessing.
+
+51
+00:02:25,133 --> 00:02:27,433
+Right. So it's,
+
+52
+00:02:27,433 --> 00:02:31,066
+it's kind of a way to do
+try catch block across,
+
+53
+00:02:32,233 --> 00:02:36,466
+across a network
+for no better way, way to put it.
+
+54
+00:02:36,466 --> 00:02:39,466
+It's a way of handling
+the errors across the network.
+
+55
+00:02:41,200 --> 00:02:41,566
+Okay.
+
+56
+00:02:41,566 --> 00:02:44,366
+So here's some categories
+and a very high level.
+
+57
+00:02:44,366 --> 00:02:47,600
+And Http support
+says I've got client errors
+
+58
+00:02:47,966 --> 00:02:52,766
+where the client is sent me bad input
+or it's an invalid state transition.
+
+59
+00:02:52,933 --> 00:02:54,033
+It's missing data.
+
+60
+00:02:54,033 --> 00:02:57,033
+Whatever the case may be,
+that means it's the caller's fault.
+
+61
+00:02:57,433 --> 00:03:00,433
+We're going to blame it on the caller
+on the server errors.
+
+62
+00:03:00,433 --> 00:03:02,033
+That's our fault, right?
+
+63
+00:03:02,033 --> 00:03:06,066
+I got bugs or misconfiguration
+or unhandled exceptions.
+
+64
+00:03:06,066 --> 00:03:07,500
+Unhandled situations.
+
+65
+00:03:07,500 --> 00:03:11,766
+I didn't know about, and then I got
+transient or environmental errors.
+
+66
+00:03:11,766 --> 00:03:13,033
+These are network timeouts,
+
+67
+00:03:13,033 --> 00:03:17,033
+partial outages, overloaded dependencies,
+whatever the case may be.
+
+68
+00:03:17,033 --> 00:03:20,033
+So those are the three types transient
+
+69
+00:03:20,133 --> 00:03:24,033
+server client transient
+or environmental network problems.
+
+70
+00:03:24,033 --> 00:03:27,600
+Right. Server.
+My server code failed client.
+
+71
+00:03:27,600 --> 00:03:31,133
+He didn't pass in the right stuff
+or you passed in the wrong stuff.
+
+72
+00:03:31,233 --> 00:03:33,100
+Whatever the case may be.
+
+73
+00:03:33,100 --> 00:03:35,500
+Okay, client errors.
+
+74
+00:03:35,500 --> 00:03:37,366
+The callers always have fault.
+
+75
+00:03:37,366 --> 00:03:38,900
+Not usually. Oh,
+
+76
+00:03:40,100 --> 00:03:41,166
+they're always at fault.
+
+77
+00:03:41,166 --> 00:03:44,533
+It's bad input or bad,
+invalid state training.
+
+78
+00:03:44,833 --> 00:03:47,233
+Change.
+
+79
+00:03:47,233 --> 00:03:48,566
+Whatever the case may be
+
+80
+00:03:48,566 --> 00:03:51,766
+on the server side,
+they aren't transient errors.
+
+81
+00:03:51,766 --> 00:03:55,400
+The server
+errors, need to be fixed at the service.
+
+82
+00:03:56,100 --> 00:03:57,766
+Transient dependency errors.
+
+83
+00:03:57,766 --> 00:04:00,666
+Maybe I'm going to retry
+or I'm going to back off,
+
+84
+00:04:00,666 --> 00:04:03,400
+or I have got limits
+or fallback situation.
+
+85
+00:04:03,400 --> 00:04:07,266
+So that's how I handle server
+and transient errors on the client side.
+
+86
+00:04:07,266 --> 00:04:10,266
+If I'm sending in the wrong thing,
+
+87
+00:04:10,333 --> 00:04:13,500
+then I don't want to retry
+if I'm sending in the wrong thing.
+
+88
+00:04:14,333 --> 00:04:14,666
+All right.
+
+89
+00:04:14,666 --> 00:04:17,266
+So client errors
+typically you're not going to retry on
+
+90
+00:04:17,266 --> 00:04:18,933
+it means you've done something wrong.
+
+91
+00:04:18,933 --> 00:04:21,933
+You got to rewrite your code.
+
+92
+00:04:22,700 --> 00:04:23,666
+Okay.
+
+93
+00:04:23,666 --> 00:04:27,533
+There are status codes that had FTP
+
+94
+00:04:27,600 --> 00:04:31,066
+will throw
+all the 200 codes are success codes.
+
+95
+00:04:31,766 --> 00:04:34,966
+All the 400 codes are client error codes.
+
+96
+00:04:35,366 --> 00:04:38,033
+And the 500 codes are server errors.
+
+97
+00:04:38,033 --> 00:04:42,733
+So 200 success,
+400 client side 500 server errors.
+
+98
+00:04:42,900 --> 00:04:43,733
+Right.
+
+99
+00:04:43,733 --> 00:04:47,766
+So the clients from these numbers,
+they can infer a lot of times
+
+100
+00:04:47,766 --> 00:04:50,866
+the root cause of failure
+whether to retry,
+
+101
+00:04:50,966 --> 00:04:54,500
+whether retry may help or not
+by the 500 numbers.
+
+102
+00:04:54,733 --> 00:04:57,800
+If it's a 400 number, retrying
+probably is not going to help you
+
+103
+00:04:58,300 --> 00:04:59,433
+as it's just not right.
+
+104
+00:04:59,433 --> 00:05:02,266
+That's a client error.
+You've done something wrong.
+
+105
+00:05:03,533 --> 00:05:04,866
+It might help if
+
+106
+00:05:04,866 --> 00:05:07,866
+you've got some timing issues.
+
+107
+00:05:07,900 --> 00:05:10,900
+But, typically not right.
+
+108
+00:05:11,533 --> 00:05:15,466
+Typically you've got a client error and
+someone didn't fill out a field, right.
+
+109
+00:05:15,466 --> 00:05:18,900
+Or whatever the case may be that
+that you're sending information across.
+
+110
+00:05:21,466 --> 00:05:21,800
+Okay.
+
+111
+00:05:21,800 --> 00:05:24,800
+So here's here's a high level of some of
+
+112
+00:05:25,033 --> 00:05:28,600
+these are the majority of the codes
+that you're going to see at 200 okay.
+
+113
+00:05:28,600 --> 00:05:29,766
+Successful.
+
+114
+00:05:29,766 --> 00:05:33,033
+And the body has the result
+on whatever call you made
+
+115
+00:05:33,433 --> 00:05:37,233
+a 201 means I created something
+on the back end in the server.
+
+116
+00:05:38,033 --> 00:05:41,433
+And I'm going to often
+give back like a pointer.
+
+117
+00:05:41,833 --> 00:05:42,933
+I was calling it a pointer.
+
+118
+00:05:42,933 --> 00:05:45,933
+It's an
+ID to the resource that you just created.
+
+119
+00:05:46,533 --> 00:05:51,400
+And then a 204 is a that was success,
+but I'm not going to pass it back
+
+120
+00:05:51,400 --> 00:05:55,000
+anything because there's
+no it was fully asynchronous.
+
+121
+00:05:55,000 --> 00:05:57,633
+You're not getting any information
+back like a delete.
+
+122
+00:05:57,633 --> 00:05:58,633
+Yeah.
+
+123
+00:05:58,633 --> 00:06:01,033
+You said delete and a deleted.
+
+124
+00:06:01,033 --> 00:06:03,933
+Don't care write a 400.
+
+125
+00:06:03,933 --> 00:06:06,033
+These are client errors right.
+
+126
+00:06:06,033 --> 00:06:07,266
+It's a bad request.
+
+127
+00:06:07,266 --> 00:06:10,333
+You send in something
+basic validation failed.
+
+128
+00:06:11,300 --> 00:06:13,233
+Maybe the wrong parameter
+
+129
+00:06:13,233 --> 00:06:17,366
+or a parameter that was required
+wasn't sent in unauthorized meaning.
+
+130
+00:06:17,366 --> 00:06:20,233
+You did not have the,
+it's invalid authorization.
+
+131
+00:06:20,233 --> 00:06:24,200
+So when you're setting up your security
+and someone tries to access something
+
+132
+00:06:24,200 --> 00:06:27,200
+that's not authorized,
+you should send a 401.
+
+133
+00:06:27,733 --> 00:06:29,100
+This is important, right?
+
+134
+00:06:29,100 --> 00:06:32,533
+Because now I know on the client side
+I'm not authorized to do that.
+
+135
+00:06:32,533 --> 00:06:34,433
+I need to get authenticated.
+
+136
+00:06:34,433 --> 00:06:36,833
+So I maybe need to go back
+and authenticate.
+
+137
+00:06:36,833 --> 00:06:41,066
+There's an opportunity on the client side
+to really indicate and try again.
+
+138
+00:06:41,800 --> 00:06:44,233
+A 403 says forbidden.
+
+139
+00:06:44,233 --> 00:06:47,033
+You're authenticated
+but you're not allowed to access that.
+
+140
+00:06:47,033 --> 00:06:47,733
+Done.
+
+141
+00:06:47,733 --> 00:06:48,633
+No bueno.
+
+142
+00:06:48,633 --> 00:06:51,433
+No good right can make that happen.
+
+143
+00:06:51,433 --> 00:06:53,466
+A 404 means it's not found.
+
+144
+00:06:53,466 --> 00:06:56,600
+Whatever resource you're trying to access
+does not exist.
+
+145
+00:06:57,133 --> 00:06:58,533
+Right. So don't try it again.
+
+146
+00:06:58,533 --> 00:06:59,966
+That will be bad, right?
+
+147
+00:06:59,966 --> 00:07:03,533
+A 409 means
+that you have a current state conflict.
+
+148
+00:07:03,800 --> 00:07:07,600
+Maybe you're trying to do something
+out of order, and the server on the back
+
+149
+00:07:07,600 --> 00:07:11,333
+side says you're not allowed to
+move from state aid to state B,
+
+150
+00:07:11,566 --> 00:07:14,466
+or maybe you're coming in
+with a different version number
+
+151
+00:07:14,466 --> 00:07:17,866
+on the API call, and I can say, not good.
+
+152
+00:07:17,866 --> 00:07:20,466
+I'm not going to let that happen. Right.
+
+153
+00:07:20,466 --> 00:07:25,600
+And then there's a 422 which says, hey,
+you gave me a bunch of stuff,
+
+154
+00:07:25,600 --> 00:07:30,066
+but I didn't like, the semantics of
+of what was coming in.
+
+155
+00:07:30,066 --> 00:07:34,500
+You gave an ID, but it was just a number.
+
+156
+00:07:34,900 --> 00:07:38,333
+Amides have letters and numbers,
+so I'm going to throw a semantic invalid.
+
+157
+00:07:38,333 --> 00:07:39,733
+So for 22.
+
+158
+00:07:39,733 --> 00:07:40,300
+All right.
+
+159
+00:07:40,300 --> 00:07:43,433
+So I'm validating it. It, it you know it.
+
+160
+00:07:43,433 --> 00:07:46,933
+He had all the right parameters
+but it's not the what I expected.
+
+161
+00:07:46,933 --> 00:07:50,566
+So I'm going to send that back as a 422
+and then a 429.
+
+162
+00:07:50,566 --> 00:07:51,500
+I get this a lot.
+
+163
+00:07:51,500 --> 00:07:55,133
+If I'm uploading a lot of stuff in an API.
+
+164
+00:07:55,366 --> 00:07:58,100
+Too many request. I've hit my,
+
+165
+00:07:59,166 --> 00:07:59,833
+my window.
+
+166
+00:07:59,833 --> 00:08:01,366
+I can't go beyond that.
+
+167
+00:08:01,366 --> 00:08:03,500
+Okay. Those are the client ones.
+
+168
+00:08:03,500 --> 00:08:06,633
+500 server side internal error.
+
+169
+00:08:07,500 --> 00:08:10,100
+The server caught it completely.
+
+170
+00:08:10,100 --> 00:08:12,466
+We broke. That's the generic we broke.
+
+171
+00:08:12,466 --> 00:08:15,466
+Typically
+you're going to see a lot of that right.
+
+172
+00:08:16,033 --> 00:08:19,333
+You may also find a bad gateway
+which is A502.
+
+173
+00:08:20,100 --> 00:08:24,266
+That means an upstream returned an invalid
+or bad response.
+
+174
+00:08:24,266 --> 00:08:28,466
+I send something back through the gateway
+and it said,
+
+175
+00:08:28,466 --> 00:08:30,100
+yeah,
+you're not really allowed to do that.
+
+176
+00:08:30,100 --> 00:08:33,100
+So that could be a bad gateway.
+
+177
+00:08:33,100 --> 00:08:35,566
+And then I could get a 503, meaning,
+
+178
+00:08:35,566 --> 00:08:38,866
+hey, the server is overloaded right now
+or it's down.
+
+179
+00:08:39,433 --> 00:08:41,766
+We want you to retry, okay?
+
+180
+00:08:41,766 --> 00:08:43,100
+Give us some time and retry.
+
+181
+00:08:43,100 --> 00:08:44,800
+Same with the 504.
+
+182
+00:08:44,800 --> 00:08:47,633
+The upstream didn't respond
+in time. Right.
+
+183
+00:08:47,633 --> 00:08:50,633
+So you know I got a gateway timeout.
+
+184
+00:08:50,633 --> 00:08:52,333
+You can go ahead and retry on that one.
+
+185
+00:08:52,333 --> 00:08:53,400
+Give it a little bit of time.
+
+186
+00:08:53,400 --> 00:08:56,500
+So those are common codes
+that you're going to see right.
+
+187
+00:08:57,000 --> 00:08:58,000
+We already talked about
+
+188
+00:08:59,433 --> 00:09:03,133
+405. And remember 400 are client errors
+
+189
+00:09:03,966 --> 00:09:06,966
+500 server errors
+
+190
+00:09:08,300 --> 00:09:09,766
+okay.
+
+191
+00:09:09,766 --> 00:09:12,500
+So remember those two treat
+
+192
+00:09:12,500 --> 00:09:16,133
+the 500 ones like I'm telling you
+there's something wrong with the server.
+
+193
+00:09:16,400 --> 00:09:17,200
+Do not.
+
+194
+00:09:17,200 --> 00:09:19,400
+And we'll talk about this later.
+Do not pass back.
+
+195
+00:09:19,400 --> 00:09:23,300
+Take, stack traces in your 500 errors
+in the body,
+
+196
+00:09:23,300 --> 00:09:25,566
+which we're going to talk about here
+in a minute.
+
+197
+00:09:25,566 --> 00:09:27,233
+Okay. I have the error codes.
+
+198
+00:09:27,233 --> 00:09:28,500
+Is that good enough?
+
+199
+00:09:28,500 --> 00:09:32,066
+Typically that's not good enough
+in order to debug what's going on.
+
+200
+00:09:32,100 --> 00:09:36,000
+But it's good enough to know
+maybe what my strategy is moving forward.
+
+201
+00:09:36,000 --> 00:09:38,466
+My fallback strategy was,
+whatever the case may be.
+
+202
+00:09:38,466 --> 00:09:41,466
+So the stable error codes
+are pretty much locked in.
+
+203
+00:09:41,633 --> 00:09:42,433
+Okay.
+
+204
+00:09:42,433 --> 00:09:46,900
+Then we want a human readable message
+that helps debuggers, that helps humans.
+
+205
+00:09:46,900 --> 00:09:47,166
+Right.
+
+206
+00:09:47,166 --> 00:09:49,333
+And some genii
+that are making these calls,
+
+207
+00:09:49,333 --> 00:09:51,833
+they can understand human language now
+
+208
+00:09:51,833 --> 00:09:55,700
+and then some details in there
+that could be here are the invalid fields.
+
+209
+00:09:56,033 --> 00:09:57,633
+Here are details.
+
+210
+00:09:57,633 --> 00:10:00,500
+And that's typically in Json
+or something like that.
+
+211
+00:10:00,500 --> 00:10:03,133
+Then there could be a correlation
+or a trace ID
+
+212
+00:10:03,133 --> 00:10:06,166
+so that the client could possibly call
+
+213
+00:10:08,166 --> 00:10:08,833
+or when you're
+
+214
+00:10:08,833 --> 00:10:13,600
+debugging this I can see which trace ID
+is, is calling on the server side,
+
+215
+00:10:13,600 --> 00:10:16,333
+maybe a session ID or whatever
+the case may be.
+
+216
+00:10:16,333 --> 00:10:19,866
+And then I could also pass
+in a retrial hint like,
+
+217
+00:10:19,866 --> 00:10:22,866
+hey, retry in five seconds type of thing.
+
+218
+00:10:24,200 --> 00:10:25,800
+The key is that whatever you do,
+
+219
+00:10:25,800 --> 00:10:30,066
+make it consistent across all the services
+so that you're not guessing.
+
+220
+00:10:30,066 --> 00:10:36,400
+Oh, when I connect to this service, it
+uses this, sort of information and when.
+
+221
+00:10:36,500 --> 00:10:37,766
+So don't do that.
+
+222
+00:10:37,766 --> 00:10:40,766
+Your error codes are going to help out
+a lot, but make sure that your other,
+
+223
+00:10:41,233 --> 00:10:45,733
+body in your, error code
+is, consistent as well.
+
+224
+00:10:46,500 --> 00:10:46,933
+Right?
+
+225
+00:10:46,933 --> 00:10:50,166
+So again, make sure that I have the status
+
+226
+00:10:50,166 --> 00:10:53,166
+in there, a structured er body.
+
+227
+00:10:53,333 --> 00:10:54,000
+Right.
+
+228
+00:10:54,000 --> 00:10:56,533
+A human readable, message.
+
+229
+00:10:56,533 --> 00:10:59,666
+And don't forget a correlation ID,
+which could be a session ID,
+
+230
+00:11:01,066 --> 00:11:02,700
+whatever it is
+
+231
+00:11:02,700 --> 00:11:05,700
+that helps you see what's going on.
+
+232
+00:11:05,800 --> 00:11:09,133
+In, on the server side,
+in the interaction with the client.
+
+233
+00:11:10,700 --> 00:11:11,533
+Okay.
+
+234
+00:11:11,533 --> 00:11:13,066
+Service to service, er, flows.
+
+235
+00:11:13,066 --> 00:11:17,233
+This is really interesting because you can
+have one service propagate errors
+
+236
+00:11:17,433 --> 00:11:21,900
+all the way up to the client or decide
+to retry and fall back on its own.
+
+237
+00:11:22,200 --> 00:11:26,833
+So if a client makes a request
+and it calls downstream to service B,
+
+238
+00:11:26,933 --> 00:11:30,133
+but I get a hey, unavailable body error
+
+239
+00:11:30,866 --> 00:11:33,866
+service, a may say I'm not going to pass
+that all the way up.
+
+240
+00:11:33,866 --> 00:11:35,500
+I'm going to try myself again.
+
+241
+00:11:35,500 --> 00:11:40,633
+So it's going to try and then if it tries
+maybe five times or ten times, then
+
+242
+00:11:40,633 --> 00:11:46,066
+it will propagate that, up to the client
+and say, hey, hey, we got issues.
+
+243
+00:11:46,066 --> 00:11:47,300
+You need to do something about.
+
+244
+00:11:48,266 --> 00:11:48,666
+So this is
+
+245
+00:11:48,666 --> 00:11:51,666
+a common service to service airflow
+that you see,
+
+246
+00:11:52,433 --> 00:11:55,333
+I remember, when you,
+
+247
+00:11:55,333 --> 00:11:58,100
+are checking for like for
+
+248
+00:11:58,100 --> 00:12:01,100
+400 errors,
+client side errors on the server side
+
+249
+00:12:01,366 --> 00:12:06,266
+that you are, validating
+input at the API boundary right up front.
+
+250
+00:12:06,300 --> 00:12:09,033
+Don't wait
+until you're halfway through something.
+
+251
+00:12:09,033 --> 00:12:12,266
+Validate everything up front
+and throw your errors early.
+
+252
+00:12:13,466 --> 00:12:16,033
+And make sure that you're not processing
+
+253
+00:12:16,033 --> 00:12:18,433
+part of it
+and you have to do a rollback, right.
+
+254
+00:12:18,433 --> 00:12:21,133
+It gives faster feedback to the user, less
+
+255
+00:12:21,133 --> 00:12:24,133
+downstream
+load, and clearer client behavior.
+
+256
+00:12:24,900 --> 00:12:27,633
+Where sometimes it may get through, know
+you want to make sure
+
+257
+00:12:27,633 --> 00:12:29,166
+you're checking all those required fields.
+
+258
+00:12:29,166 --> 00:12:32,166
+Right. From.
+
+259
+00:12:32,366 --> 00:12:35,266
+Map internal errors to a contract.
+
+260
+00:12:35,266 --> 00:12:35,533
+Right?
+
+261
+00:12:35,533 --> 00:12:37,966
+You've already established your contract,
+right?
+
+262
+00:12:37,966 --> 00:12:40,833
+You catch internal errors early,
+
+263
+00:12:40,833 --> 00:12:44,366
+classify them as client server,
+transient nap.
+
+264
+00:12:44,366 --> 00:12:45,766
+Those to the status
+
+265
+00:12:45,766 --> 00:12:49,866
+do not pass in stack traces, class names,
+or any sensitive data.
+
+266
+00:12:50,300 --> 00:12:50,900
+Right.
+
+267
+00:12:50,900 --> 00:12:54,133
+You may you may do some of this
+when you're debugging
+
+268
+00:12:54,133 --> 00:12:57,133
+because you go, hey,
+I can look in one log to see that.
+
+269
+00:12:57,133 --> 00:13:01,166
+But a lot of times you forget to take that
+stuff out and you end up with,
+
+270
+00:13:02,066 --> 00:13:05,366
+leaking your internal architecture
+up to the real world.
+
+271
+00:13:05,800 --> 00:13:08,166
+Now, hackers have a way in.
+
+272
+00:13:08,166 --> 00:13:10,400
+They can understand
+how you work on the back end better.
+
+273
+00:13:10,400 --> 00:13:13,033
+So be careful.
+Those sorts of things. Right.
+
+274
+00:13:14,666 --> 00:13:15,866
+Transient issues.
+
+275
+00:13:15,866 --> 00:13:19,266
+You want a retry strategy
+in their timeouts?
+
+276
+00:13:19,266 --> 00:13:23,333
+503 some network failures
+use exponential backoff.
+
+277
+00:13:23,833 --> 00:13:27,566
+Plus a jitter exponential backoff says,
+and I'm going to try right away
+
+278
+00:13:28,433 --> 00:13:31,033
+in maybe, second or two.
+
+279
+00:13:31,033 --> 00:13:34,133
+And then I'm going to try in four seconds,
+and then I'm going to try
+
+280
+00:13:34,133 --> 00:13:35,400
+an eight seconds.
+
+281
+00:13:35,400 --> 00:13:38,400
+Then I'm going to try in 16 seconds,
+give or take,
+
+282
+00:13:38,433 --> 00:13:42,466
+you know, a little bit, there
+and then when I hit a certain,
+
+283
+00:13:43,200 --> 00:13:46,066
+threshold that I've established
+on number of retries,
+
+284
+00:13:46,066 --> 00:13:50,666
+then I do a fail over a fallback, right?
+
+285
+00:13:51,166 --> 00:13:55,333
+Or I do a circuit break
+right where I fail fast and downstream
+
+286
+00:13:55,900 --> 00:13:59,133
+and that the downstream is unhealthy
+instead of flooding the network
+
+287
+00:13:59,133 --> 00:14:02,133
+with a whole bunch of traffic right?
+
+288
+00:14:03,400 --> 00:14:04,733
+Okay.
+
+289
+00:14:04,733 --> 00:14:07,466
+Only retry when the operation is safe
+
+290
+00:14:07,466 --> 00:14:10,466
+to repeat into potent.
+
+291
+00:14:10,600 --> 00:14:12,666
+We've talked about this before.
+
+292
+00:14:12,666 --> 00:14:15,300
+I need to make sure that if I do
+call it again,
+
+293
+00:14:15,300 --> 00:14:17,966
+that it's not going to do something bad
+on the back end.
+
+294
+00:14:17,966 --> 00:14:21,200
+Right. Explicitly designed for retries.
+
+295
+00:14:22,333 --> 00:14:22,966
+Right?
+
+296
+00:14:22,966 --> 00:14:26,066
+So make sure that you're checking
+your state on the server side.
+
+297
+00:14:26,166 --> 00:14:29,833
+If someone retry something
+like purchasing something
+
+298
+00:14:30,100 --> 00:14:33,100
+and you're failing on,
+
+299
+00:14:33,166 --> 00:14:36,000
+not on getting the money,
+but you're failing on the inventory step
+
+300
+00:14:36,000 --> 00:14:39,366
+because you already got the money, don't
+keep charging them over and over again.
+
+301
+00:14:39,366 --> 00:14:41,500
+That's a bad design, right?
+
+302
+00:14:41,500 --> 00:14:44,800
+If it's too risky to retry,
+if you can't do
+
+303
+00:14:45,000 --> 00:14:48,000
+independent updates, right.
+
+304
+00:14:48,100 --> 00:14:50,266
+So be careful. Those sorts of things.
+
+305
+00:14:50,266 --> 00:14:53,700
+All right, Mark,
+which operations can be retried.
+
+306
+00:14:54,466 --> 00:14:58,633
+In in your code
+and then that that'll help you
+
+307
+00:14:58,733 --> 00:15:01,733
+to make sure that you're not making,
+those kinds of, mistakes.
+
+308
+00:15:02,933 --> 00:15:04,266
+All right.
+
+309
+00:15:04,266 --> 00:15:07,866
+I can't emphasize enough
+using stable, documented error codes.
+
+310
+00:15:08,133 --> 00:15:13,266
+Use the Http error codes, use
+a common, detail payload
+
+311
+00:15:13,533 --> 00:15:18,166
+and error messages, human readable
+error messages, and in for observability.
+
+312
+00:15:18,166 --> 00:15:19,633
+So if I have a session ID,
+
+313
+00:15:19,633 --> 00:15:22,666
+I'm passing through this whole thing
+or whatever correlation ID,
+
+314
+00:15:23,266 --> 00:15:26,600
+make sure that those are consistent,
+then I can check on those things.
+
+315
+00:15:26,600 --> 00:15:30,833
+This would be great for monitoring tools
+like Prometheus or things like that,
+
+316
+00:15:31,200 --> 00:15:34,600
+and do not leak any internal, secrets.
+
+317
+00:15:37,133 --> 00:15:39,933
+Okay.
+
+318
+00:15:39,933 --> 00:15:43,633
+Be careful of overreliance
+on retries. Why?
+
+319
+00:15:44,266 --> 00:15:48,033
+Because you can have
+a thundering herd of outages as you
+
+320
+00:15:48,533 --> 00:15:51,966
+as you, completely a swamp.
+
+321
+00:15:51,966 --> 00:15:53,733
+The network with retries.
+
+322
+00:15:53,733 --> 00:15:55,666
+And that server is not coming back.
+
+323
+00:15:55,666 --> 00:15:56,833
+There's an error there.
+
+324
+00:15:56,833 --> 00:15:59,833
+And if you've ever tried to shut down
+a microservice,
+
+325
+00:15:59,933 --> 00:16:03,233
+a thundering herd,
+it is a nightmare, right?
+
+326
+00:16:03,600 --> 00:16:06,833
+Because, oh, all of a sudden
+I've got all these retries going on
+
+327
+00:16:06,833 --> 00:16:11,966
+and maybe I'm, I shut down a service
+and start up a new one and retry it.
+
+328
+00:16:12,300 --> 00:16:15,300
+You can get stuck in these very difficult
+loops to,
+
+329
+00:16:15,566 --> 00:16:18,666
+to shut down and stop them from happening.
+
+330
+00:16:18,666 --> 00:16:23,733
+So make sure that, you're not masking
+any deeper problems
+
+331
+00:16:23,733 --> 00:16:28,500
+on reliability on the back end
+by doing this and mitigate your,
+
+332
+00:16:29,166 --> 00:16:32,933
+retries with limits
+and back off and monitoring, techniques.
+
+333
+00:16:36,266 --> 00:16:38,166
+And I can't emphasize enough on
+
+334
+00:16:38,166 --> 00:16:41,166
+leaking your abstraction on the back side.
+
+335
+00:16:42,000 --> 00:16:45,600
+Do not return
+low level database error codes,
+
+336
+00:16:45,833 --> 00:16:49,166
+internal hostnames, stack traces.
+
+337
+00:16:50,500 --> 00:16:52,633
+It it causes a lot of problems
+
+338
+00:16:52,633 --> 00:16:55,633
+with security
+and tightly coupled internals.
+
+339
+00:16:55,866 --> 00:16:59,933
+It's hard to evolve your API, so there's
+a lot of issues involved with that.
+
+340
+00:17:00,233 --> 00:17:03,700
+Make sure you put the right abstraction
+layers as you're moving up through,
+
+341
+00:17:04,066 --> 00:17:08,033
+through things,
+and make sure that you're consistent with,
+
+342
+00:17:08,833 --> 00:17:11,800
+your details in your error
+
+343
+00:17:11,800 --> 00:17:14,800
+and make sure you're using the IR
+codes, correctly.
+
+344
+00:17:15,433 --> 00:17:18,433
+I don't overcomplicate things,
+
+345
+00:17:19,266 --> 00:17:22,600
+because that will over complicate
+your client side, whatever it is.
+
+346
+00:17:22,800 --> 00:17:23,066
+Right.
+
+347
+00:17:23,066 --> 00:17:26,800
+So keep things simple and consistent,
+
+348
+00:17:28,266 --> 00:17:29,300
+okay?
+
+349
+00:17:29,300 --> 00:17:33,500
+Putting this all together
+as a reference pattern at the boundary.
+
+350
+00:17:33,633 --> 00:17:38,566
+Make sure you validate inputs and return
+clear 400 errors
+
+351
+00:17:38,833 --> 00:17:41,700
+on failure right inside the server.
+
+352
+00:17:41,700 --> 00:17:45,266
+Classify
+your errors as server or transient
+
+353
+00:17:46,133 --> 00:17:48,733
+and and possibly client right.
+
+354
+00:17:48,733 --> 00:17:52,433
+And then map to the Http codes
+and your IR body
+
+355
+00:17:52,433 --> 00:17:55,900
+that you've already decided on
+for dependencies,
+
+356
+00:17:56,533 --> 00:17:59,533
+look at retries, fallbacks,
+and circuit breakers
+
+357
+00:18:00,000 --> 00:18:02,700
+and then only where it's safe
+
+358
+00:18:02,700 --> 00:18:05,700
+and use it intentionally on that retry.
+
+359
+00:18:05,766 --> 00:18:06,066
+Right.
+
+360
+00:18:06,066 --> 00:18:09,566
+So make sure that it's safe
+to retry an action.
+
+361
+00:18:09,566 --> 00:18:10,300
+Right.
+
+362
+00:18:10,300 --> 00:18:14,600
+And then for observability
+and debug ability, use correlation IDs.
+
+363
+00:18:14,733 --> 00:18:17,966
+So if I have a flow
+through a several microservices
+
+364
+00:18:17,966 --> 00:18:19,666
+I have the same correlation ID.
+
+365
+00:18:19,666 --> 00:18:21,733
+I can see what's going on,
+
+366
+00:18:21,733 --> 00:18:24,566
+with other tools that are out there
+to help you debug things.
+
+367
+00:18:26,400 --> 00:18:26,766
+Okay.
+
+368
+00:18:26,766 --> 00:18:28,033
+That's it.
+
+369
+00:18:28,033 --> 00:18:31,033
+There's a lot there's a lot to do with,
+
+370
+00:18:31,800 --> 00:18:34,800
+error
+handling in microservice architectures.
+
+371
+00:18:35,200 --> 00:18:38,900
+But if you do it right, it makes it much
+easier if you're consistent.
+
+372
+00:18:39,166 --> 00:18:42,166
+So go out there and architect
+a really good solution,
+
+373
+00:18:42,166 --> 00:18:45,333
+spend some time
+coming up with those, document them
+
+374
+00:18:45,633 --> 00:18:49,600
+so that you can easily, work
+through your debugging cycle.
+
+375
+00:18:49,633 --> 00:18:49,933
+In this.

@@ -6,6 +6,8 @@
 
 == Cookies, Sessions, and CSRF
 
+Video: https://youtu.be/0WWW9REc_q8
+
 * Focus: how web apps keep user state, and how CSRF abuses that model
 * Theme: identity, sessions, and secure interactions on the web
 

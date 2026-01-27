@@ -1,5 +1,7 @@
 # OAuth2 and OIDC Overview
 
+Video: https://youtu.be/L6UrFWzA8rc
+
 **Purpose:** Introduce OAuth 2.0 and OpenID Connect (OIDC) at an architectural level: what problems they solve, the main roles and flows, and where they fit into modern identity and session architectures.
 
 **Outcomes**

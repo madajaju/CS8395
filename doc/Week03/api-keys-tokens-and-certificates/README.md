@@ -1,5 +1,7 @@
 # API Keys, Tokens, and Certificates
 
+Video: https://youtu.be/zJHqFYMYEjA
+
 **Purpose:** Introduce common mechanisms for authenticating and securing communication between services, and how they fit into cloud/distributed architectures.
 
 **Outcomes**

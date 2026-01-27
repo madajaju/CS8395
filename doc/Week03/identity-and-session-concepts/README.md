@@ -1,5 +1,7 @@
 # Identity and Session Concepts
 
+Video: https://youtu.be/bwan-Txb8FU
+
 **Purpose:** Introduce core concepts of identity, authentication, and sessions in web and distributed systems, and how they underpin the rest of the week’s topics.
 
 **Outcomes**

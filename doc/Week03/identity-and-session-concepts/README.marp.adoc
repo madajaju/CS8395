@@ -6,6 +6,8 @@
 
 == Identity and Session Concepts
 
+Video: https://youtu.be/bwan-Txb8FU
+
 * Focus: identity, authentication, authorization, and sessions
 * Theme: how we know *who* is calling and how we remember them
 

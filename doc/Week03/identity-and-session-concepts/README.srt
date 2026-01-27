@@ -1,0 +1,1245 @@
+﻿1
+00:00:00,266 --> 00:00:00,600
+Okay.
+
+2
+00:00:00,600 --> 00:00:03,600
+We're going to talk about identity
+and session concepts.
+
+3
+00:00:05,066 --> 00:00:09,666
+This is, really important to understand
+when we're talking about microservice
+
+4
+00:00:09,666 --> 00:00:14,333
+architectures and also just straight up
+client, web server type, type of things.
+
+5
+00:00:14,566 --> 00:00:17,566
+But what we find in the web server client,
+
+6
+00:00:18,433 --> 00:00:21,233
+application
+applies to microservices as well.
+
+7
+00:00:21,233 --> 00:00:23,466
+So the idea here is that
+
+8
+00:00:23,466 --> 00:00:27,300
+we're going to focus on what is identity
+authentication authorization.
+
+9
+00:00:27,300 --> 00:00:28,400
+And sessions.
+
+10
+00:00:28,400 --> 00:00:33,433
+And how do we use those to identify who's
+talking to me, who's asking for things.
+
+11
+00:00:33,666 --> 00:00:36,533
+And are they authorized, to do it.
+
+12
+00:00:36,533 --> 00:00:39,466
+So that's the idea behind it, right.
+
+13
+00:00:39,466 --> 00:00:42,666
+By the end of this, you should be able
+to distinguish what identity
+
+14
+00:00:42,966 --> 00:00:48,000
+authentication and authorization is
+and identify what a session is, and
+
+15
+00:00:48,000 --> 00:00:53,133
+then differentiate between user identity
+and service side, then the etc., etc..
+
+16
+00:00:53,900 --> 00:00:54,166
+Right.
+
+17
+00:00:56,400 --> 00:00:59,800
+Identity and
+sessions matter because in modern systems
+
+18
+00:00:59,800 --> 00:01:03,466
+there's lots of lots of different users
+and devices of services.
+
+19
+00:01:03,933 --> 00:01:07,533
+I can have one microservice that's used
+by several different microservices
+
+20
+00:01:07,733 --> 00:01:10,800
+that may have differing
+authorization levels that I need,
+
+21
+00:01:11,700 --> 00:01:14,133
+you know, to manage.
+
+22
+00:01:14,133 --> 00:01:17,800
+So I could have one service service
+a that's accessing service,
+
+23
+00:01:18,566 --> 00:01:23,233
+B but can only access read things,
+it can only read things, it
+
+24
+00:01:23,233 --> 00:01:28,133
+can't update it where I can have service
+C that can read and write.
+
+25
+00:01:28,433 --> 00:01:28,600
+Right.
+
+26
+00:01:28,600 --> 00:01:31,533
+So those that
+that's a simple example. Right.
+
+27
+00:01:31,533 --> 00:01:35,700
+And so those are some of the
+the things that we need to handle.
+
+28
+00:01:35,733 --> 00:01:38,733
+And then also I want the concept
+of a session.
+
+29
+00:01:38,766 --> 00:01:42,866
+Remember Http requests and Http
+servers are stateless.
+
+30
+00:01:43,333 --> 00:01:46,333
+So when I get a request in I need to know
+
+31
+00:01:46,700 --> 00:01:50,066
+the identity of the person and
+and what state things are in.
+
+32
+00:01:50,066 --> 00:01:51,500
+So we do that through
+
+33
+00:01:51,500 --> 00:01:55,600
+storing session IDs and being able to pass
+those session IDs around
+
+34
+00:01:55,933 --> 00:01:58,933
+so that I know who's calling me
+
+35
+00:01:59,666 --> 00:02:02,066
+and which transaction they're working on.
+
+36
+00:02:03,766 --> 00:02:06,433
+Okay, so identity,
+
+37
+00:02:06,433 --> 00:02:10,600
+who or what is it
+could be a user device or service.
+
+38
+00:02:10,966 --> 00:02:13,966
+It has lots of attributes
+that I can put in there.
+
+39
+00:02:13,966 --> 00:02:17,600
+Authentication is
+you prove to me who you are.
+
+40
+00:02:17,833 --> 00:02:19,666
+You proved to me your identity.
+
+41
+00:02:19,666 --> 00:02:23,600
+I can do this with passwords,
+tokens, biometrics, whatever,
+
+42
+00:02:23,633 --> 00:02:25,233
+whatever the case may be.
+
+43
+00:02:25,233 --> 00:02:29,700
+And then authorization
+is someone with a specific identity
+
+44
+00:02:29,700 --> 00:02:32,700
+that's been authenticated is allowed to do
+
+45
+00:02:33,200 --> 00:02:36,133
+XYZ, whatever, whatever the case may be.
+
+46
+00:02:36,133 --> 00:02:41,066
+And that could depend on attributes
+or roles or permissions or contexts.
+
+47
+00:02:41,066 --> 00:02:44,066
+There's lots of things
+I can do with authorization.
+
+48
+00:02:45,033 --> 00:02:45,600
+Okay.
+
+49
+00:02:45,600 --> 00:02:49,800
+So the easiest way to think about this
+is that a user is going to provide
+
+50
+00:02:49,800 --> 00:02:52,933
+credentials, password or single sign
+
+51
+00:02:52,933 --> 00:02:56,033
+on to identity, provider.
+
+52
+00:02:56,033 --> 00:02:57,033
+Or I'm going to look up,
+
+53
+00:02:58,466 --> 00:03:00,300
+in that identity provider.
+
+54
+00:03:00,300 --> 00:03:03,900
+That's then going to pass down
+the identity and the claims.
+
+55
+00:03:04,200 --> 00:03:04,500
+Right.
+
+56
+00:03:04,500 --> 00:03:10,033
+It's authenticated user down
+into an authorization check that then will
+
+57
+00:03:10,033 --> 00:03:13,833
+access the API and the application
+that sends it back to the user.
+
+58
+00:03:13,833 --> 00:03:16,233
+So simple.
+
+59
+00:03:16,233 --> 00:03:19,500
+The user identifies
+who they are to a pass password,
+
+60
+00:03:20,633 --> 00:03:22,500
+for authentication.
+
+61
+00:03:22,500 --> 00:03:25,933
+If they authenticate correctly
+I pass that down to an authorization
+
+62
+00:03:26,200 --> 00:03:30,000
+with the identity and the claims
+and then the authorization checks. Yep.
+
+63
+00:03:30,000 --> 00:03:31,000
+They're allowed to do that.
+
+64
+00:03:31,000 --> 00:03:34,000
+And then they can go ahead
+and do whatever they want.
+
+65
+00:03:34,666 --> 00:03:39,766
+But now a session, is a link
+between the identity
+
+66
+00:03:39,900 --> 00:03:42,900
+and the series of interactions
+that they've already had over time.
+
+67
+00:03:43,166 --> 00:03:46,966
+I typically and there's a whole lecture
+on sessions that you need to go check out,
+
+68
+00:03:47,366 --> 00:03:50,366
+but I typically store those in the server.
+
+69
+00:03:50,866 --> 00:03:55,166
+In the microservice,
+the session I, ID is generated
+
+70
+00:03:55,166 --> 00:03:59,233
+from that microservice
+and it tells you in there who's logged in
+
+71
+00:04:00,300 --> 00:04:03,300
+if they're authenticated or not
+when they were authenticated,
+
+72
+00:04:03,400 --> 00:04:06,700
+and then any security context
+that they have authorization levels,
+
+73
+00:04:07,000 --> 00:04:09,000
+whatever the case may be.
+
+74
+00:04:09,000 --> 00:04:09,800
+Okay.
+
+75
+00:04:09,800 --> 00:04:13,700
+And then,
+this session is an ongoing interaction.
+
+76
+00:04:14,100 --> 00:04:18,333
+It stores the ongoing interaction
+with, the microservice
+
+77
+00:04:18,833 --> 00:04:22,900
+and that session or transaction
+that it is working on.
+
+78
+00:04:22,900 --> 00:04:24,600
+It could be time bound.
+
+79
+00:04:24,600 --> 00:04:27,733
+It includes log in time
+expiry and context,
+
+80
+00:04:28,000 --> 00:04:30,833
+and it can be revoked
+and renewed all the time.
+
+81
+00:04:30,833 --> 00:04:32,900
+So these sessions are really important.
+
+82
+00:04:32,900 --> 00:04:36,666
+If you've got a microservice architecture
+where you're dealing with transactions,
+
+83
+00:04:37,133 --> 00:04:39,866
+where a, session ID
+
+84
+00:04:39,866 --> 00:04:43,300
+can be passed
+around multiple, microservices,
+
+85
+00:04:43,533 --> 00:04:46,533
+so I can keep individual state
+of those session,
+
+86
+00:04:47,400 --> 00:04:50,300
+sessions across, the,
+
+87
+00:04:50,300 --> 00:04:53,300
+ness of microservices
+that you've established,
+
+88
+00:04:54,333 --> 00:04:54,966
+right?
+
+89
+00:04:54,966 --> 00:04:56,966
+Typical session web flow.
+
+90
+00:04:56,966 --> 00:05:00,900
+A user opens up
+a login login page, the web server,
+
+91
+00:05:01,866 --> 00:05:05,100
+validates their credentials
+that pass in their password, validates
+
+92
+00:05:05,100 --> 00:05:08,100
+their credentials, storing a session ID,
+
+93
+00:05:08,366 --> 00:05:10,800
+they can easily come back in this session.
+
+94
+00:05:10,800 --> 00:05:14,033
+Idea is stored in the browser,
+which is a client in this case.
+
+95
+00:05:14,500 --> 00:05:18,966
+And then they click profile
+and they get the right user look up.
+
+96
+00:05:19,266 --> 00:05:22,633
+On the other hand
+you know, in recent times
+
+97
+00:05:22,633 --> 00:05:25,633
+we've seen some of the big,
+
+98
+00:05:26,266 --> 00:05:27,800
+gen I, cloud service
+
+99
+00:05:27,800 --> 00:05:33,200
+providers not use session
+IDs as cookies and pass in the headers,
+
+100
+00:05:33,366 --> 00:05:37,633
+but passed in as a query
+
+101
+00:05:38,000 --> 00:05:41,000
+in the URL
+
+102
+00:05:41,300 --> 00:05:43,666
+as a query parameter.
+
+103
+00:05:43,666 --> 00:05:45,900
+Really, really bad, right?
+
+104
+00:05:45,900 --> 00:05:50,400
+Because someone can easily take
+that session ID and become somebody else.
+
+105
+00:05:50,400 --> 00:05:53,700
+Very simply,
+especially when you've got weak security.
+
+106
+00:05:53,966 --> 00:05:56,100
+This is happening.
+
+107
+00:05:56,100 --> 00:05:58,900
+It was just fixed
+in the last couple of months
+
+108
+00:05:58,900 --> 00:06:01,933
+on some of the really big cloud
+service providers that,
+
+109
+00:06:02,766 --> 00:06:04,366
+obviously
+didn't know what they were doing.
+
+110
+00:06:04,366 --> 00:06:06,466
+As as long as security goes right.
+
+111
+00:06:08,366 --> 00:06:08,833
+How do you
+
+112
+00:06:08,833 --> 00:06:13,166
+represent a session is typically a session
+ID, right, that you have,
+
+113
+00:06:13,866 --> 00:06:16,200
+that is stored on the server
+
+114
+00:06:16,200 --> 00:06:19,200
+and I can pass it through.
+
+115
+00:06:19,900 --> 00:06:22,566
+I could pass it through the calls.
+
+116
+00:06:22,566 --> 00:06:27,566
+I'm storing the session
+either in a cache or in, memory.
+
+117
+00:06:27,733 --> 00:06:32,500
+Another, concept
+is a self-contained token or JWT,
+
+118
+00:06:33,066 --> 00:06:36,966
+and the token carries identity
+claims state and things like that.
+
+119
+00:06:37,200 --> 00:06:41,766
+So this he just gets passed around
+the servers know what to do with the JWT.
+
+120
+00:06:42,833 --> 00:06:45,033
+And it can have the information in there
+
+121
+00:06:45,033 --> 00:06:48,033
+that needs to do, whatever's next.
+
+122
+00:06:48,966 --> 00:06:50,400
+Okay.
+
+123
+00:06:50,400 --> 00:06:52,200
+Session should be time bound.
+
+124
+00:06:52,200 --> 00:06:54,333
+They shouldn't last forever.
+
+125
+00:06:54,333 --> 00:06:57,333
+You should, typically, an idle
+timeout is a good way to go.
+
+126
+00:06:57,600 --> 00:06:59,933
+You could do an absolute timeout as well.
+
+127
+00:06:59,933 --> 00:07:04,000
+You could start up new sessions
+if they're asking to do something risky.
+
+128
+00:07:04,800 --> 00:07:05,200
+Like,
+
+129
+00:07:06,333 --> 00:07:08,100
+transfer money from your bank,
+
+130
+00:07:08,100 --> 00:07:12,533
+for example, or, you know,
+anything that can be, destructive.
+
+131
+00:07:12,566 --> 00:07:16,500
+You could ask for a new session, new
+authentication and all that stuff.
+
+132
+00:07:16,700 --> 00:07:17,366
+Right?
+
+133
+00:07:17,366 --> 00:07:21,466
+But if you want some apps to remember,
+then, you,
+
+134
+00:07:21,733 --> 00:07:26,766
+you know, you you need to, to, understand
+that that's risky as,
+
+135
+00:07:27,433 --> 00:07:30,100
+the longer
+the session goes out there, the,
+
+136
+00:07:30,100 --> 00:07:33,066
+larger the attack surface.
+
+137
+00:07:33,066 --> 00:07:34,500
+Right?
+
+138
+00:07:34,500 --> 00:07:38,200
+Use your identity and service
+identity are,
+
+139
+00:07:39,000 --> 00:07:43,733
+the only thing really different here
+is that the user represents a human. And,
+
+140
+00:07:44,766 --> 00:07:47,766
+and but underneath the covers, really?
+
+141
+00:07:48,666 --> 00:07:51,700
+You should be treating any client
+that comes into your thing
+
+142
+00:07:51,700 --> 00:07:54,700
+as if it's a user or another microservice.
+
+143
+00:07:54,800 --> 00:07:56,166
+All right, that's how I would.
+
+144
+00:07:56,166 --> 00:07:58,133
+That's how I would do it.
+
+145
+00:07:58,133 --> 00:08:01,400
+I would use tokens or, certifications,
+
+146
+00:08:02,033 --> 00:08:04,733
+to do this over just an API key.
+
+147
+00:08:04,733 --> 00:08:07,733
+API keys are not as secure,
+but they're easier to work with.
+
+148
+00:08:08,300 --> 00:08:12,366
+But you've got to make that decision
+inside your architecture itself.
+
+149
+00:08:12,366 --> 00:08:15,733
+Since API keys are easier to work with,
+a lot of people use those
+
+150
+00:08:15,733 --> 00:08:19,133
+for a microservice
+to microservice, communications.
+
+151
+00:08:21,233 --> 00:08:24,233
+Okay. So,
+
+152
+00:08:24,366 --> 00:08:28,200
+you can have the case
+where I've got a user identity
+
+153
+00:08:28,200 --> 00:08:32,533
+and a service identity, and I want to mesh
+the two together, meaning
+
+154
+00:08:32,700 --> 00:08:35,700
+I've got a user
+that's logged into a front end service,
+
+155
+00:08:35,700 --> 00:08:38,700
+and I want to pass on that identity
+to a backend service
+
+156
+00:08:39,433 --> 00:08:41,900
+for, like, an order entry system.
+
+157
+00:08:41,900 --> 00:08:42,666
+Right.
+
+158
+00:08:42,666 --> 00:08:47,100
+And in that case, I can combine
+the user and the service identity,
+
+159
+00:08:47,133 --> 00:08:51,666
+gather from the front server and pass it
+into the back service so that it knows,
+
+160
+00:08:51,966 --> 00:08:55,500
+hey, I know the front end
+service is asking me to do this,
+
+161
+00:08:55,500 --> 00:08:59,000
+and it's asking me to do this
+for this specific user.
+
+162
+00:08:59,000 --> 00:09:01,133
+So it's almost like a proxy.
+
+163
+00:09:01,133 --> 00:09:04,233
+Not not quite a price,
+but it's the combination of the two.
+
+164
+00:09:05,533 --> 00:09:06,400
+Right.
+
+165
+00:09:06,400 --> 00:09:09,933
+And this propagating of identity is
+is pretty common.
+
+166
+00:09:09,933 --> 00:09:14,000
+We see that in a lot of applications,
+especially in the e-commerce,
+
+167
+00:09:14,233 --> 00:09:15,366
+side of things.
+
+168
+00:09:15,366 --> 00:09:19,233
+Make sure that you are not
+passing these things in as,
+
+169
+00:09:21,800 --> 00:09:22,333
+that you're
+
+170
+00:09:22,333 --> 00:09:25,433
+using Https to pass these things in,
+and then you're
+
+171
+00:09:25,433 --> 00:09:29,700
+passing them in as headers,
+not as query parameters.
+
+172
+00:09:29,966 --> 00:09:34,066
+I, you do have some issues with Csrf
+
+173
+00:09:34,300 --> 00:09:37,266
+and, session hijacking and cookie theft.
+
+174
+00:09:37,266 --> 00:09:40,533
+Take a look at the, lecture on that.
+
+175
+00:09:40,533 --> 00:09:45,066
+There's a whole lecture on cookies
+and sessions and Csrf.
+
+176
+00:09:45,066 --> 00:09:48,066
+So take a look at those, for more details.
+
+177
+00:09:50,166 --> 00:09:51,133
+Commonly
+
+178
+00:09:51,133 --> 00:09:54,666
+we set the authorization headers
+in the bearer token.
+
+179
+00:09:55,500 --> 00:09:58,800
+That's a common way of,
+setting those tokens across
+
+180
+00:09:59,066 --> 00:10:02,200
+when you're communicating,
+between different microservices.
+
+181
+00:10:06,000 --> 00:10:06,700
+Okay.
+
+182
+00:10:06,700 --> 00:10:08,466
+Let's talk about trust boundaries.
+
+183
+00:10:08,466 --> 00:10:12,066
+So we've talked a little bit about this,
+before,
+
+184
+00:10:12,766 --> 00:10:17,566
+typically your API gateway that you have
+that gives you,
+
+185
+00:10:17,833 --> 00:10:20,833
+external clients access
+to your microservice,
+
+186
+00:10:21,600 --> 00:10:25,733
+cluster that you have, everything is going
+to come through that API gateway.
+
+187
+00:10:25,766 --> 00:10:28,733
+So that's a good trust boundary
+that you can establish
+
+188
+00:10:28,733 --> 00:10:32,966
+and you can authenticate and authorize
+everything there at that, gateway.
+
+189
+00:10:33,266 --> 00:10:34,800
+And then on the back end,
+
+190
+00:10:35,900 --> 00:10:36,700
+you can make sure
+
+191
+00:10:36,700 --> 00:10:39,700
+that the services know
+how to talk to each other,
+
+192
+00:10:39,833 --> 00:10:43,466
+and I can forward any trusted claims
+through that API gateway.
+
+193
+00:10:43,766 --> 00:10:48,400
+So that's where I would, add the user
+claims or service identity right there.
+
+194
+00:10:48,400 --> 00:10:50,300
+So now you're combining tokens
+
+195
+00:10:50,300 --> 00:10:53,300
+and the API keys together
+that are being passed down in,
+
+196
+00:10:53,533 --> 00:10:56,533
+into handling
+those internal service calls.
+
+197
+00:10:57,300 --> 00:11:00,066
+So that that's one technique you can do.
+
+198
+00:11:00,066 --> 00:11:03,033
+The only downside to
+this is if someone gets through
+
+199
+00:11:03,033 --> 00:11:05,033
+your gateway in your trust boundary,
+you know,
+
+200
+00:11:05,033 --> 00:11:09,133
+they have access to all those AI,
+microservices that you have.
+
+201
+00:11:09,733 --> 00:11:12,733
+So you got you got to be careful of that
+sort of thing.
+
+202
+00:11:12,966 --> 00:11:15,600
+Okay. Session hijacking.
+
+203
+00:11:15,600 --> 00:11:19,800
+This is when you can impersonate the user
+by stealing their session ID.
+
+204
+00:11:20,966 --> 00:11:22,933
+And the only way
+to prevent those sorts of.
+
+205
+00:11:22,933 --> 00:11:24,066
+There's lots of different techniques,
+
+206
+00:11:24,066 --> 00:11:27,366
+but one is don't make your sessions
+really last really long.
+
+207
+00:11:27,366 --> 00:11:28,100
+Right.
+
+208
+00:11:28,100 --> 00:11:31,733
+So install the, cookie or token
+out of a browser.
+
+209
+00:11:32,466 --> 00:11:34,766
+That could, that could cause a problem.
+
+210
+00:11:34,766 --> 00:11:39,800
+But another way that they can steward is
+if you're doing coms that are not Https,
+
+211
+00:11:39,800 --> 00:11:43,500
+if it's just Http,
+they can snoop on your network,
+
+212
+00:11:43,766 --> 00:11:46,300
+grab those, tokens and keys,
+and now we come.
+
+213
+00:11:46,300 --> 00:11:47,333
+You all right?
+
+214
+00:11:47,333 --> 00:11:50,100
+And that is a big mistake.
+
+215
+00:11:50,100 --> 00:11:54,566
+Another common thing that we see
+people doing is storing in their logs,
+
+216
+00:11:55,200 --> 00:11:56,400
+session IDs,
+
+217
+00:11:57,366 --> 00:11:59,600
+and, and tokens and things like that.
+
+218
+00:11:59,600 --> 00:12:03,433
+And that's another, mistake, especially
+if someone's infiltrated your system.
+
+219
+00:12:03,433 --> 00:12:06,433
+Now, you've exposed all the microservices
+as well.
+
+220
+00:12:09,200 --> 00:12:10,800
+Okay.
+
+221
+00:12:10,800 --> 00:12:15,600
+Any time that someone logs in regenerate
+a new session, ID
+
+222
+00:12:16,233 --> 00:12:19,233
+even if you are,
+
+223
+00:12:20,733 --> 00:12:24,300
+he even if you've got microservices
+that are talking to each other
+
+224
+00:12:24,300 --> 00:12:28,933
+and you want a new, don't reuse
+the same session over and over again.
+
+225
+00:12:28,933 --> 00:12:31,500
+If it's a new transaction, create
+a new session.
+
+226
+00:12:31,500 --> 00:12:34,500
+That's a
+that's easiest way to do it. Right.
+
+227
+00:12:34,500 --> 00:12:37,500
+And this way you can, segregate,
+
+228
+00:12:37,500 --> 00:12:40,500
+if someone's got access to one session,
+they're not,
+
+229
+00:12:40,800 --> 00:12:44,466
+infiltrating, all the transactions
+that you want to make, right?
+
+230
+00:12:45,133 --> 00:12:48,133
+And remember, don't store your tokens
+
+231
+00:12:48,333 --> 00:12:51,333
+where exactly where they can easily be,
+
+232
+00:12:51,900 --> 00:12:54,000
+infiltrated by an XSS attack.
+
+233
+00:12:58,800 --> 00:12:59,333
+We've already
+
+234
+00:12:59,333 --> 00:13:02,333
+talked that there's a trade off
+anytime you create a session.
+
+235
+00:13:02,466 --> 00:13:06,133
+So if I have a single session per user,
+that means that,
+
+236
+00:13:07,100 --> 00:13:08,833
+it's easy to log them out of everywhere.
+
+237
+00:13:08,833 --> 00:13:12,000
+When I just shut down that that session,
+they're easier to manage
+
+238
+00:13:12,600 --> 00:13:15,300
+when I go to multiple concurrent sessions.
+
+239
+00:13:15,300 --> 00:13:19,200
+That's, it's it's more secure, right?
+
+240
+00:13:19,200 --> 00:13:22,233
+I've got multiple,
+devices, multiple browsers.
+
+241
+00:13:22,833 --> 00:13:25,633
+But I need a way of tracking.
+
+242
+00:13:25,633 --> 00:13:28,633
+Who this person is and whether,
+
+243
+00:13:28,666 --> 00:13:31,533
+you know,
+they're going to, conflict with each other
+
+244
+00:13:31,533 --> 00:13:34,966
+and they're much more harder to revoke
+if a user saying,
+
+245
+00:13:34,966 --> 00:13:38,633
+I don't trust that user anymore, I have
+multiple sessions, I gotta go clean up.
+
+246
+00:13:38,866 --> 00:13:41,100
+So that's that's one of the downsides.
+
+247
+00:13:41,100 --> 00:13:44,866
+But multiple concurrent
+sessions are more secure in general.
+
+248
+00:13:47,233 --> 00:13:50,233
+Member sessions,
+
+249
+00:13:50,266 --> 00:13:52,466
+can be stateless or stateful.
+
+250
+00:13:52,466 --> 00:13:56,566
+Stateful means of storing session
+data on the server itself.
+
+251
+00:13:57,100 --> 00:13:59,766
+They're easily to revoke and centralize.
+
+252
+00:13:59,766 --> 00:14:01,666
+Stateless is where I it's token based.
+
+253
+00:14:01,666 --> 00:14:05,333
+And I'm storing really storing the state
+in the token itself
+
+254
+00:14:05,600 --> 00:14:08,600
+because the state is a combination
+of all the attributes.
+
+255
+00:14:09,533 --> 00:14:14,300
+And if they can scale out really easy,
+but they can be harder to revoke
+
+256
+00:14:14,300 --> 00:14:18,900
+because now I've got that JWT token
+that's, moving around,
+
+257
+00:14:20,100 --> 00:14:22,800
+my microservices
+so they can be hard to track down
+
+258
+00:14:22,800 --> 00:14:25,800
+and revoke
+because they're not centralized.
+
+259
+00:14:29,600 --> 00:14:29,933
+Okay.
+
+260
+00:14:29,933 --> 00:14:32,933
+So take a look at the other,
+
+261
+00:14:33,066 --> 00:14:35,833
+lectures on cookies and csrf
+
+262
+00:14:35,833 --> 00:14:40,600
+API tokens, inserts, OAuth two and Iirc,
+
+263
+00:14:40,633 --> 00:14:43,600
+which is our authorization
+and then er contracts.
+
+264
+00:14:43,600 --> 00:14:46,233
+So this kind of pulls
+all that stuff together.
+
+265
+00:14:46,233 --> 00:14:49,066
+Make sure you check out
+those other lectures.
+
+266
+00:14:49,066 --> 00:14:51,666
+And remember we're starting with identity
+
+267
+00:14:51,666 --> 00:14:55,166
+who authorization prove it. And
+
+268
+00:14:56,300 --> 00:14:59,700
+or authentication prove who you are
+and an authorization.
+
+269
+00:14:59,933 --> 00:15:00,833
+What can I do.
+
+270
+00:15:00,833 --> 00:15:03,966
+Once I proved to I who I am right.
+
+271
+00:15:04,466 --> 00:15:07,466
+Sessions helped me balance secure
+
+272
+00:15:07,800 --> 00:15:11,166
+and that your session architecture
+is going to help you balance security,
+
+273
+00:15:11,166 --> 00:15:15,500
+usability and scalability across
+across your microservice architectures.
