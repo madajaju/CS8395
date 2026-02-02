@@ -4,6 +4,10 @@
 :revealjs_transition: slide
 :revealjs_slideNumber: true
 :revealjs_history: true
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/Hy_9tgxmrxE
 
 == Introduction
 Adopting microservices is easy to get wrong. 
@@ -11,18 +15,17 @@ Adopting microservices is easy to get wrong.
 * **Goal:** Identify common mistakes and "wrong turns."
 * **Strategy:** Learn to recognize symptoms and course-correct.
 
-[.columns]
 == Outcomes
-[.column]
 * Define common anti-patterns.
 * Recognize symptoms.
-
-[.column]
 * Discuss fixes.
 * Understand the complexity cost.
 
+[.columns]
 == 1. The Distributed Monolith
 
+[.column]
+---
 [plantuml, distributed-monolith, svg]
 ----
 @startuml
@@ -42,10 +45,13 @@ note top of A : Must deploy A, B, and C\nat the same time
 note bottom of B : Failure in B\ncascades to all
 @enduml
 ----
-
+---
+[.column]
+---
 * **Symptom:** Tight coupling requires all services to deploy together.
 * **Failure:** One service failing crashes the entire system.
 * **Fix:** Stable API contracts, circuit breakers, and Database per Service.
+---
 
 == 2. Nano-services
 * **Symptom:** Slicing so thin that tiny logic pieces are separate services.
@@ -57,8 +63,10 @@ note bottom of B : Failure in B\ncascades to all
 * **Problem:** Changing a column requires updating multiple codebases.
 * **Fix:** Assign a single "Owner" service; others use its API.
 
+[.columns]
 == 4. Mega-Gateway
-
+[.column]
+---
 [plantuml, mega-gateway, svg]
 ----
 @startuml
@@ -82,10 +90,13 @@ note right of GW
 end note
 @enduml
 ----
+[.column]
+---
 
 * **Symptom:** All business logic lives in the API Gateway (NGINX/Kong).
 * **Problem:** Gateway becomes a bottleneck and a monolith.
 * **Fix:** Keep the gateway "dumb" (routing/SSL/rate limiting only).
+---
 
 == 5. Ignoring Observability
 * **Symptom:** You must log into 5 servers to debug one request.

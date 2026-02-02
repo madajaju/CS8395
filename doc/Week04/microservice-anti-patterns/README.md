@@ -9,6 +9,8 @@
 
 ---
 
+Video: https://youtu.be/Hy_9tgxmrxE
+
 ## 1. The Distributed Monolith
 
 This is the most common anti-pattern. You have multiple services, but they are so tightly coupled that they must all be deployed together, and a failure in one crashes the entire system.

@@ -1,6 +1,6 @@
-# Scaling Strategies
+= Scaling Strategies
 
-## 1. Motivation: Growth Breaks Assumptions
+== 1. Motivation: Growth Breaks Assumptions
 
 Systems are often designed for early traffic, then suddenly face:
 
@@ -12,16 +12,16 @@ When load increases, what used to be "fast enough" can become slow or unreliable
 
 ---
 
-## 2. Two Fundamental Directions: Vertical vs Horizontal
+== 2. Two Fundamental Directions: Vertical vs Horizontal
 
-**Vertical scaling (scale up)**  
+**Vertical scaling (scale up)**
 Add more resources to a single machine:
 
 - More CPU
 - More memory
 - Faster storage
 
-**Horizontal scaling (scale out)**  
+**Horizontal scaling (scale out)**
 Add more machines and distribute load:
 
 - More servers behind a load balancer
@@ -32,43 +32,79 @@ Tradeoff summary:
 - Vertical scaling is simpler but hits hardware limits.
 - Horizontal scaling is more flexible but increases system complexity.
 
+[plantuml]
+....
+@startuml
+  title Scaling Directions
+rectangle User
+left to right direction
+  rectangle "Vertical Scaling" as VS {
+    User --> Hardware : Add CPU, Memory
+  }
+  rectangle "Horizontal Scaling" as HS {
+    User -> LoadBalancer : Distribute Requests
+    User --> Servers : Add More Machines
+  }
+@enduml
+....
+
 ---
 
-## 3. Stateless vs Stateful Implications
+== 3. Stateless vs Stateful Implications
 
 Scaling strategies depend on whether the service is **stateless** or **stateful**.
 
 - **Stateless services** scale horizontally easily:
-  - Any node can handle any request.
-  - Use a load balancer to distribute traffic.
+- Any node can handle any request.
+- Use a load balancer to distribute traffic.
+
 - **Stateful services** are harder:
-  - Session data or local state ties requests to a specific node.
-  - Requires sticky sessions, replication, or external state stores.
+- Session data or local state ties requests to a specific node.
+- Requires sticky sessions, replication, or external state stores.
 
 This is why many architectures push state **out** of application servers and into shared systems.
 
+[plantuml]
+....
+@startuml
+  title Stateless vs Stateful
+left to right direction
+  rectangle "Stateless Services" as Stateless {
+    Stateless -> LoadBalancer : Handle Any Request
+  }
+  rectangle "Stateful Services" as Stateful {
+    Stateful -> StickySessions : Maintain Session
+    Stateful -> Replication : Share State
+  }
+@enduml
+....
+
 ---
 
-## 4. The Scaling Ladder: Common Tactics
+== 4. The Scaling Ladder: Common Tactics
 
 Teams usually scale in stages:
 
-1. **Optimize the code**  
-   Reduce expensive calls, improve queries, add indexes.
-2. **Cache aggressively**  
-   Keep repeated results in memory (Redis, CDN, in-process cache).
-3. **Scale vertically**  
-   Buy bigger machines for immediate relief.
-4. **Scale horizontally**  
-   Add more nodes and distribute load.
-5. **Partition data**  
-   Shard databases or split services.
+1. **Optimize the code**
+Reduce expensive calls, improve queries, add indexes.
+
+2. **Cache aggressively**
+Keep repeated results in memory (Redis, CDN, in-process cache).
+
+3. **Scale vertically**
+Buy bigger machines for immediate relief.
+
+4. **Scale horizontally**
+Add more nodes and distribute load.
+
+5. **Partition data**
+Shard databases or split services.
 
 Each step adds cost and complexity; teams should not jump to the most complex step first.
 
 ---
 
-## 5. Load Balancing and Traffic Distribution
+== 5. Load Balancing and Traffic Distribution
 
 Horizontal scaling usually depends on a **load balancer**:
 
@@ -82,9 +118,22 @@ Key concerns:
 - **Fast failover**
 - **Minimal overhead**
 
+[plantuml]
+....
+@startuml
+  title Load Balancing
+  actor User
+  node "Load Balancer" {
+    User -> LoadBalancer : Send Request
+    LoadBalancer --> ServerA : "Distribute Load"
+    LoadBalancer --> ServerB : "Distribute Load"
+  }
+@enduml
+....
+
 ---
 
-## 6. Caching as a Scaling Strategy
+== 6. Caching as a Scaling Strategy
 
 Caching reduces load without adding servers:
 
@@ -102,7 +151,7 @@ Good caching strategy often delays the need for more expensive scaling steps.
 
 ---
 
-## 7. Data Layer Scaling
+== 7. Data Layer Scaling
 
 The data layer is often the bottleneck. Common approaches:
 
@@ -118,9 +167,23 @@ Tradeoffs:
 
 Scaling data is usually the hardest part of scaling systems.
 
+[plantuml]
+....
+@startuml
+  title Data Layer Scaling
+  rectangle "Read Replicas" as RR
+  rectangle "Sharding" as SH
+  rectangle "Partitioning" as P
+    database Database
+  P --> Database : "Split by Key/Time"
+  RR --> Database : "Support Reads"
+  SH --> Database : "Split Data"
+@enduml
+....
+
 ---
 
-## 8. Asynchronous Workloads and Queues
+== 8. Asynchronous Workloads and Queues
 
 Not all scaling is about handling live requests. Offload work:
 
@@ -137,7 +200,7 @@ This is a core scaling tool for workloads like video processing, email sending, 
 
 ---
 
-## 9. Cost and Complexity Tradeoffs
+== 9. Cost and Complexity Tradeoffs
 
 Scaling is not free:
 
@@ -154,7 +217,7 @@ Sometimes the best scaling move is:
 
 ---
 
-## 10. Example Scenario
+== 10. Example Scenario
 
 Imagine a product that launches and traffic doubles:
 
@@ -167,93 +230,7 @@ Each step is more complex but also more scalable.
 
 ---
 
-## 11. Code Snippets (Short Examples)
-
-These snippets show common scaling tactics like load balancing, caching, and async work.
-
-### Node.js (basic in-process cache)
-
-```javascript
-const cache = new Map();
-async function getUser(id) {
-  if (cache.has(id)) return cache.get(id);
-  const user = await db.fetchUser(id);
-  cache.set(id, user);
-  return user;
-}
-```
-
-### Go (worker pool for async processing)
-
-```go
-jobs := make(chan Job, 100)
-for i := 0; i < 4; i++ {
-	go func() {
-		for job := range jobs { process(job) }
-	}()
-}
-```
-
-### Python (simple rate limiting)
-
-```python
-last = 0.0
-def allow():
-    global last
-    if time.time() - last < 0.1:
-        return False
-    last = time.time()
-    return True
-```
-
-### Java Spring (cache annotation)
-
-```java
-@Cacheable("users")
-public User getUser(String id) {
-    return repo.findById(id);
-}
-```
-
----
-
-## 12. Code Snippets: Shard Selection
-
-These examples show choosing a shard based on a user ID.
-
-### Node.js (mod-based shard)
-
-```javascript
-const shardCount = 4;
-const shardId = userId % shardCount;
-const db = shards[shardId];
-```
-
-### Go (hash-based shard)
-
-```go
-shardCount := 4
-shardID := int(crc32.ChecksumIEEE([]byte(userID))) % shardCount
-db := shards[shardID]
-```
-
-### Python (mod-based shard)
-
-```python
-shard_id = user_id % 4
-db = shards[shard_id]
-```
-
-### Java Spring (simple shard router)
-
-```java
-int shardId = Math.floorMod(userId, 4);
-DataSource ds = shards.get(shardId);
-```
-
----
-
-## 13. Key Takeaways
+== 11. Key Takeaways
 
 - Scaling strategies range from simple optimizations to complex distributed systems.
 - Vertical scaling is easy but limited; horizontal scaling is powerful but complex.

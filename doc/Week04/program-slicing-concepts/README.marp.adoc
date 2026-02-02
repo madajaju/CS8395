@@ -4,6 +4,10 @@
 :revealjs_transition: slide
 :revealjs_slideNumber: true
 :revealjs_history: true
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/LDQ42HK5ZD8
 
 == Introduction
 * **Purpose:** Decompose a monolith or large problem space into discrete microservices.
@@ -31,7 +35,6 @@
 [plantuml, slicing-comparison, svg]
 ----
 @startuml
-skinparam handwritten false
 skinparam packageStyle rect
 skinparam defaultTextAlignment center
 
@@ -67,7 +70,8 @@ package "Vertical Slicing (Microservices)" {
 === Comparison Details
 [.column]
 --
-### Horizontal (The Old Way)
+*Horizontal (The Old Way)*
+
 * **Layers:** UI -> Logic -> Data.
 * **Problem:** Every feature touches every layer.
 * **Result:** Tight coupling between unrelated features.
@@ -75,7 +79,8 @@ package "Vertical Slicing (Microservices)" {
 
 [.column]
 --
-### Vertical (The New Way)
+*Vertical (The New Way)*
+
 * **Slices:** Catalog, Ordering, Payment.
 * **Benefit:** Each slice owns its UI, Logic, and Data.
 * **Result:** Team autonomy and faster deployment.

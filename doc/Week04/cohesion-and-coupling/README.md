@@ -8,6 +8,7 @@
 - Identify the architectural risks of poor cohesion or tight coupling.
 
 ---
+Video: https://youtu.be/UfkYdsvcfKY
 
 ## 1. The Golden Rule of Architecture
 

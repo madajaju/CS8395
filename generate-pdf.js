@@ -41,7 +41,7 @@ async function traverseAndConvert(dir) {
 
           fs.mkdirSync(path.resolve(dirname, '.output'), { recursive: true });
           fs.copyFileSync(path.resolve('./doc', "custom.css"), path.resolve(dirname, '.output', "custom.css"));
-
+            console.log("Working on:", dirname);
           const result2 = spawnSync(
               'docker run --rm -v ".:/documents" -w /documents ' +
               'asciidoctor/docker-asciidoctor:latest asciidoctor-revealjs ' +

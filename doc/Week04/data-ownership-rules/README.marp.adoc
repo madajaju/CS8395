@@ -4,28 +4,26 @@
 :revealjs_transition: slide
 :revealjs_slideNumber: true
 :revealjs_history: true
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 
 == The Principle
 **"Database per Service"**
 
 In true microservices, each service **must** own its own data.
 
-[.columns]
 == Outcomes
-[.column]
 * Explain Database per Service.
 * Identify problems with shared DBs.
-
-[.column]
 * Discuss cross-boundary access.
 * Handle referential integrity.
 
-== 1. Private Data
+==  Private Data
 * No service accesses another's database directly.
 * **API Access Only:** Ask via GET/POST or subscribe to events.
 * The database is an **internal detail**, not a public interface.
 
-== 2. Why No Shared Databases?
+==  Why No Shared Databases?
 
 [plantuml, data-ownership, svg]
 ----
@@ -59,19 +57,22 @@ Shared DBs = **Public Enemy Number One**
 * **Performance Interference:** "Noisy Neighbor" queries.
 * **Security:** Harder to enforce "least privilege."
 
-== 3. Dealing with "Foreign" Data
+==  Dealing with "Foreign" Data
 How do we get data we don't own?
-
-[.columns]
 --
-[.column]
-### Option A: API Calls
+*Option A:* API Calls
+
 * Service A calls Service B's API.
 * *Pros:* Fresh data.
 * *Cons:* Temporal coupling, latency.
+--
 
-[.column]
-### Option B: Replication
+== Option B: Replication
+
+* Service B publishes an event.
+* Service A saves a local projection.
+* *Pros:* No temporal coupling, fast.
+* *Cons:* Eventual consistency.
 
 [plantuml, replication, svg]
 ----
@@ -93,29 +94,23 @@ note bottom of ODB : Local Projection\nof Catalog Data
 @enduml
 ----
 
-* Service B publishes an event.
-* Service A saves a local projection.
-* *Pros:* No temporal coupling, fast.
-* *Cons:* Eventual consistency.
---
-
-== 4. Referential Integrity
+==  Referential Integrity
 * No cross-database Foreign Keys.
 * Integrity is the **responsibility of the application**.
 * Use logic to handle deletes or accept partial inconsistency.
 
-== 5. Real-World: Netflix Title Metadata
+==  Real-World: Netflix Title Metadata
 * **Metadata Service:** Owns titles/descriptions.
 * **Playback Service:** Needs titles to show "Now Playing."
 * **The "Netflix Way":** Playback service caches its own metadata.
 * **Result:** If Metadata Service crashes, you can still watch your movie.
 
-== 6. Tie-in: Assignment A1
+==  Tie-in: Assignment A1
 * **Step 2 (Diagram):** Must show your service's dedicated DB.
 * **The Challenge:** How do you handle "foreign" IDs (like `user_id`) in your schema?
 * **Reflection:** Will you use API calls or replication?
 
-== 7. Summary
+==  Summary
 * Data ownership is the foundation of autonomy.
 * Enforce strict boundaries at the data layer.
 * Services must be able to evolve their schemas independently.

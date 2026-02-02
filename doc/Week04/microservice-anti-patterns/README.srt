@@ -1,0 +1,842 @@
+﻿1
+00:00:00,133 --> 00:00:00,666
+Okay.
+
+2
+00:00:00,666 --> 00:00:03,433
+In this lecture we're going to talk
+about microservice anti-patterns.
+
+3
+00:00:03,433 --> 00:00:05,800
+Things you should not do.
+
+4
+00:00:05,800 --> 00:00:06,033
+Okay.
+
+5
+00:00:06,033 --> 00:00:08,666
+So don't do these things right.
+
+6
+00:00:08,666 --> 00:00:10,100
+Well the goal is to identify
+
+7
+00:00:10,100 --> 00:00:13,866
+common mistakes and wrong turns that
+people make in microservice architectures.
+
+8
+00:00:14,266 --> 00:00:17,666
+And then the strategy
+is to learn to recognize symptoms
+
+9
+00:00:18,033 --> 00:00:21,566
+and and course correct
+as soon as possible.
+
+10
+00:00:22,566 --> 00:00:25,333
+I'm going to introduce
+a couple of really big disasters
+
+11
+00:00:25,333 --> 00:00:28,333
+that cost
+hundreds of millions of dollars as well.
+
+12
+00:00:28,766 --> 00:00:28,966
+All right.
+
+13
+00:00:28,966 --> 00:00:32,600
+So, will,
+we'll work through these problems here.
+
+14
+00:00:32,633 --> 00:00:34,600
+All right. Here
+we go. The distributed monoliths.
+
+15
+00:00:34,600 --> 00:00:36,433
+I've talked about this several times.
+
+16
+00:00:36,433 --> 00:00:38,166
+You know, you have a distributed monolith.
+
+17
+00:00:38,166 --> 00:00:41,966
+When you've got tightly coupling
+that requires all the services
+
+18
+00:00:41,966 --> 00:00:44,666
+to be deployed together.
+That is one of the big symptoms.
+
+19
+00:00:44,666 --> 00:00:47,666
+If I can't deploy service
+A without service B,
+
+20
+00:00:48,233 --> 00:00:49,766
+I know I have some coupling there.
+
+21
+00:00:49,766 --> 00:00:50,066
+Right.
+
+22
+00:00:50,066 --> 00:00:53,900
+And, 
+there could be, a lot of issues there.
+
+23
+00:00:53,900 --> 00:00:56,033
+Or if I'm updating one service
+
+24
+00:00:56,033 --> 00:00:59,666
+and I have to update another service
+at the same time, then I have coupling.
+
+25
+00:00:59,933 --> 00:01:02,533
+I might have a distributed
+monolith. Right.
+
+26
+00:01:02,533 --> 00:01:05,866
+You can really see this happen
+if one service fails
+
+27
+00:01:06,200 --> 00:01:08,400
+and it crashes the entire system.
+
+28
+00:01:08,400 --> 00:01:11,600
+So we had a big incident recently,
+
+29
+00:01:12,033 --> 00:01:14,933
+at, AWS.
+
+30
+00:01:14,933 --> 00:01:17,066
+Right? AWS outage.
+
+31
+00:01:17,066 --> 00:01:18,633
+I would say distributed monolith.
+
+32
+00:01:18,633 --> 00:01:20,100
+Not a true.
+
+33
+00:01:20,100 --> 00:01:24,266
+Oh, it's some of our microservices,
+but there's a big true distributed
+
+34
+00:01:24,266 --> 00:01:28,300
+monolith in there because one service
+failed and everything came down.
+
+35
+00:01:29,233 --> 00:01:29,500
+Right.
+
+36
+00:01:29,500 --> 00:01:32,633
+That's a symptom of it
+as one of the big failures that we see.
+
+37
+00:01:33,233 --> 00:01:34,066
+Right.
+
+38
+00:01:34,066 --> 00:01:34,966
+How do you fix this?
+
+39
+00:01:34,966 --> 00:01:36,966
+You need to make sure
+that you have a stable API.
+
+40
+00:01:36,966 --> 00:01:40,400
+Contracts, including how to handle errors.
+
+41
+00:01:40,800 --> 00:01:44,033
+You need circuit breakers,
+which we're going to talk about next week.
+
+42
+00:01:44,400 --> 00:01:46,733
+And we need a database as a service.
+
+43
+00:01:46,733 --> 00:01:50,833
+So I don't have all this, coupling
+going on between, the services.
+
+44
+00:01:51,400 --> 00:01:54,400
+So API contracts critical.
+
+45
+00:01:54,866 --> 00:01:59,800
+You need to know what your inputs
+and your outputs are for each, API call
+
+46
+00:02:00,000 --> 00:02:04,033
+and also what your error, codes are
+and the conditions of those error codes
+
+47
+00:02:04,300 --> 00:02:07,166
+and maybe even a hint on what to do
+if you get them.
+
+48
+00:02:07,166 --> 00:02:10,100
+Okay. 
+All right, let's keep moving forward.
+
+49
+00:02:10,100 --> 00:02:11,666
+The next one is called Nano Services.
+
+50
+00:02:11,666 --> 00:02:13,766
+Now, I have done this myself.
+
+51
+00:02:13,766 --> 00:02:18,966
+I, I sliced everything
+so thin that instead of having maybe 10
+
+52
+00:02:18,966 --> 00:02:23,066
+or 20, microservices,
+I had hundreds of them running people
+
+53
+00:02:23,066 --> 00:02:26,533
+that move into function as a service move
+in this direction really quick.
+
+54
+00:02:26,966 --> 00:02:30,300
+And it can
+it can be a nightmare to manage, right?
+
+55
+00:02:31,066 --> 00:02:35,133
+Typically what you see with
+this is you see a lot of network overhead
+
+56
+00:02:36,100 --> 00:02:37,933
+and it outweighs the business value.
+
+57
+00:02:37,933 --> 00:02:42,133
+So you've got to move things around
+where you know, that, where you know,
+
+58
+00:02:42,433 --> 00:02:44,066
+the best value is going to be.
+
+59
+00:02:44,066 --> 00:02:46,000
+How do you find those boundaries?
+
+60
+00:02:46,000 --> 00:02:50,000
+Look at what can be scaled
+independent of each other.
+
+61
+00:02:50,000 --> 00:02:54,500
+Look at where your data boundaries
+are merged services together that share
+
+62
+00:02:54,500 --> 00:02:58,133
+the same context, the same reason
+for a change that you have.
+
+63
+00:02:58,600 --> 00:03:01,533
+So take a look at it
+from that perspective.
+
+64
+00:03:01,533 --> 00:03:06,500
+You can very easily
+go to many nano services or not.
+
+65
+00:03:06,633 --> 00:03:07,366
+Not enough.
+
+66
+00:03:07,366 --> 00:03:10,366
+And you end up with a big monolith,
+or you end up with,
+
+67
+00:03:10,600 --> 00:03:13,600
+system that's, very complex and rigid.
+
+68
+00:03:14,066 --> 00:03:15,833
+That's hard to manage.
+
+69
+00:03:15,833 --> 00:03:19,200
+So you got to find
+the, the, the in between.
+
+70
+00:03:21,300 --> 00:03:22,266
+Okay.
+
+71
+00:03:22,266 --> 00:03:23,100
+Shared database.
+
+72
+00:03:23,100 --> 00:03:25,300
+There's a whole lecture
+on shared database.
+
+73
+00:03:25,300 --> 00:03:27,866
+This is when I have multiple services
+that are reading,
+
+74
+00:03:27,866 --> 00:03:31,466
+writing from the same tables,
+the same directory structure,
+
+75
+00:03:31,766 --> 00:03:37,066
+the same MongoDB database, whatever
+the case may be in your data store, right.
+
+76
+00:03:37,100 --> 00:03:40,800
+If I have multiple services
+accessing that, I have a shared database.
+
+77
+00:03:40,800 --> 00:03:43,766
+So I probably have a big issue there
+that I need to do.
+
+78
+00:03:43,766 --> 00:03:45,500
+What do I do?
+
+79
+00:03:45,500 --> 00:03:48,733
+I need to kind of separate things out.
+
+80
+00:03:48,733 --> 00:03:51,466
+I need, how
+
+81
+00:03:51,466 --> 00:03:55,500
+so that there's a single owner
+for the data and that should be
+
+82
+00:03:55,500 --> 00:03:56,666
+that microservice.
+
+83
+00:03:56,666 --> 00:03:59,033
+Everything else
+should be going through the APIs.
+
+84
+00:03:59,033 --> 00:04:02,100
+The problems that cause here are
+that if I do change
+
+85
+00:04:02,100 --> 00:04:05,633
+any of the schemas, there's
+a rippling effect across the code base.
+
+86
+00:04:05,633 --> 00:04:09,733
+And I have a lot of changes
+that happen in all the microservices.
+
+87
+00:04:10,100 --> 00:04:13,333
+Like I said, there's a whole lecture
+on shared databases and ways around it.
+
+88
+00:04:14,666 --> 00:04:17,666
+Another one is called the Mega Gateway.
+
+89
+00:04:17,900 --> 00:04:22,433
+So it's really easy at times to just jam
+a whole bunch of business logic,
+
+90
+00:04:23,000 --> 00:04:25,833
+in an API gateway like nginx,
+
+91
+00:04:25,833 --> 00:04:29,000
+and it let you have business rules
+and things I can in there.
+
+92
+00:04:29,166 --> 00:04:30,433
+But what all you've done is
+
+93
+00:04:30,433 --> 00:04:34,533
+you've shifted all the business logic
+into one microservice, which shouldn't
+
+94
+00:04:34,533 --> 00:04:37,633
+be called a microservice image
+should be called a macro service, right?
+
+95
+00:04:37,633 --> 00:04:41,366
+Because it has a lot of stuff in there,
+and now it becomes a bottleneck.
+
+96
+00:04:41,566 --> 00:04:44,366
+And you've just created a monolith
+
+97
+00:04:44,366 --> 00:04:48,400
+with a bunch of microservices
+that are being starved.
+
+98
+00:04:48,900 --> 00:04:50,600
+And that typically happens.
+
+99
+00:04:50,600 --> 00:04:52,166
+Keep your gateway dumb.
+
+100
+00:04:52,166 --> 00:04:57,300
+It's for routing SSL,
+handshaking, and rate limiting only.
+
+101
+00:04:57,733 --> 00:04:59,133
+Don't put any other smarts in there.
+
+102
+00:04:59,133 --> 00:05:01,966
+There's going to be a temptation
+to do that.
+
+103
+00:05:01,966 --> 00:05:02,700
+Don't do that.
+
+104
+00:05:04,133 --> 00:05:04,700
+All right.
+
+105
+00:05:04,700 --> 00:05:06,066
+This is a big one too.
+
+106
+00:05:06,066 --> 00:05:09,333
+Ignoring observability
+because you're dealing
+
+107
+00:05:09,333 --> 00:05:12,600
+with a whole bunch of microservices
+that are talking over the network.
+
+108
+00:05:12,833 --> 00:05:15,933
+Failures happen
+because networks go up and down.
+
+109
+00:05:17,566 --> 00:05:19,600
+There's a lot of variability in networks.
+
+110
+00:05:19,600 --> 00:05:21,766
+And when you're programing over a network,
+
+111
+00:05:21,766 --> 00:05:24,566
+so you've got to observe what's going on.
+
+112
+00:05:24,566 --> 00:05:28,833
+So you've got to log what's going on in
+each of your microservices
+
+113
+00:05:29,100 --> 00:05:32,600
+and do it in a consistent manner.
+
+114
+00:05:32,833 --> 00:05:36,766
+I, centralized
+logging is one way to do this.
+
+115
+00:05:36,766 --> 00:05:40,333
+Or distributed
+tracing with Yaga is another.
+
+116
+00:05:40,700 --> 00:05:45,533
+But put these elements
+into your architecture right up front
+
+117
+00:05:45,833 --> 00:05:48,733
+so it'll make your life a whole lot easier
+when you're debugging.
+
+118
+00:05:48,733 --> 00:05:52,900
+Really complex interactions
+between microservices, which can happen.
+
+119
+00:05:54,566 --> 00:05:56,600
+Okay, there's a great World war,
+
+120
+00:05:57,566 --> 00:06:01,566
+real world example of this back in 2012.
+
+121
+00:06:01,833 --> 00:06:06,933
+And, Knight Capital released
+a brand new product, to the market
+
+122
+00:06:06,933 --> 00:06:11,900
+that they were using for, retail market, 
+trades and things like that.
+
+123
+00:06:12,966 --> 00:06:17,166
+And what was interesting,
+they had some old code in their code base
+
+124
+00:06:17,466 --> 00:06:22,400
+that was obsolete,
+that wasn't, completely taken out.
+
+125
+00:06:22,600 --> 00:06:26,133
+And when the new code came
+in, it activated this,
+
+126
+00:06:26,266 --> 00:06:30,333
+old code
+because they weren't in microservices.
+
+127
+00:06:30,333 --> 00:06:33,366
+They were kind of coupled, in a way.
+
+128
+00:06:33,366 --> 00:06:38,666
+And that coupling of that code,
+that old code that wasn't being used,
+
+129
+00:06:38,666 --> 00:06:41,666
+but now all of a sudden was,
+to the deployment
+
+130
+00:06:41,766 --> 00:06:45,400
+hadn't been, tested with the new schemas
+that they had and all that.
+
+131
+00:06:45,400 --> 00:06:47,800
+And because there were so much coupling
+
+132
+00:06:47,800 --> 00:06:50,400
+and it caused a $440
+
+133
+00:06:50,400 --> 00:06:53,400
+million loss in 45 minutes
+
+134
+00:06:53,466 --> 00:06:57,833
+on approximately $30 billion in trades,
+
+135
+00:06:58,133 --> 00:07:03,433
+you know, you would say, hey, that's
+not that bad, a $4,440 million loss.
+
+136
+00:07:03,433 --> 00:07:05,166
+That's a lot of money.
+
+137
+00:07:05,166 --> 00:07:10,233
+So one of the reasons why it lasted
+45 minutes instead of a couple minutes
+
+138
+00:07:10,733 --> 00:07:13,466
+is not only the deployment
+coupling that they had,
+
+139
+00:07:13,466 --> 00:07:16,600
+but they had no observability
+into what was going on.
+
+140
+00:07:17,633 --> 00:07:18,433
+So they couldn't even
+
+141
+00:07:18,433 --> 00:07:22,233
+shutting down it for 45 minutes.
+
+142
+00:07:22,233 --> 00:07:24,500
+They didn't even know what was going on.
+
+143
+00:07:24,500 --> 00:07:29,866
+So putting observability in your code
+is very important, right?
+
+144
+00:07:29,866 --> 00:07:33,600
+And having different levels
+of observability and structuring
+
+145
+00:07:33,600 --> 00:07:36,066
+your logs is really important.
+
+146
+00:07:36,066 --> 00:07:39,066
+So for assignment one A,
+
+147
+00:07:39,100 --> 00:07:43,466
+make sure that you don't fall
+into the shared database trap it.
+
+148
+00:07:43,466 --> 00:07:45,766
+And and we're
+working in multiple languages.
+
+149
+00:07:45,766 --> 00:07:49,833
+So they should not be using the same
+shared database if they're microservices.
+
+150
+00:07:49,833 --> 00:07:51,300
+They were doing different things.
+
+151
+00:07:51,300 --> 00:07:54,100
+If you have two implementations, one
+
+152
+00:07:54,100 --> 00:07:57,833
+and go and one in Java of your customer,
+
+153
+00:07:58,233 --> 00:08:02,500
+microservice
+and it uses a customer database,
+
+154
+00:08:02,500 --> 00:08:04,666
+then I would expect them to use the same,
+
+155
+00:08:04,666 --> 00:08:07,433
+because you're not going to activate
+both those at the same time.
+
+156
+00:08:07,433 --> 00:08:07,966
+Right.
+
+157
+00:08:07,966 --> 00:08:11,666
+And then make sure that you have logging,
+use some structured logging,
+
+158
+00:08:11,666 --> 00:08:14,900
+to ensure that your service is observable
+right from the start.
+
+159
+00:08:15,400 --> 00:08:18,866
+And so that when it is spitting out logs
+that, you know, we can
+
+160
+00:08:18,866 --> 00:08:20,100
+see what's, what's going on.
+
+161
+00:08:21,533 --> 00:08:21,900
+Okay.
+
+162
+00:08:21,900 --> 00:08:25,033
+So remember microservices add complexity,
+
+163
+00:08:25,266 --> 00:08:28,933
+which means you've got to deal
+with that complexity in the architecture.
+
+164
+00:08:29,266 --> 00:08:34,700
+If you establish wrong boundaries,
+then you get, the worst of both worlds,
+
+165
+00:08:34,700 --> 00:08:39,200
+the rigidity of monoliths and the
+complexity of a distributed system,
+
+166
+00:08:39,800 --> 00:08:43,200
+which means debugging is harder,
+crashes are more.
+
+167
+00:08:43,200 --> 00:08:46,366
+I mean, it's
+this is really bad if you don't do this.
+
+168
+00:08:46,366 --> 00:08:46,900
+Right?
+
+169
+00:08:46,900 --> 00:08:50,633
+So, stay vigilant
+and work on the design patterns
+
+170
+00:08:50,633 --> 00:08:53,500
+that we talk about in these annotate
+patterns. Check.
+
+171
+00:08:53,500 --> 00:08:57,100
+Use a generative
+AI to check against these design patterns.
+
+172
+00:08:57,500 --> 00:08:58,633
+Be very specific.
+
+173
+00:08:58,633 --> 00:09:02,966
+Don't just say, hey, tell me if
+this is using good design patterns.
+
+174
+00:09:03,200 --> 00:09:08,200
+Be specific and say,
+am I using, the anti-patterns?
+
+175
+00:09:08,200 --> 00:09:10,000
+Am I using a shared database?
+
+176
+00:09:10,000 --> 00:09:12,833
+If I am, what can I do to overcome that?
+
+177
+00:09:12,833 --> 00:09:13,166
+Right.
+
+178
+00:09:13,166 --> 00:09:16,133
+Do I use observability correctly?
+
+179
+00:09:16,133 --> 00:09:17,700
+Do I have good logging?
+
+180
+00:09:18,966 --> 00:09:20,433
+Am I have I
+
+181
+00:09:20,433 --> 00:09:23,666
+created a, mana, a distributed monolith?
+
+182
+00:09:23,666 --> 00:09:26,366
+Why have I created it?
+Where's my coupling?
+
+183
+00:09:26,366 --> 00:09:29,000
+Do I have deployment coupling?
+Do I have data coupling?
+
+184
+00:09:29,000 --> 00:09:32,966
+All these things you should be asking
+instead of just a broad question
+
+185
+00:09:32,966 --> 00:09:33,866
+across the board.

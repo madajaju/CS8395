@@ -1,0 +1,198 @@
+= Retries, Timeouts, and Backoff
+
+== 1. Motivation: Why Networks Fail in the Real World
+
+Distributed systems depend on networks. Networks are imperfect:
+
+- Packets get lost
+- Services become overloaded
+- Temporary outages happen
+- Latency spikes at unpredictable times
+
+A request that fails once might succeed a second later. The question is: **how do we retry safely and predictably?**
+
+Retries, timeouts, and backoff are the core tools for managing these transient failures.
+
+
+== 2. Core Definitions
+
+**Timeout**
+- A maximum time to wait for a response before giving up.
+- Prevents a client from hanging forever on a slow or stalled request.
+
+**Retry**
+- A deliberate re-attempt of a failed request.
+- Used when failures are likely temporary.
+
+**Backoff**
+- A strategy to wait longer between each retry attempt.
+- Prevents a thundering herd of retries overwhelming a struggling service.
+
+Together, these create a controlled failure-recovery loop.
+
+[.columns]
+== 3. The Failure Categories That Matter
+
+Not all failures are equal. The decision to retry should depend on *why* the call failed.
+
+[.column]
+---
+[plantuml]
+----
+plantuml
+@startuml
+title Transient Failures
+actor User
+User -> System : Network Timeout
+User -> System : Connection Reset
+User -> System : 5xx Errors
+@enduml
+----
+---
+
+[.column]
+---
+[plantuml]
+----
+@startuml
+actor User
+title Permanent Failures
+User -> System : 4xx Errors
+User -> System : Non-idempotent Failures
+
+@enduml
+----
+---
+
+
+== 4. Timeouts: The First Line of Defense
+
+Without timeouts:
+
+- Clients can block indefinitely
+- Threads or resources are exhausted
+- Cascading failure becomes more likely
+
+Timeouts should be:
+
+- Short enough to fail fast
+- Long enough to cover normal latency variance
+
+Common practice: use **different timeouts** for different operations.
+
+---
+
+== 5. Retries: Useful, But Dangerous
+
+Retries can improve reliability for transient failures, but they introduce risk:
+
+- **Duplicate requests** if the first attempt actually succeeded
+- **Retry storms** that amplify load
+- **Hidden latency** if every call retries multiple times
+
+Retries should always be paired with:
+
+- Idempotent operations
+- Backoff strategies
+- A maximum number of attempts
+
+---
+
+== 6. Idempotency and Safe Retries
+
+An operation is **idempotent** if repeating it has the same effect as running it once.
+
+Examples:
+
+- `GET /users/123` is idempotent
+- `PUT /users/123` (set state to X) is idempotent
+- `POST /payments` is **not** idempotent by default
+
+To make non-idempotent operations safe:
+
+- Use **idempotency keys**
+- Store and deduplicate requests on the server
+
+This lets retries happen without duplicate side effects.
+
+---
+
+== 7. Backoff Strategies
+
+The purpose of backoff is to spread retries over time so the target system can recover.
+
+[plantuml]
+----
+@startuml
+participant "Fixed Backoff" as FB
+participant "Linear Backoff" as LB
+participant "Exponential Backoff" as EB
+
+FB -> System : Wait 200 ms
+LB -> System : Wait +100 ms
+EB -> System : Wait doubles (100, 200, 400 ms)
+@enduml
+----
+
+== 8. Retry Budgeting and Limits
+
+Unlimited retries cause runaway systems.
+
+Best practices:
+
+- Set a **max retry count** (e.g., 3 attempts total)
+- Use a **time limit** (e.g., stop retrying after 2 seconds)
+- Implement **retry budgets** per client or per service
+
+A retry budget limits how many retries are allowed in a given window, preventing retry storms during outages.
+
+---
+
+== 9. Interactions with Circuit Breakers
+
+Retries and timeouts are often paired with **circuit breakers**:
+
+- If a dependency is failing repeatedly, the circuit breaker "opens"
+- Calls fail fast until the dependency shows signs of recovery
+
+This prevents retries from constantly hammering a broken service and improves overall system stability.
+
+---
+
+== 10. Observability and Tuning
+
+Retries and timeouts are not set-and-forget. They need monitoring:
+
+- Track retry rates
+- Measure latency distribution
+- Detect when a dependency slows down
+
+Tuning examples:
+
+- If retries spike, reduce retry attempts or add jitter.
+- If timeouts trigger too often, increase timeouts or optimize the dependency.
+
+---
+
+== 11. Example Scenario
+
+Consider a service that calls a third-party shipping API:
+
+1. The API call times out at 500 ms.
+2. The client retries with exponential backoff and jitter.
+3. The call succeeds on the second attempt.
+4. If retries exceed the limit, the request fails fast and returns a 503 to the user.
+
+The result is a balance of **reliability** and **system stability**.
+
+---
+
+== 12. Key Takeaways
+
+- Timeouts prevent requests from hanging and protect system resources.
+- Retries can improve reliability but must be controlled.
+- Backoff and jitter prevent synchronized retry storms.
+- Idempotency is critical for safe retries.
+- Use retry limits and budgets to prevent runaway behavior.
+
+---

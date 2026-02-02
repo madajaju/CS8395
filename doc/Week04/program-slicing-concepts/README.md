@@ -9,6 +9,8 @@
 
 ---
 
+Video: https://youtu.be/LDQ42HK5ZD8
+
 ## 1. What is Program Slicing?
 
 In traditional software engineering, **program slicing** is a technique used to simplify programs by focusing on a specific subset of the program's behavior. A "slice" consists of all statements that might affect the value of a variable at a given point.

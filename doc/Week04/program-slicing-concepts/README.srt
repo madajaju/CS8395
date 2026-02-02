@@ -1,0 +1,723 @@
+﻿1
+00:00:00,466 --> 00:00:00,800
+All right.
+
+2
+00:00:00,800 --> 00:00:04,333
+In this lecture we're going to talk about
+how to take a program and slice
+
+3
+00:00:04,333 --> 00:00:07,333
+it and create service boundaries.
+
+4
+00:00:07,366 --> 00:00:09,933
+So the purpose is to take a monolithic
+
+5
+00:00:09,933 --> 00:00:14,033
+or large program space
+and break it into discrete microservices.
+
+6
+00:00:14,566 --> 00:00:19,633
+This is part art,
+part science, and it's called slicing.
+
+7
+00:00:19,933 --> 00:00:23,733
+And you typically base
+it off of data flow and responsibilities.
+
+8
+00:00:24,000 --> 00:00:27,800
+Or if you go to like the object
+oriented analysis and design models
+
+9
+00:00:27,800 --> 00:00:32,266
+that are out there, you can find
+those boundaries pretty easily around
+
+10
+00:00:32,600 --> 00:00:38,566
+a package or a logical packages
+and or classes themselves.
+
+11
+00:00:38,666 --> 00:00:41,300
+Model classes, this is another technique.
+
+12
+00:00:41,300 --> 00:00:44,300
+So those are some things to look at.
+
+13
+00:00:44,366 --> 00:00:48,766
+So outcome outcomes of this is that you're
+going to know what program slicing is.
+
+14
+00:00:49,100 --> 00:00:52,100
+You identify natural service boundaries.
+
+15
+00:00:52,200 --> 00:00:53,933
+In the architecture.
+
+16
+00:00:53,933 --> 00:00:57,733
+And then apply those slicing
+to domain models
+
+17
+00:00:58,000 --> 00:01:01,000
+and understand
+the trade offs and risks between them.
+
+18
+00:01:01,600 --> 00:01:05,800
+There's lots of different techniques
+to do this, and it all depends
+
+19
+00:01:05,800 --> 00:01:09,133
+on the program space that you're
+working in on the best approach.
+
+20
+00:01:09,633 --> 00:01:12,433
+But there are some guidelines
+that will give you.
+
+21
+00:01:12,433 --> 00:01:15,833
+And then you need to know what the trade
+offs are, the pros and the cons,
+
+22
+00:01:16,166 --> 00:01:18,966
+and articulate those in your architecture.
+
+23
+00:01:18,966 --> 00:01:19,400
+Design.
+
+24
+00:01:20,500 --> 00:01:23,366
+So traditionally,
+
+25
+00:01:23,366 --> 00:01:27,466
+what a program slicing is, is
+I simplify programs
+
+26
+00:01:27,466 --> 00:01:31,366
+just by focusing on a subset of behaviors
+or behavior based.
+
+27
+00:01:32,066 --> 00:01:35,866
+So the microservices,
+there's two ways of doing it.
+
+28
+00:01:35,866 --> 00:01:38,566
+Vertical slices of functionality
+
+29
+00:01:38,566 --> 00:01:42,966
+and separating concerns
+for independent change.
+
+30
+00:01:43,700 --> 00:01:47,133
+And then you're going to shift
+from horizontal slicing,
+
+31
+00:01:48,100 --> 00:01:50,800
+which we've seen a lot of,
+and you see a lot of horizontal
+
+32
+00:01:50,800 --> 00:01:54,766
+slicing in monolithic programing
+or in modular programing,
+
+33
+00:01:55,066 --> 00:01:58,400
+shifting that to a service
+which is more vertical, which includes
+
+34
+00:01:58,766 --> 00:02:02,500
+maybe an, interface,
+maybe even a web interface,
+
+35
+00:02:03,066 --> 00:02:08,933
+business logic and storage
+all in the same microservice,
+
+36
+00:02:08,933 --> 00:02:12,900
+which is really fascinating
+because it goes almost contrary to,
+
+37
+00:02:13,300 --> 00:02:16,600
+the way that we've done
+modular programing in the past.
+
+38
+00:02:18,600 --> 00:02:19,266
+Okay.
+
+39
+00:02:19,266 --> 00:02:22,900
+So if I look at horizontal, right,
+I got my UI
+
+40
+00:02:22,933 --> 00:02:25,933
+layer,
+my business logic and my data layer.
+
+41
+00:02:26,166 --> 00:02:27,233
+That's monolithic, right.
+
+42
+00:02:27,233 --> 00:02:30,966
+Because I've got three different layers
+and and I've seen people do this
+
+43
+00:02:30,966 --> 00:02:31,966
+I've done this myself.
+
+44
+00:02:31,966 --> 00:02:35,666
+I have a program I'm working on right now
+that I've done this horizontal.
+
+45
+00:02:35,866 --> 00:02:39,466
+I my UI sitting out there,
+I got business logic running
+
+46
+00:02:39,466 --> 00:02:43,233
+as a, as its own, application.
+
+47
+00:02:43,233 --> 00:02:46,133
+Then I have a data layer
+that's running as its own application.
+
+48
+00:02:46,133 --> 00:02:47,766
+This is a distributed monolith.
+
+49
+00:02:48,733 --> 00:02:49,433
+Okay.
+
+50
+00:02:49,433 --> 00:02:54,766
+Vertical slicing says that, hey,
+I've got a UI and API logic and data
+
+51
+00:02:54,766 --> 00:02:57,866
+all in its own little bundle,
+
+52
+00:02:58,133 --> 00:03:01,133
+and it's specific to catalog,
+
+53
+00:03:01,133 --> 00:03:04,133
+and I could have one specific to ordering,
+
+54
+00:03:04,400 --> 00:03:07,533
+and another one specific to customer
+
+55
+00:03:09,466 --> 00:03:10,066
+right.
+
+56
+00:03:10,066 --> 00:03:13,533
+Or customer care could be another one.
+
+57
+00:03:13,733 --> 00:03:14,300
+Right.
+
+58
+00:03:14,300 --> 00:03:18,033
+So it's a mindset that you have to change.
+
+59
+00:03:19,466 --> 00:03:22,666
+So finding the gaps and boundaries
+this is really important right
+
+60
+00:03:22,833 --> 00:03:25,733
+to find where
+those microservice boundaries should be.
+
+61
+00:03:25,733 --> 00:03:28,500
+Look at business capabilities first.
+
+62
+00:03:28,500 --> 00:03:33,500
+You know that's a good place to kind of
+look and say, hey, I'm doing order entry.
+
+63
+00:03:33,666 --> 00:03:37,833
+Hey, that's a that's a business capability
+instead of order management.
+
+64
+00:03:37,833 --> 00:03:40,733
+That might be too broad, right?
+
+65
+00:03:40,733 --> 00:03:43,600
+You can also look at data ship ownership.
+
+66
+00:03:43,600 --> 00:03:47,866
+And that might lead to a
+an order manager.
+
+67
+00:03:48,533 --> 00:03:51,433
+It might I it depends. Right.
+
+68
+00:03:51,433 --> 00:03:53,833
+Depends on how you set these things up.
+
+69
+00:03:53,833 --> 00:03:56,300
+Also look for change in patterns.
+
+70
+00:03:56,300 --> 00:03:59,000
+And look for things that change together.
+
+71
+00:03:59,000 --> 00:04:03,433
+So if I change one thing
+in one microservice and it causes
+
+72
+00:04:03,433 --> 00:04:07,000
+a cascading effect to other microservices,
+then my boundaries are off.
+
+73
+00:04:07,366 --> 00:04:08,466
+So I've got a
+
+74
+00:04:08,466 --> 00:04:12,333
+I've got to figure that out
+and then go back and look at Conway's Law.
+
+75
+00:04:12,366 --> 00:04:15,000
+We've talked about this
+in previous lectures.
+
+76
+00:04:15,000 --> 00:04:18,366
+And maybe for your microservices
+around the,
+
+77
+00:04:18,366 --> 00:04:20,833
+organizational boundaries
+that you already have,
+
+78
+00:04:22,166 --> 00:04:24,566
+that might be a good place to start.
+
+79
+00:04:24,566 --> 00:04:27,000
+So find those gaps and boundaries.
+
+80
+00:04:27,000 --> 00:04:29,766
+This take this takes some investigating.
+
+81
+00:04:29,766 --> 00:04:33,433
+It takes some architecting, work
+that you have to do, but
+
+82
+00:04:33,433 --> 00:04:36,533
+it will make your life a whole lot easier
+if you find those boundaries first.
+
+83
+00:04:37,766 --> 00:04:38,366
+Okay.
+
+84
+00:04:38,366 --> 00:04:41,200
+Here's some of the
+the issues, that we're going to talk
+
+85
+00:04:41,200 --> 00:04:44,533
+more in depth
+about in other lectures over slicing.
+
+86
+00:04:44,666 --> 00:04:48,300
+I've seen this when people move to
+of a pure function as a service.
+
+87
+00:04:48,600 --> 00:04:50,566
+There's a lot of network overhead.
+
+88
+00:04:50,566 --> 00:04:53,700
+And then you get distributed transaction
+hell,
+
+89
+00:04:54,466 --> 00:04:57,533
+where I've got a transaction
+that has to flow
+
+90
+00:04:57,533 --> 00:05:01,233
+through a dozen different microservices
+in order to do something
+
+91
+00:05:01,900 --> 00:05:04,300
+that's, that's nano services.
+
+92
+00:05:04,300 --> 00:05:07,300
+And the overhead and managing
+that can be very difficult.
+
+93
+00:05:07,300 --> 00:05:10,833
+And then I have under slicing, then
+this turns into your distributed monolith.
+
+94
+00:05:10,833 --> 00:05:12,766
+Right. It's hard to scale.
+
+95
+00:05:12,766 --> 00:05:17,366
+I've got, you know, omnipotent services
+that do everything.
+
+96
+00:05:18,166 --> 00:05:19,566
+That's bad. Typically.
+
+97
+00:05:20,533 --> 00:05:21,666
+Not typically always.
+
+98
+00:05:21,666 --> 00:05:22,333
+Right.
+
+99
+00:05:22,333 --> 00:05:25,200
+Or if I'm looking at that,
+I have a lot of data duplication
+
+100
+00:05:25,200 --> 00:05:28,000
+where I'm copying data
+a lot between services.
+
+101
+00:05:28,000 --> 00:05:32,100
+Then I can run into inconsistency
+in my data models
+
+102
+00:05:32,500 --> 00:05:35,666
+and the, the
+
+103
+00:05:35,866 --> 00:05:39,133
+the problem
+it just is, is really difficult to debug.
+
+104
+00:05:39,366 --> 00:05:43,066
+So in those cases, you may want to, 
+adjust your boundaries appropriately.
+
+105
+00:05:45,033 --> 00:05:45,533
+Okay.
+
+106
+00:05:45,533 --> 00:05:48,133
+Here's a really good example.
+
+107
+00:05:48,133 --> 00:05:50,300
+That's a pattern anti-pattern.
+
+108
+00:05:50,300 --> 00:05:54,633
+So in the real world
+Amazon went from this giant bookstore
+
+109
+00:05:54,633 --> 00:06:00,100
+monolith that they had, and they had this
+Amazon two pizza team rule,
+
+110
+00:06:00,600 --> 00:06:03,633
+which said, hey, if I can't feed
+
+111
+00:06:03,633 --> 00:06:07,000
+my team with, two pizzas
+
+112
+00:06:07,000 --> 00:06:11,433
+or less than the T, the team is too big
+and they're doing too much information.
+
+113
+00:06:11,700 --> 00:06:14,700
+So you slice the,
+
+114
+00:06:15,033 --> 00:06:18,700
+you slice the problem space down
+into where,
+
+115
+00:06:18,700 --> 00:06:23,066
+team of 60 people can handle it
+without without issue.
+
+116
+00:06:24,000 --> 00:06:24,600
+Okay.
+
+117
+00:06:24,600 --> 00:06:27,600
+Now, this works really well
+
+118
+00:06:27,600 --> 00:06:32,100
+if you have an overarching architecture
+that shows,
+
+119
+00:06:32,733 --> 00:06:36,433
+and controls coupling,
+inadvertent coupling that happens.
+
+120
+00:06:37,066 --> 00:06:42,200
+And we've seen this, work very,
+very well with AWS,
+
+121
+00:06:42,200 --> 00:06:45,433
+but at the same time,
+without that overarching architecture,
+
+122
+00:06:45,700 --> 00:06:50,633
+we see major failures
+and we see issues with coupling it,
+
+123
+00:06:50,633 --> 00:06:55,133
+averting coupling as these teams go off
+and do their own thing without any guards
+
+124
+00:06:55,133 --> 00:06:58,133
+or checks on where their, their keeping,
+
+125
+00:06:58,233 --> 00:07:01,066
+with microservice best practices.
+
+126
+00:07:01,066 --> 00:07:05,366
+And we've seen some major outages
+because these teams go off
+
+127
+00:07:05,366 --> 00:07:06,800
+and do their own thing,
+
+128
+00:07:06,800 --> 00:07:11,333
+but they actually, set up these
+dependencies between lower level
+
+129
+00:07:11,700 --> 00:07:15,133
+back in microservices and create a web
+
+130
+00:07:15,200 --> 00:07:18,200
+that turns into a monolith,
+distributed monolith.
+
+131
+00:07:18,633 --> 00:07:20,100
+So you got to be careful.
+
+132
+00:07:20,100 --> 00:07:22,966
+You need some oversight on these teams.
+
+133
+00:07:22,966 --> 00:07:26,600
+And, and these microservice teams
+that are working out there,
+
+134
+00:07:27,233 --> 00:07:29,133
+you can't just let them run wild.
+
+135
+00:07:29,133 --> 00:07:31,166
+So it's a pattern anti-pattern.
+
+136
+00:07:32,866 --> 00:07:33,133
+All right.
+
+137
+00:07:33,133 --> 00:07:36,200
+For assignment one, the goal is to define
+
+138
+00:07:36,200 --> 00:07:39,200
+some logical microservice boundaries.
+
+139
+00:07:39,233 --> 00:07:41,800
+Make sure that it's a vertical slice.
+
+140
+00:07:41,800 --> 00:07:44,800
+I don't want to see horizontal slices
+in there.
+
+141
+00:07:45,566 --> 00:07:48,166
+Avoid creating those horizontal slices.
+
+142
+00:07:48,166 --> 00:07:51,166
+If it's just a database wrapper that is.
+
+143
+00:07:51,666 --> 00:07:53,700
+That is not good, right?
+
+144
+00:07:53,700 --> 00:07:57,866
+All you've done is created a horizontal,
+which really turns into a distributed,
+
+145
+00:07:57,900 --> 00:08:02,166
+like, a distributed monolith,
+not a microservice.
+
+146
+00:08:02,233 --> 00:08:05,266
+Remember, microservice
+needs to be able to stand on its own.
+
+147
+00:08:05,833 --> 00:08:09,900
+It can run and work all on its own,
+even in the user interface.
+
+148
+00:08:09,933 --> 00:08:14,500
+There are techniques
+you can use to serve up individual,
+
+149
+00:08:14,500 --> 00:08:18,766
+components and elements
+for that individual microservice
+
+150
+00:08:18,766 --> 00:08:21,766
+into a, a
+
+151
+00:08:22,666 --> 00:08:25,200
+in, into a framework
+that can serve up multiple
+
+152
+00:08:25,200 --> 00:08:28,200
+user interfaces
+from different microservices as you need.
+
+153
+00:08:28,200 --> 00:08:30,133
+So take a look at those.
+
+154
+00:08:30,133 --> 00:08:30,433
+Okay.
+
+155
+00:08:30,433 --> 00:08:33,333
+Remember
+find the right scenes in your application.
+
+156
+00:08:33,333 --> 00:08:34,933
+Find those boundaries.
+
+157
+00:08:34,933 --> 00:08:37,766
+Slice
+vertically along business capabilities.
+
+158
+00:08:37,766 --> 00:08:42,466
+The best that you can and then aim
+for high cohesion and loose coupling.
+
+159
+00:08:42,966 --> 00:08:47,000
+Remember, the goal here is a microservice
+can be autonomous at stand on its own.
