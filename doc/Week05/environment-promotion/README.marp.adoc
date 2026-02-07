@@ -1,25 +1,35 @@
 = Environment Promotion
-:revealjs:
-: toc: macro
-: cascading:
-: source: <source>
-: theme: night
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
 
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+[.columns]
 == 1. Motivation: Why Environment Promotion Exists
 
+[.column]
+--
 Most teams run their software in multiple environments:
 
 - **Development** for rapid iteration
 - **Test / QA** for functional verification
 - **Staging** for production-like validation
 - **Production** for real users and real data
+--
 
+[.column]
+--
 .Disorganized paths to production
-[plantuml]
+[plantuml, format=svg, width=100%]
 ----
 @startuml
   title Disorganized Path to Production
 
+left to right direction
   actor Developer
   node Development {
     Developer -> Development : Commit changes
@@ -29,11 +39,14 @@ Most teams run their software in multiple environments:
   node Production {
   }
     Development -> TestQA : "Move to Test environment"
-    TestQA -> Production : "Deploy to Production\n\"It works in dev\" failures"
+    TestQA --> Production : "Deploy to Production\nIt works in dev"
 
-    Production <- Development : "Move without validation"
+    Production <-- Development : "Move without validation"
 @enduml
 ----
+--
+
+== 1b. Without Promotion
 
 Without a disciplined way to move changes, teams face:
 
@@ -55,11 +68,10 @@ This idea is simple but powerful:
 
 > The code you run in production is the same code that passed your tests and staging checks.
 
+
 == 3. The Promotion Pipeline
 
-A typical promotion pipeline looks like:
-
-[plantuml]
+[plantuml, format=svg, width=100%]
 ----
 @startuml
 title Promotion Pipeline
@@ -74,20 +86,25 @@ Approval -> Prod : "Deploy to production"
 @enduml
 ----
 
-The key is consistency: promotion should follow the same route every time.
-
+[.columns]
 == 4. Immutability: The Artifact Must Not Change
 
+[.column]
+--
 To avoid common pitfalls:
 
 - Build once
 - Version the artifact
 - Promote the exact same artifact across environments
+--
 
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ----
 @startuml
 title Immutable Artifact
+left to right direction
 package "Build Environment" {
   [Build] --> [Artifact]
 }
@@ -99,12 +116,16 @@ package "Promoted Environments" {
 }
 @enduml
 ----
+--
 
+[.column]
+--
 Common practices:
 
 - Container images with tags
 - Checksums or signatures
 - Artifact registries
+--
 
 == 5. Configuration vs Code
 
@@ -119,15 +140,21 @@ Differences can include:
 
 The rule is: **code stays the same, configuration changes**.
 
+[.columns]
 == 6. Deployment Strategies That Support Promotion
 
+[.column]
+--
 Promotion pairs naturally with safer deployment strategies:
 
 - **Blue/green deployment**
 - **Canary release**
 - **Feature flags**
+--
 
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ----
 @startuml
 title Deployment Strategies
@@ -140,6 +167,7 @@ package "Canary Release" {
 }
 @enduml
 ----
+--
 
 == 7. Verification at Each Stage
 
@@ -182,12 +210,9 @@ Consider a service that handles payments:
 5. Canary release sends 5% of traffic to new version.
 6. Rollback is easy if a bug appears.
 
-== 13. Key Takeaways
+== 11. Key Takeaways
 
 - Promotion is a **disciplined path** from code to production.
 - Maintain the same artifact across environments.
-- Strong promotion depends on:
-- Artifact immutability
-- Configuration separation
-- Automated tests
+- Strong promotion depends on artifact immutability, configuration separation, and automated tests.
 - Benefits include **predictable, safer releases**.

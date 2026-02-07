@@ -1,0 +1,133 @@
+= Idempotency in Distributed Systems
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+== Goals
+- Define idempotency in distributed systems
+- Explain why retries are common
+- Identify idempotent vs non-idempotent methods
+- Use idempotency keys effectively
+- Avoid duplicate side effects
+- Recognize tradeoffs and pitfalls
+
+== Overview
+- Repeat the same request, get the same result
+- Protects against retry duplicates
+- Essential for payments and orders
+- Safe for at-least-once delivery
+- Requires server-side storage
+- Must replay the same response
+
+[.columns]
+[.column]
+--
+- Networks are unreliable by default
+- Clients retry on timeouts or 5xx
+- Servers may process twice
+- Idempotency makes retries safe
+- Prevents duplicate writes
+- Improves user trust and consistency
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "API Service" as API
+database "Idempotency Store" as Store
+database "Orders DB" as DB
+
+Client -> API: POST /orders (Idempotency-Key)
+API -> Store: Check key
+alt Not seen
+  API -> DB: Create order
+  DB --> API: Order ID
+  API -> Store: Save key + response
+  API --> Client: 201 Created
+else Seen
+  API -> Store: Fetch stored response
+  API --> Client: 201 Created (replay)
+end
+@enduml
+----
+--
+
+== Core Concepts
+- GET, PUT, DELETE are idempotent by definition
+- POST is not idempotent unless enforced
+- Client generates a unique idempotency key
+- Server stores key and response
+- TTL controls deduplication window
+- Response replay must be consistent
+
+== Example: Client Request
+[.columns]
+[.column]
+--
+- Use a UUID per logical request
+- Retry with the same key
+- Required for unsafe operations
+- Works with gateways and queues
+- Client should log the key
+- Server should validate presence
+--
+[.column]
+--
+[source,http]
+----
+POST /orders HTTP/1.1
+Host: api.example.com
+Idempotency-Key: 1f2c0b2a-5d2c-4b6a-9f89-7fbf2a9f4b21
+Content-Type: application/json
+
+{"sku":"A-123","qty":1}
+----
+--
+
+== Example: Server Dedup
+[.columns]
+[.column]
+--
+- Reject missing keys for unsafe ops
+- Check store before processing
+- Persist response before returning
+- Replay identical response on repeat
+- Use TTL for storage control
+- Track metrics for duplicates
+--
+[.column]
+--
+[source,python]
+----
+key = request.headers.get("Idempotency-Key")
+if not key:
+    return error(400, "Missing Idempotency-Key")
+
+cached = store.get(key)
+if cached:
+    return cached.response
+
+result = create_order(request.body)
+store.put(key, result, ttl_seconds=86400)
+return result
+----
+--
+
+== Architectural Tradeoffs
+- Reliability: avoids duplicate side effects, depends on storage
+- Latency: extra lookup adds a hop per request
+- Cost: key storage increases memory or DB usage
+- Scalability: high write rates need efficient indexing
+- Complexity: response replay logic is tricky
+- Operations: TTL and cleanup policies must be tuned
+
+== Pitfalls and Recap
+- Treating all POSTs as safe without keys
+- TTL too short for slow retries
+- Not replaying the same response
+- Storing keys without response data
+- Skipping idempotency for payments
+- Recap: keys + stored responses make retries safe

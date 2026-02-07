@@ -1,0 +1,114 @@
+= Load Balancing Strategies
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+== Goals
+- Explain why load balancing is needed
+- Compare Layer 4 and Layer 7 approaches
+- Identify common routing algorithms
+- Use health checks and draining
+- Recognize design tradeoffs
+- Avoid common configuration pitfalls
+
+== Overview
+- Distributes traffic across instances
+- Improves availability and throughput
+- Enables horizontal scaling
+- Supports rolling deployments
+- Removes unhealthy nodes from rotation
+- Reduces hot spots and overloads
+
+[.columns]
+[.column]
+--
+- Layer 4 balances connections
+- Layer 7 balances HTTP requests
+- Algorithms fit different workloads
+- Health checks gate traffic
+- Draining prevents dropped requests
+- Observability confirms distribution
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Load Balancer" as LB
+participant "Service A" as A
+participant "Service B" as B
+participant "Service C" as C
+
+Client -> LB: Request
+LB -> A: Route (healthy)
+A --> LB: Response
+LB --> Client: Response
+
+LB -> B: Health check
+LB -> C: Health check
+@enduml
+----
+--
+
+== Algorithms
+- Round robin for uniform instances
+- Weighted routing for uneven capacity
+- Least connections for bursty traffic
+- Least latency for performance focus
+- Hash-based for affinity needs
+- Choose per workload, not globally
+
+== Example: Nginx Weights
+[.columns]
+[.column]
+--
+- Assign weights by instance capacity
+- Works well for mixed hardware
+- Combine with health checks
+- Use during staged migrations
+- Avoid huge weight gaps
+- Monitor distribution results
+--
+[.column]
+--
+[source,nginx]
+----
+upstream api_pool {
+    server 10.0.0.10 weight=3;
+    server 10.0.0.11 weight=2;
+    server 10.0.0.12 weight=1;
+}
+
+server {
+    location / {
+        proxy_pass http://api_pool;
+    }
+}
+----
+--
+
+== Client-Side Balancing
+- Useful when no shared LB exists
+- Client must track health and retry
+- Works for internal service calls
+- Requires consistent discovery
+- Can amplify blast radius if buggy
+- Use backoff and circuit breakers
+
+== Architectural Tradeoffs
+- Scalability: enables horizontal scale but adds a hop
+- Reliability: health checks help, misconfig hurts
+- Latency: Layer 7 adds overhead but gives control
+- Cost: managed LBs cost money; self-managed costs ops
+- Complexity: routing rules can be error-prone
+- Operations: observability is required for tuning
+
+== Pitfalls and Recap
+- Slow or missing health checks
+- Sticky sessions without a real need
+- One algorithm for all traffic types
+- Skipping connection draining
+- Uneven weights across zones
+- Recap: balance wisely, verify with metrics

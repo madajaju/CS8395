@@ -1,6 +1,17 @@
+
 = Retries, Timeouts, and Backoff
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 
 == 1. Motivation: Why Networks Fail in the Real World
+
+Video: https://youtu.be/6d1HoyLkt6k
 
 Distributed systems depend on networks. Networks are imperfect:
 
@@ -36,8 +47,8 @@ Together, these create a controlled failure-recovery loop.
 Not all failures are equal. The decision to retry should depend on *why* the call failed.
 
 [.column]
----
-[plantuml]
+--
+[plantuml, format=svg, width=100%]
 ----
 plantuml
 @startuml
@@ -48,11 +59,11 @@ User -> System : Connection Reset
 User -> System : 5xx Errors
 @enduml
 ----
----
+--
 
 [.column]
----
-[plantuml]
+--
+[plantuml, format=svg, width=100%]
 ----
 @startuml
 actor User
@@ -62,7 +73,7 @@ User -> System : Non-idempotent Failures
 
 @enduml
 ----
----
+--
 
 
 == 4. Timeouts: The First Line of Defense
@@ -80,8 +91,6 @@ Timeouts should be:
 
 Common practice: use **different timeouts** for different operations.
 
----
-
 == 5. Retries: Useful, But Dangerous
 
 Retries can improve reliability for transient failures, but they introduce risk:
@@ -95,8 +104,6 @@ Retries should always be paired with:
 - Idempotent operations
 - Backoff strategies
 - A maximum number of attempts
-
----
 
 == 6. Idempotency and Safe Retries
 
@@ -115,13 +122,11 @@ To make non-idempotent operations safe:
 
 This lets retries happen without duplicate side effects.
 
----
-
 == 7. Backoff Strategies
 
 The purpose of backoff is to spread retries over time so the target system can recover.
 
-[plantuml]
+[plantuml, format=svg, width=100%]
 ----
 @startuml
 participant "Fixed Backoff" as FB
@@ -146,8 +151,6 @@ Best practices:
 
 A retry budget limits how many retries are allowed in a given window, preventing retry storms during outages.
 
----
-
 == 9. Interactions with Circuit Breakers
 
 Retries and timeouts are often paired with **circuit breakers**:
@@ -156,8 +159,6 @@ Retries and timeouts are often paired with **circuit breakers**:
 - Calls fail fast until the dependency shows signs of recovery
 
 This prevents retries from constantly hammering a broken service and improves overall system stability.
-
----
 
 == 10. Observability and Tuning
 
@@ -172,8 +173,6 @@ Tuning examples:
 - If retries spike, reduce retry attempts or add jitter.
 - If timeouts trigger too often, increase timeouts or optimize the dependency.
 
----
-
 == 11. Example Scenario
 
 Consider a service that calls a third-party shipping API:
@@ -185,8 +184,6 @@ Consider a service that calls a third-party shipping API:
 
 The result is a balance of **reliability** and **system stability**.
 
----
-
 == 12. Key Takeaways
 
 - Timeouts prevent requests from hanging and protect system resources.
@@ -194,5 +191,3 @@ The result is a balance of **reliability** and **system stability**.
 - Backoff and jitter prevent synchronized retry storms.
 - Idempotency is critical for safe retries.
 - Use retry limits and budgets to prevent runaway behavior.
-
----

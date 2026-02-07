@@ -1,4 +1,14 @@
 = Stateless vs Stateful Services
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/x8lQrDvzWQY
 
 == 1. Motivation: Why State Matters
 
@@ -15,36 +25,40 @@ The architectural question is **where that memory lives**. This choice affects:
 - Deployment strategy
 - Cost
 
----
-
+[.columns]
 == 2. Core Definitions
 
+[.column]
+--
 **Stateless service**
 - Does not retain client-specific data between requests.
 - Each request contains all information needed to process it.
+
 
 **Stateful service**
 - Retains data or context across requests.
 - Requests depend on prior interaction or local stored state.
 
 In practice, most systems include both, but the distribution of state is a major design decision.
+--
 
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ....
 @startuml
-  title Core Definitions
-  left to right direction
-  rectangle "Stateless Service" as Stateless {
-    Stateless -> Request : "No Retained Data"
-  }
-  rectangle "Stateful Service" as Stateful {
-    Stateful -> Request : "Retained Context"
-    Stateful -> LocalState : "Depends on Previous State"
-  }
+title Core Definitions
+left to right direction
+rectangle "Stateless Service" as Stateless {
+  Stateless -> Request : "No Retained Data"
+}
+rectangle "Stateful Service" as Stateful {
+  Stateful --> Request : "Retained Context"
+  Stateful -> LocalState : "Depends on Previous State"
+}
 @enduml
 ....
-
----
+--
 
 == 3. Why Stateless Services Scale Easily
 
@@ -57,8 +71,6 @@ When services are stateless:
 
 This makes stateless design a default goal for horizontally scalable systems.
 
----
-
 == 4. Why Stateful Services Are Sometimes Necessary
 
 Some workloads require local or persistent state:
@@ -70,10 +82,11 @@ Some workloads require local or persistent state:
 
 State enables efficiency and correctness but introduces operational complexity.
 
----
-
+[.columns]
 == 5. Common Examples
 
+[.column]
+--
 **Stateless**
 - REST APIs that read/write from shared databases
 - CDN edge servers
@@ -83,43 +96,51 @@ State enables efficiency and correctness but introduces operational complexity.
 - Databases and message queues
 - Session-based web apps without external session stores
 - Real-time game servers with in-memory world state
+--
 
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ....
 @startuml
-  title Common Examples
-  left to right direction
-  rectangle "Stateless Examples" as StatelessExamples {
-    StatelessExamples -> "REST APIs" : "Use Shared DB"
-    StatelessExamples -> "CDN Edges" : "Cache Content"
-  }
-  rectangle "Stateful Examples" as StatefulExamples {
-    StatefulExamples -> "Databases" : "Retain Data"
-    StatefulExamples -> "Real-Time Apps" : "Maintain Local State"
-  }
+title Common Examples
+left to right direction
+rectangle "Stateless Examples" as StatelessExamples {
+  StatelessExamples --> "REST APIs" : "Use Shared DB"
+  StatelessExamples -> "CDN Edges" : "Cache Content"
+}
+rectangle "Stateful Examples" as StatefulExamples {
+  StatefulExamples --> "Databases" : "Retain Data"
+  StatefulExamples -> "Real-Time Apps" : "Maintain Local State"
+}
 @enduml
 ....
-
----
+--
 
 == 6. Managing State in Scalable Systems
 
-Teams often push state into shared systems, even though this can introduce coupling. Here’s why shared databases might be recommended:
+Teams often push state into shared systems, even though this can introduce coupling.
 
-- **Centralized Data Control**: Shared databases provide a centralized point for data management, ensuring consistency across services.
+Why teams do it:
 
-- **Reduced Latency for Data Access**: Accessing a shared database can be faster than synchronizing state across multiple data stores.
+- **Centralized data control** for consistent updates across services
+- **Reduced latency** compared to synchronizing multiple data stores
+- **Simplified architecture** vs. complex state replication
+- **Cross-service queries** are easier with shared data access
 
-- **Simplified Architecture**: Utilizing a shared database reduces the need for complex state-management strategies.
+== 6b. Shared Database Risks and Mitigations
 
-- **Support for Cross-Service Queries**: Shared databases enable efficient cross-service data queries, enhancing overall data coherence.
+Shared databases reduce complexity but increase coupling. Common mitigations:
 
-While shared databases can reduce complexities, teams should implement effective strategies, like versioning and clear API boundaries, to mitigate coupling risks.
+- **Versioned schemas** and compatibility windows
+- **Clear API boundaries** between teams
+- **Defined ownership** for data access and change control
 
----
-
+[.columns]
 == 7. Session State and User Context
 
+[.column]
+--
 Classic web apps stored session data in memory on a single server. That creates problems:
 
 - Sticky sessions are required
@@ -130,24 +151,26 @@ Modern alternatives:
 
 - Store sessions in Redis or a database
 - Use stateless tokens (JWTs)
+--
 
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ....
 @startuml
-  title Session State Challenges
-  left to right direction
-  rectangle "In-Memory Sessions" as InMemory {
-    InMemory -> Server : "Sticky Sessions Required"
-    InMemory -> Failure : "Session Loss on Failover"
-  }
-  rectangle "Modern Alternatives" as Alternatives {
-    Alternatives -> Redis : "Store Sessions"
-    Alternatives -> Tokens : "Use JWTs"
-  }
+title Session State Challenges
+left to right direction
+rectangle "In-Memory Sessions" as InMemory {
+  InMemory --> Server : "Sticky Sessions Required"
+  InMemory -> Failure : "Session Loss on Failover"
+}
+rectangle "Modern Alternatives" as Alternatives {
+  Alternatives --> Redis : "Store Sessions"
+  Alternatives -> Tokens : "Use JWTs"
+}
 @enduml
 ....
-
----
+--
 
 == 8. Reliability and Failure Modes
 
@@ -160,8 +183,6 @@ Modern alternatives:
 - Require careful failover and consistency planning
 
 State increases both responsibility and risk.
-
----
 
 == 9. Tradeoffs and Design Choices
 
@@ -179,22 +200,25 @@ Stateful systems:
 
 The right choice depends on performance requirements, cost, and operational maturity.
 
----
 
+[.columns]
 == 10. Example Scenario
 
-A shopping cart service can be built in two ways:
+[.column]
+--
+**Stateful**: cart stored in server memory.
 
-1. **Stateful**: cart stored in server memory.
-   - Fast access
-   - Breaks on server failure or scaling
-2. **Stateless**: cart stored in Redis or database.
-   - Slightly more latency
-   - Survives scaling and failures
+- Fast access
+- Breaks on server failure or scaling
+--
 
-Most modern systems choose the stateless approach because it scales better.
+[.column]
+--
+**Stateless**: cart stored in Redis or database.
 
----
+- Slightly more latency
+- Survives scaling and failures
+--
 
 == 11. Key Takeaways
 

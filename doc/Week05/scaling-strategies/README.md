@@ -1,4 +1,8 @@
-# Scaling Strategies
+# Microservices Scaling Strategies: Horizontal vs Vertical, Caching, Load Balancing & Sharding
+
+Video: https://youtu.be/NwYMr7qEttw
+
+This lecture gives a high‑level roadmap for scaling microservices, covering vertical vs horizontal scaling, stateless vs stateful services, load balancing strategies, caching, and data‑layer techniques like read replicas and sharding. It also touches on async workloads, cost/complexity trade‑offs, and practical scaling scenarios for traffic spikes and product launches.
 
 ## 1. Motivation: Growth Breaks Assumptions
 

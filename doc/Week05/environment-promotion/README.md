@@ -1,4 +1,6 @@
-# Environment Promotion
+# Environment Promotion in CI/CD: Immutable Artifacts, Stage Gates & Safer Microservices Deployments
+
+In this lecture, you’ll learn why environment promotion is essential for reliable CI/CD pipelines in microservice architectures. We cover immutable artifacts, stage gates, common deployment risks, and best practices like canary and blue/green releases, artifact repositories, checksums, and configuration management. Perfect for teams building repeatable releases across dev, test, staging, and production.
 
 ## 1. Motivation: Why Environment Promotion Exists
 

@@ -1,0 +1,131 @@
+= Graceful Shutdown and Draining
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+== Goals
+- Explain graceful shutdown and request draining
+- Identify where shutdown failures occur
+- Describe readiness vs liveness signals
+- Plan drain timeouts and ordering
+- Apply in deploys and autoscaling
+- Avoid common shutdown pitfalls
+
+== Overview
+- Stop accepting new requests first
+- Allow in-flight work to complete
+- Deregister from the load balancer early
+- Enforce a maximum drain timeout
+- Close resources in safe order
+- Emit logs and metrics for shutdown
+
+[.columns]
+[.column]
+--
+- Protects user experience during deploys
+- Prevents partial writes and corruption
+- Keeps background jobs consistent
+- Works with autoscale scale-in events
+- Reduces timeouts for clients
+- Enables safer rollbacks
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Load Balancer" as LB
+participant "Service Instance" as S
+
+Client -> LB: Request
+LB -> S: Route request
+
+S -> LB: Deregister (drain)
+LB -> S: Stop new requests
+S -> S: Finish in-flight work
+S --> LB: Drain complete
+S -> S: Shutdown
+@enduml
+----
+--
+
+== Design Notes
+- Separate readiness from liveness probes
+- Do not accept new connections during drain
+- Make handlers idempotent to allow retries
+- Signal shutdown early in the process
+- Choose a timeout that matches SLOs
+- Close shared resources last
+
+== Example: Go Shutdown
+[.columns]
+[.column]
+--
+- Listen for SIGTERM or SIGINT
+- Call server.Shutdown with a timeout
+- Stop new requests immediately
+- Let in-flight work finish
+- Log the start and end of draining
+- Exit with a clear status code
+--
+[.column]
+--
+[source,go]
+----
+server := http.Server{Addr: ":8080", Handler: mux}
+
+go server.ListenAndServe()
+
+quit := make(chan os.Signal, 1)
+signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+<-quit
+
+ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+defer cancel()
+_ = server.Shutdown(ctx)
+----
+--
+
+== Example: Kubernetes Draining
+[.columns]
+[.column]
+--
+- terminationGracePeriodSeconds controls drain window
+- preStop hook delays shutdown for deregistration
+- Works with readiness probes to stop traffic
+- Use per-service timeouts based on SLA
+- Keep shutdown logic deterministic
+- Verify LB health check behavior
+--
+[.column]
+--
+[source,yaml]
+----
+spec:
+  terminationGracePeriodSeconds: 30
+  containers:
+  - name: app
+    lifecycle:
+      preStop:
+        exec:
+          command: ["/bin/sh", "-c", "sleep 10"]
+----
+--
+
+== Architectural Tradeoffs
+- Reliability: reduces dropped requests but can still time out
+- Latency: longer drain windows slow rollouts
+- Cost: extra capacity stays online during drain
+- Scalability: safe scale-in needs LB coordination
+- Complexity: ordering and signal handling add effort
+- Operations: requires clear deploy and rollback playbooks
+
+== Pitfalls and Recap
+- Not deregistering from the load balancer
+- Drain timeout too short for long requests
+- Closing DB connections before responses complete
+- Ignoring background jobs and queues
+- Conflating readiness and liveness
+- Recap: drain traffic, finish work, shutdown cleanly

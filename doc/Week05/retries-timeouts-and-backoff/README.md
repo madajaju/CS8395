@@ -1,4 +1,9 @@
-# Retries, Timeouts, and Backoff
+# Retries, Timeouts & Backoff in Microservices: Reliable Client‑Server Resilience Patterns
+
+Video: https://youtu.be/I6clrLp1nsI
+
+This lecture breaks down retries, timeouts, and backoff strategies for resilient microservice communication. Learn how to prevent cascading failures, handle idempotent vs non‑idempotent requests, use exponential backoff with jitter, set retry budgets, and apply circuit breakers for fail‑fast behavior. Includes practical guidance on error handling, observability, and real‑world API call examples.
+
 
 ## 1. Motivation: Why Networks Fail in the Real World
 

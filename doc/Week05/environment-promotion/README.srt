@@ -1,0 +1,1070 @@
+﻿1
+00:00:00,166 --> 00:00:00,766
+Okay.
+
+2
+00:00:00,766 --> 00:00:03,766
+In this lecture I'm
+going to talk about environment promotion.
+
+3
+00:00:04,000 --> 00:00:07,366
+This is really important for your CI
+CD pipeline and the way
+
+4
+00:00:07,366 --> 00:00:11,033
+that you can deploy microservices
+most effectively
+
+5
+00:00:11,933 --> 00:00:16,033
+and in a consistent manner,
+which is really important.
+
+6
+00:00:16,333 --> 00:00:16,833
+Right?
+
+7
+00:00:16,833 --> 00:00:19,833
+So most teams run
+their software on multiple environments.
+
+8
+00:00:20,233 --> 00:00:21,166
+You need to have a development
+
+9
+00:00:21,166 --> 00:00:24,166
+environment, a test environment
+and a production environment.
+
+10
+00:00:24,633 --> 00:00:28,500
+And when you do monolithic programing
+this is really easy, right?
+
+11
+00:00:28,500 --> 00:00:33,433
+Because I've deployed one big application
+and it can go through those environments
+
+12
+00:00:33,433 --> 00:00:37,300
+when you're working in, microservice
+architectures.
+
+13
+00:00:37,333 --> 00:00:39,733
+These environments
+have become very important
+
+14
+00:00:39,733 --> 00:00:42,466
+because you are running
+multiple applications.
+
+15
+00:00:42,466 --> 00:00:44,066
+You are running on a network.
+
+16
+00:00:44,066 --> 00:00:47,033
+So all these things need to be set up
+appropriately.
+
+17
+00:00:47,033 --> 00:00:50,633
+Luckily, we've got tools like Kubernetes
+and Docker,
+
+18
+00:00:50,900 --> 00:00:53,733
+Ansible all and Terraform.
+
+19
+00:00:53,733 --> 00:00:55,800
+Those things help set up
+these environments
+
+20
+00:00:55,800 --> 00:00:59,466
+very easily and more effectively
+than doing everything by hand.
+
+21
+00:00:59,500 --> 00:01:05,000
+So you should look into, automating
+your CI CD pipeline in your environment,
+
+22
+00:01:05,033 --> 00:01:08,533
+set up without promotion,
+without going through this.
+
+23
+00:01:08,933 --> 00:01:10,833
+There are some dangers, right?
+
+24
+00:01:10,833 --> 00:01:13,700
+You have un repeatable releases.
+
+25
+00:01:13,700 --> 00:01:16,233
+There's no clear ownership for broken
+deployments.
+
+26
+00:01:16,233 --> 00:01:19,700
+We've seen very large companies
+struggle with deployments.
+
+27
+00:01:19,700 --> 00:01:21,433
+Oh, I deployed a new,
+
+28
+00:01:21,433 --> 00:01:24,600
+patch to a database, and all of a sudden
+everything goes down.
+
+29
+00:01:25,033 --> 00:01:28,033
+These sorts of things, if you look at them
+
+30
+00:01:28,100 --> 00:01:31,100
+all, can stem back to poor,
+
+31
+00:01:31,200 --> 00:01:34,000
+environment management,
+poor CI, CD pipeline,
+
+32
+00:01:35,866 --> 00:01:38,400
+rig, governance is the right word.
+
+33
+00:01:38,400 --> 00:01:40,133
+I'm looking for.
+
+34
+00:01:40,133 --> 00:01:42,933
+So the core definition of an environment
+
+35
+00:01:42,933 --> 00:01:46,600
+and environment promotion
+means that the same build artifact
+
+36
+00:01:46,600 --> 00:01:49,933
+can move through the different
+environments in a fixed order.
+
+37
+00:01:50,200 --> 00:01:55,300
+I am not adding when I go in from
+development to test and then production.
+
+38
+00:01:55,300 --> 00:01:57,366
+I should not be adding any code,
+
+39
+00:01:57,366 --> 00:02:00,733
+any changes to my microservice at all
+in those environments.
+
+40
+00:02:01,066 --> 00:02:04,066
+Otherwise, what you've developed
+and what you released
+
+41
+00:02:04,400 --> 00:02:07,800
+are not can are not repeatable.
+
+42
+00:02:08,233 --> 00:02:11,733
+And this is a problem
+that I've seen in large corporations
+
+43
+00:02:11,733 --> 00:02:13,466
+in the past, even small ones.
+
+44
+00:02:13,466 --> 00:02:15,533
+I do this myself sometimes.
+
+45
+00:02:15,533 --> 00:02:16,900
+Oh, this real quick patch.
+
+46
+00:02:16,900 --> 00:02:20,433
+I'm just going to plug in after test
+and I'll go back to development,
+
+47
+00:02:20,433 --> 00:02:24,600
+make sure everything's running through or
+I see it in test.
+
+48
+00:02:24,600 --> 00:02:27,600
+I add the patch
+and push it into production.
+
+49
+00:02:27,933 --> 00:02:31,366
+That has cost millions of dollars
+for lots of different companies
+
+50
+00:02:31,366 --> 00:02:32,166
+all over the world.
+
+51
+00:02:33,300 --> 00:02:35,066
+Remember that artifacts.
+
+52
+00:02:35,066 --> 00:02:40,633
+You use these environments as stage gates
+to protect you from any failures
+
+53
+00:02:40,633 --> 00:02:43,266
+in production, because that's
+where you want to save things
+
+54
+00:02:43,266 --> 00:02:44,766
+the most is in production.
+
+55
+00:02:44,766 --> 00:02:48,166
+So a typical pipeline, there's a lot
+you can put a lot in here.
+
+56
+00:02:48,533 --> 00:02:50,200
+I have my build.
+
+57
+00:02:50,200 --> 00:02:53,800
+I have my unit tests,
+I have my integration tests.
+
+58
+00:02:54,266 --> 00:02:57,700
+I have UAT, user acceptance testing.
+
+59
+00:02:58,666 --> 00:03:01,100
+I can deploy it into a staging area
+
+60
+00:03:01,100 --> 00:03:04,333
+to be deployed once
+it goes through final approval.
+
+61
+00:03:04,566 --> 00:03:08,233
+Typically call
+those my gold repos, my gold repositories
+
+62
+00:03:08,500 --> 00:03:12,366
+where I know whatever's there has passed
+everything in my test environments,
+
+63
+00:03:12,833 --> 00:03:15,833
+and then it can move on
+to full production.
+
+64
+00:03:16,033 --> 00:03:18,666
+This is a pretty typical pipeline,
+
+65
+00:03:18,666 --> 00:03:19,233
+right?
+
+66
+00:03:19,233 --> 00:03:21,733
+The key here is immutability.
+
+67
+00:03:21,733 --> 00:03:23,833
+Those artifacts must not change.
+
+68
+00:03:23,833 --> 00:03:26,866
+And in the past, when we were doing more
+
+69
+00:03:27,133 --> 00:03:30,433
+lower level code like C and C
+plus plus and things like that,
+
+70
+00:03:30,433 --> 00:03:34,800
+where I've got compilers and other tools
+that help generate the code,
+
+71
+00:03:35,833 --> 00:03:36,966
+those tools
+
+72
+00:03:36,966 --> 00:03:42,033
+are checked into my pipeline as well
+and checked in and all that so that I can,
+
+73
+00:03:42,700 --> 00:03:45,933
+a year or two years later
+if I need a build
+
+74
+00:03:45,933 --> 00:03:49,933
+with a specific patch on it,
+I can go back to that and get that,
+
+75
+00:03:51,000 --> 00:03:52,066
+repeated.
+
+76
+00:03:52,066 --> 00:03:55,500
+That tends to be a very, big problem
+
+77
+00:03:55,733 --> 00:03:58,900
+that we've kind of ignored
+because we moved to more software
+
+78
+00:03:58,900 --> 00:04:01,900
+as a service type of things
+instead of deploying
+
+79
+00:04:02,166 --> 00:04:05,200
+a software on people's, own own devices.
+
+80
+00:04:05,433 --> 00:04:08,900
+But I can see a big shift
+happening in that area, too.
+
+81
+00:04:09,333 --> 00:04:11,966
+Some common pitfalls to avoid.
+
+82
+00:04:11,966 --> 00:04:15,033
+Build it once and you're done. Right.
+
+83
+00:04:15,066 --> 00:04:19,333
+You should have, the ability to build it
+over and over again without a problem
+
+84
+00:04:19,833 --> 00:04:24,233
+and make sure that you promote the exact
+same artifact across the environments.
+
+85
+00:04:25,200 --> 00:04:27,566
+Don't change them in any way, shape,
+or form as they move
+
+86
+00:04:27,566 --> 00:04:29,333
+through the environments.
+
+87
+00:04:29,333 --> 00:04:32,900
+Common practices are using container
+images with tags.
+
+88
+00:04:32,900 --> 00:04:36,033
+Coming up with a tagging version
+scheme is really important.
+
+89
+00:04:36,500 --> 00:04:40,100
+Having checksums
+and signatures for security
+
+90
+00:04:40,966 --> 00:04:43,966
+and then having artifact repositories
+that are locked down.
+
+91
+00:04:44,000 --> 00:04:46,666
+We had a big,
+
+92
+00:04:46,666 --> 00:04:49,700
+infiltration by, Russian operatives
+
+93
+00:04:50,833 --> 00:04:54,933
+in a CI CD pipeline where between test
+
+94
+00:04:55,233 --> 00:04:58,533
+and production,
+they injected code in there.
+
+95
+00:04:59,266 --> 00:05:01,633
+They got into the CI CD pipeline,
+
+96
+00:05:01,633 --> 00:05:04,966
+injecting code after the test between test
+and production.
+
+97
+00:05:05,500 --> 00:05:07,933
+Crazy, crazy that that happened.
+
+98
+00:05:07,933 --> 00:05:11,700
+The company that got attacked
+was not using checksums and signatures.
+
+99
+00:05:12,400 --> 00:05:12,600
+Right.
+
+100
+00:05:12,600 --> 00:05:16,566
+Because if the checksum was there,
+it would have, it would have been caught.
+
+101
+00:05:16,600 --> 00:05:19,766
+Right. So, well, I could have been caught.
+
+102
+00:05:19,800 --> 00:05:22,233
+It depends on when the crew created
+the checksum.
+
+103
+00:05:22,233 --> 00:05:23,900
+In this case, it would have been caught.
+
+104
+00:05:26,266 --> 00:05:27,133
+Okay.
+
+105
+00:05:27,133 --> 00:05:28,900
+Configuration versus code.
+
+106
+00:05:28,900 --> 00:05:31,900
+So promoting the same artifact
+does not mean
+
+107
+00:05:32,833 --> 00:05:34,833
+every environment has to be identical.
+
+108
+00:05:34,833 --> 00:05:35,233
+In fact,
+
+109
+00:05:35,233 --> 00:05:40,333
+we'll see that there aren't a lot of times
+in typically in test environments.
+
+110
+00:05:40,833 --> 00:05:42,866
+I could have different environments
+for test.
+
+111
+00:05:42,866 --> 00:05:45,566
+Maybe I am doing, testing.
+
+112
+00:05:45,566 --> 00:05:48,100
+That's doing unit testing,
+but no performance.
+
+113
+00:05:48,100 --> 00:05:51,133
+So I turn all my logging on
+for performance.
+
+114
+00:05:51,233 --> 00:05:52,600
+I'm not going to turn my logging on.
+
+115
+00:05:52,600 --> 00:05:55,366
+I'm going to turn my logging
+at a different level.
+
+116
+00:05:55,366 --> 00:05:57,800
+So the environment may actually change.
+
+117
+00:05:57,800 --> 00:06:01,333
+The differences could be,
+running environments could be different.
+
+118
+00:06:01,333 --> 00:06:03,133
+Database endpoints can be different.
+
+119
+00:06:03,133 --> 00:06:08,200
+Feature flags be turned on and off,
+depending on which features on testing
+
+120
+00:06:08,500 --> 00:06:11,933
+API keys and secrets
+most definitely will be different
+
+121
+00:06:11,933 --> 00:06:13,566
+in the different environments.
+
+122
+00:06:13,566 --> 00:06:17,333
+Do not just turn off API keys
+
+123
+00:06:17,333 --> 00:06:21,100
+and secrets in your test environment,
+because it's a pain to work with.
+
+124
+00:06:21,100 --> 00:06:23,300
+Oh, I don't need it in my test
+environment.
+
+125
+00:06:23,300 --> 00:06:26,833
+Still have them,
+but you can use a different schema
+
+126
+00:06:26,833 --> 00:06:30,366
+for for those,
+you can use longer lasting keys in those.
+
+127
+00:06:30,666 --> 00:06:32,233
+What happens sometimes is people
+
+128
+00:06:32,233 --> 00:06:35,666
+turn them off and then they go production
+and forgot to turn back on.
+
+129
+00:06:36,366 --> 00:06:37,966
+Authentication and authorization.
+
+130
+00:06:37,966 --> 00:06:40,166
+So that could be, you know, really bad.
+
+131
+00:06:42,400 --> 00:06:42,900
+Okay.
+
+132
+00:06:42,900 --> 00:06:45,200
+There are some different deployment
+strategies as well.
+
+133
+00:06:45,200 --> 00:06:48,900
+So once everything gets through to test
+and I'm headed to deployment,
+
+134
+00:06:50,166 --> 00:06:52,200
+there are some different strategies
+to deploy,
+
+135
+00:06:52,200 --> 00:06:54,100
+especially if you want higher uptime.
+
+136
+00:06:54,100 --> 00:06:56,733
+And microservices are great at this.
+
+137
+00:06:56,733 --> 00:07:01,566
+One is called the canary release
+where I, I take 5% of my users
+
+138
+00:07:01,566 --> 00:07:05,233
+that are using it and I put them into this
+canary production environment.
+
+139
+00:07:05,833 --> 00:07:06,100
+Right.
+
+140
+00:07:06,100 --> 00:07:10,266
+So if the production environment
+goes south, I can easily turn that back
+
+141
+00:07:10,633 --> 00:07:13,900
+and then,
+wait for the next production cycle.
+
+142
+00:07:13,933 --> 00:07:16,933
+So instead of just deploying everywhere,
+
+143
+00:07:16,933 --> 00:07:19,933
+the canary release is all about,
+
+144
+00:07:20,800 --> 00:07:23,800
+limiting how many people get that,
+
+145
+00:07:23,933 --> 00:07:26,533
+that new release for a period of time.
+
+146
+00:07:26,533 --> 00:07:29,966
+And then when it's,
+it seems to be full production
+
+147
+00:07:29,966 --> 00:07:34,700
+for a designated time that use, designate,
+then you can switch everyone else over.
+
+148
+00:07:35,100 --> 00:07:38,533
+There's also blue green environments
+where I switch everyone over.
+
+149
+00:07:39,566 --> 00:07:41,500
+Post, validation.
+
+150
+00:07:41,500 --> 00:07:43,000
+And now everyone's on the new thing.
+
+151
+00:07:43,000 --> 00:07:47,300
+And if it starts failing,
+I can switch back from, blue to green.
+
+152
+00:07:48,266 --> 00:07:49,933
+All right, so I can easily.
+
+153
+00:07:49,933 --> 00:07:53,666
+I can easily make this, I have two
+operating environment center running.
+
+154
+00:07:54,066 --> 00:07:56,100
+Those are some interesting ways to do it.
+
+155
+00:07:56,100 --> 00:07:59,433
+Also, I've seen this in the past
+where I have feature flags
+
+156
+00:07:59,700 --> 00:08:01,000
+where when I'm deploying,
+
+157
+00:08:01,000 --> 00:08:04,033
+I can deploy based off of some features
+that I've already touched.
+
+158
+00:08:04,033 --> 00:08:06,733
+So I've already tested
+all these features in test,
+
+159
+00:08:06,733 --> 00:08:10,066
+and I can turn on and off
+different features as I deploy,
+
+160
+00:08:10,366 --> 00:08:14,200
+as I have higher reliability
+or higher confidence for my reliability.
+
+161
+00:08:14,500 --> 00:08:15,933
+I can turn those features on.
+
+162
+00:08:15,933 --> 00:08:18,933
+That's another option.
+
+163
+00:08:19,000 --> 00:08:21,100
+Make sure that you set up
+
+164
+00:08:21,100 --> 00:08:24,666
+your verification
+gates in each stage in dev.
+
+165
+00:08:24,933 --> 00:08:27,933
+There should be some kind of gate,
+a test gate
+
+166
+00:08:28,000 --> 00:08:31,200
+that you have to pass
+to get out of dev into test and QA.
+
+167
+00:08:31,633 --> 00:08:32,133
+Right?
+
+168
+00:08:32,133 --> 00:08:33,966
+Whether it's a static analysis
+
+169
+00:08:33,966 --> 00:08:37,700
+or some simple unit tests or whatever
+the case may be,
+
+170
+00:08:37,966 --> 00:08:41,233
+you're probably have a stage gate there
+and then you've got testing QA.
+
+171
+00:08:41,500 --> 00:08:44,500
+Those should all be fully automated,
+with some
+
+172
+00:08:44,500 --> 00:08:47,500
+some stage gating, that goes in there.
+
+173
+00:08:47,733 --> 00:08:50,833
+And then as we've
+already talked in staging,
+
+174
+00:08:50,900 --> 00:08:52,666
+these are production like checks making.
+
+175
+00:08:52,666 --> 00:08:55,533
+Everything's
+ready to go until I get into production.
+
+176
+00:08:57,866 --> 00:09:00,000
+Make sure that you have the right
+approvals.
+
+177
+00:09:00,000 --> 00:09:03,000
+Not too much approval,
+but just the right amount
+
+178
+00:09:03,733 --> 00:09:06,000
+before you release into production,
+
+179
+00:09:06,000 --> 00:09:09,466
+especially if you're in a large system
+working for large company.
+
+180
+00:09:10,533 --> 00:09:11,566
+It can be devastating.
+
+181
+00:09:11,566 --> 00:09:14,566
+It can be even worse for small company if,
+
+182
+00:09:15,433 --> 00:09:17,766
+if you have a massive outage
+
+183
+00:09:17,766 --> 00:09:21,166
+and your first launch, for example,
+you need to be able to step that back.
+
+184
+00:09:21,200 --> 00:09:24,133
+I have been in a major fail launch.
+
+185
+00:09:24,133 --> 00:09:25,933
+It is devastating.
+
+186
+00:09:25,933 --> 00:09:29,000
+And if you don't have a way
+back, it's even worse.
+
+187
+00:09:29,033 --> 00:09:31,433
+So watch what you're doing there.
+
+188
+00:09:31,433 --> 00:09:35,200
+Make sure that you have your checklist off
+before you go into production.
+
+189
+00:09:36,833 --> 00:09:37,633
+Okay.
+
+190
+00:09:37,633 --> 00:09:41,233
+There's some risks and trade offs
+doing this with multiple stages.
+
+191
+00:09:41,566 --> 00:09:44,566
+Slower feedback to get everything through.
+
+192
+00:09:45,100 --> 00:09:48,500
+And you can have bottlenecks
+in any of the manual processes
+
+193
+00:09:48,500 --> 00:09:52,066
+that you may have in your, in your four CD
+pipeline.
+
+194
+00:09:52,266 --> 00:09:53,500
+Right.
+
+195
+00:09:53,500 --> 00:09:56,133
+Common risks that we see,
+
+196
+00:09:56,133 --> 00:09:59,166
+also are environment drift.
+
+197
+00:09:59,200 --> 00:10:03,066
+So if development is working forward
+thinking
+
+198
+00:10:03,066 --> 00:10:07,066
+and they're working on new technologies
+that may those technologies
+
+199
+00:10:07,066 --> 00:10:09,266
+may not actually be
+in your test environment,
+
+200
+00:10:09,266 --> 00:10:11,966
+whether it's new silicon features
+that the coding against.
+
+201
+00:10:13,533 --> 00:10:15,800
+And maybe
+you don't have all those features
+
+202
+00:10:15,800 --> 00:10:18,733
+in all the silicon that you're running
+in your test environment.
+
+203
+00:10:18,733 --> 00:10:21,700
+You can get environment drift
+and then production.
+
+204
+00:10:21,700 --> 00:10:22,633
+If you're developing things
+
+205
+00:10:22,633 --> 00:10:26,333
+that you don't have in production,
+that could be, a real pain as well.
+
+206
+00:10:26,766 --> 00:10:29,766
+And then watch out for manual fixes
+in production.
+
+207
+00:10:30,200 --> 00:10:32,300
+I kind of get this back up
+and running quickly.
+
+208
+00:10:32,300 --> 00:10:34,800
+Make the change in production,
+and it never gets propagated
+
+209
+00:10:34,800 --> 00:10:37,800
+back to development
+and runs through the test cycle.
+
+210
+00:10:38,900 --> 00:10:40,866
+Okay.
+
+211
+00:10:40,866 --> 00:10:44,200
+When you are developing your services,
+come up with,
+
+212
+00:10:45,600 --> 00:10:47,933
+really good Cicd
+
+213
+00:10:47,933 --> 00:10:51,066
+or configuration management practices
+developers
+
+214
+00:10:51,066 --> 00:10:54,066
+merging code back into main.
+
+215
+00:10:54,066 --> 00:10:55,100
+Be wary of that.
+
+216
+00:10:55,100 --> 00:10:56,500
+There should be some stage gate.
+
+217
+00:10:56,500 --> 00:10:58,700
+There should be, something there.
+
+218
+00:10:58,700 --> 00:11:01,400
+Promote
+being able to promote something to main.
+
+219
+00:11:01,400 --> 00:11:04,400
+Make sure that you have
+
+220
+00:11:04,500 --> 00:11:07,633
+your build numbers,
+you know, piling up that
+
+221
+00:11:07,633 --> 00:11:10,633
+you don't use the same number
+for every single build.
+
+222
+00:11:10,633 --> 00:11:13,233
+Automate your tests as much as you can.
+
+223
+00:11:13,233 --> 00:11:17,366
+Use the same image
+that is deployed in test as you do
+
+224
+00:11:17,366 --> 00:11:19,900
+in staging and in production.
+
+225
+00:11:19,900 --> 00:11:21,233
+And then canary.
+
+226
+00:11:21,233 --> 00:11:24,433
+If you are going to use Canary,
+it's it's a great strategy.
+
+227
+00:11:25,233 --> 00:11:26,833
+Limit how big the traffic is.
+
+228
+00:11:26,833 --> 00:11:30,766
+But make sure you have enough traffic
+there, to test, the things that you need
+
+229
+00:11:30,766 --> 00:11:36,500
+to and make rollback as easy as possible
+in case something really bad happens.
+
+230
+00:11:37,566 --> 00:11:38,433
+Okay.
+
+231
+00:11:38,433 --> 00:11:43,933
+Hopefully this will help you, when you're
+developing your, microservices.
+
+232
+00:11:43,933 --> 00:11:45,566
+Because if you put this in up front,
+
+233
+00:11:45,566 --> 00:11:48,266
+when you're iterating
+through these microservices,
+
+234
+00:11:48,266 --> 00:11:50,266
+you don't have to worry
+about your environments anymore.
+
+235
+00:11:50,266 --> 00:11:52,233
+All that can happen automatically.

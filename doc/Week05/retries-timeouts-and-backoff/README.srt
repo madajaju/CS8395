@@ -1,0 +1,1100 @@
+﻿1
+00:00:00,200 --> 00:00:00,566
+Okay.
+
+2
+00:00:00,566 --> 00:00:04,433
+In this lecture I'm going to talk about
+retries, timeouts and backoff.
+
+3
+00:00:05,533 --> 00:00:07,866
+These are typically they're always done
+
+4
+00:00:07,866 --> 00:00:11,766
+at the client side of the rest client
+server interface.
+
+5
+00:00:12,033 --> 00:00:15,400
+But remember as a microservice
+you could be both a client
+
+6
+00:00:15,400 --> 00:00:16,733
+and a server at the same time.
+
+7
+00:00:16,733 --> 00:00:19,733
+So you gotta pay attention
+to how you're doing this
+
+8
+00:00:19,800 --> 00:00:22,600
+and make sure,
+because you might be a server that you're
+
+9
+00:00:22,600 --> 00:00:26,400
+propagating the appropriate errors
+back up to whoever's calling you.
+
+10
+00:00:26,833 --> 00:00:30,566
+If you get something down on the bottom
+that's causing you not to be able to do
+
+11
+00:00:30,600 --> 00:00:33,833
+your work, you need to let 
+other services know as well.
+
+12
+00:00:34,433 --> 00:00:35,000
+All right.
+
+13
+00:00:35,000 --> 00:00:38,433
+The reason that we have
+these techniques is because networks,
+
+14
+00:00:39,000 --> 00:00:43,066
+are not as reliable
+as just a single system system.
+
+15
+00:00:43,100 --> 00:00:45,100
+There's a lot of
+environment things going on
+
+16
+00:00:46,066 --> 00:00:48,066
+that can increase latency.
+
+17
+00:00:48,066 --> 00:00:51,700
+You can drop packets,
+other services can become overloaded.
+
+18
+00:00:51,966 --> 00:00:53,833
+You could have temporary outages.
+
+19
+00:00:53,833 --> 00:00:56,333
+There's a whole bunch of different things
+that you're dealing with
+
+20
+00:00:56,333 --> 00:00:59,333
+that you typically don't deal
+with on a single machine,
+
+21
+00:00:59,466 --> 00:01:02,200
+running on one CPU and things like that.
+
+22
+00:01:02,200 --> 00:01:02,433
+Right.
+
+23
+00:01:02,433 --> 00:01:06,600
+So we need to make sure that we have
+some reliability in our system.
+
+24
+00:01:06,600 --> 00:01:11,166
+So this ability to retry,
+to have timeouts to back off
+
+25
+00:01:11,166 --> 00:01:14,533
+all these are key design patterns
+that we need to look at.
+
+26
+00:01:15,500 --> 00:01:18,066
+So core definitions timeout.
+
+27
+00:01:18,066 --> 00:01:22,566
+What is the maximum time I'm going to wait
+before I give up from the client
+
+28
+00:01:22,566 --> 00:01:23,666
+I send something through.
+
+29
+00:01:23,666 --> 00:01:26,000
+I don't give a validation back.
+
+30
+00:01:26,000 --> 00:01:28,300
+I'm going to timeout after a certain time.
+
+31
+00:01:28,300 --> 00:01:30,733
+Retry says I'm going
+
+32
+00:01:30,733 --> 00:01:33,733
+to deliberately retry a failed request.
+
+33
+00:01:34,333 --> 00:01:38,666
+And I use and I use it
+when failures are likely temporary.
+
+34
+00:01:39,100 --> 00:01:42,133
+So if I get like a timeout,
+I may try it again.
+
+35
+00:01:42,133 --> 00:01:42,933
+Right?
+
+36
+00:01:42,933 --> 00:01:45,866
+If I get an a real a real error
+
+37
+00:01:45,866 --> 00:01:50,100
+like on the back end server crash,
+I may try it again, but if I get an error
+
+38
+00:01:50,300 --> 00:01:54,500
+that's a client error, like a bad request,
+I there no reason to retry there.
+
+39
+00:01:54,966 --> 00:01:56,400
+Right back off.
+
+40
+00:01:56,400 --> 00:02:00,033
+Says that I'm going to retry,
+but I'm going to retry.
+
+41
+00:02:00,666 --> 00:02:03,800
+I'm going to wait longer
+before I retry again.
+
+42
+00:02:04,366 --> 00:02:04,600
+Right.
+
+43
+00:02:04,600 --> 00:02:08,400
+So I'm going to not retry retry retry
+retry or retry.
+
+44
+00:02:08,400 --> 00:02:11,233
+Wait a little bit. Retry again.
+
+45
+00:02:11,233 --> 00:02:13,433
+If it's still fails
+wait a little bit longer.
+
+46
+00:02:13,433 --> 00:02:15,866
+Retry again there
+we'll talk about some both strategies
+
+47
+00:02:17,266 --> 00:02:18,500
+okay.
+
+48
+00:02:18,500 --> 00:02:21,733
+Not all failures that you have
+in these client
+
+49
+00:02:21,733 --> 00:02:24,733
+server
+relationships in microservices are equal.
+
+50
+00:02:24,733 --> 00:02:26,633
+It could be a client error.
+
+51
+00:02:26,633 --> 00:02:28,033
+It could be a server error.
+
+52
+00:02:28,033 --> 00:02:29,600
+It could be a network error.
+
+53
+00:02:29,600 --> 00:02:33,033
+And the the error codes
+that we talked about in previous,
+
+54
+00:02:33,100 --> 00:02:37,466
+lectures talk about the different types
+of failures that we have.
+
+55
+00:02:37,466 --> 00:02:40,900
+And it's really important to understand
+what those are and use those effectively.
+
+56
+00:02:42,300 --> 00:02:44,666
+They should be described in the contract
+
+57
+00:02:44,666 --> 00:02:48,500
+that you have with the client
+and the server and the rest API.
+
+58
+00:02:48,933 --> 00:02:49,966
+Okay.
+
+59
+00:02:49,966 --> 00:02:50,366
+All right.
+
+60
+00:02:50,366 --> 00:02:51,733
+Why do we need timeouts.
+
+61
+00:02:51,733 --> 00:02:55,700
+Let's talk about that
+without timeouts a client if I'm
+
+62
+00:02:55,800 --> 00:02:59,800
+if I'm sending something to a, a server,
+a microservice on the back end,
+
+63
+00:03:00,433 --> 00:03:04,333
+and I'm stuck and I don't have a timeout,
+
+64
+00:03:04,333 --> 00:03:07,333
+I could be stuck
+waiting for a really long time.
+
+65
+00:03:07,633 --> 00:03:09,466
+I minutes, hours.
+
+66
+00:03:09,466 --> 00:03:12,366
+If she do it that long,
+I need some kind of a timeout. Right.
+
+67
+00:03:12,366 --> 00:03:13,600
+Which if I do that,
+
+68
+00:03:13,600 --> 00:03:17,833
+that means other threads and resources,
+can be completely blocked at that time.
+
+69
+00:03:17,833 --> 00:03:20,833
+So I'm sitting there kind of waiting,
+
+70
+00:03:20,866 --> 00:03:23,633
+right, without without doing anything.
+
+71
+00:03:23,633 --> 00:03:28,100
+It can also cause cascading failures
+because all of a sudden I am blocked.
+
+72
+00:03:28,100 --> 00:03:32,300
+I'm a microservice
+that's waiting other other microservices
+
+73
+00:03:32,300 --> 00:03:36,600
+up the chain or user up the chain that's
+using me is going to try and access me.
+
+74
+00:03:36,600 --> 00:03:38,066
+And now I can't take that request.
+
+75
+00:03:38,066 --> 00:03:40,233
+So I timeout up.
+
+76
+00:03:40,233 --> 00:03:42,333
+I have a long time for them to wait.
+
+77
+00:03:42,333 --> 00:03:48,166
+And you get this cascading, block
+that happens, which is no fun and can
+
+78
+00:03:48,166 --> 00:03:51,266
+cause a lot of grief for you, especially
+when you're trying to debug things.
+
+79
+00:03:51,933 --> 00:03:55,433
+So if you do set your timeout,
+what you should make sure that it's short
+
+80
+00:03:55,433 --> 00:03:56,933
+enough to fail fast,
+
+81
+00:03:56,933 --> 00:04:00,666
+but long enough to handle any normal
+latency or variance in the system.
+
+82
+00:04:01,166 --> 00:04:03,766
+So if you're doing a third party app,
+
+83
+00:04:03,766 --> 00:04:06,600
+your timeout may be a little bit longer
+because you are going out
+
+84
+00:04:06,600 --> 00:04:08,133
+over the full blown internet.
+
+85
+00:04:08,133 --> 00:04:12,433
+Then just staying within your own network
+and out there in the full blown internet.
+
+86
+00:04:12,433 --> 00:04:16,466
+With microservices,
+it can be a wasteland of noisy
+
+87
+00:04:16,466 --> 00:04:19,633
+neighbors and things that give you
+different performance numbers.
+
+88
+00:04:19,633 --> 00:04:20,466
+Each time that you run.
+
+89
+00:04:21,666 --> 00:04:23,600
+So it is
+
+90
+00:04:23,600 --> 00:04:27,066
+important to identify
+the correct timeout for the,
+
+91
+00:04:27,066 --> 00:04:30,066
+the interaction
+that two microservices are having.
+
+92
+00:04:30,333 --> 00:04:33,000
+And they will be different.
+
+93
+00:04:33,000 --> 00:04:33,300
+Okay.
+
+94
+00:04:33,300 --> 00:04:35,233
+So let's try out retries.
+
+95
+00:04:35,233 --> 00:04:37,433
+They're useful but they can be dangerous.
+
+96
+00:04:37,433 --> 00:04:39,666
+So you got to be careful here right.
+
+97
+00:04:39,666 --> 00:04:42,900
+What if I have a duplicate request.
+
+98
+00:04:42,900 --> 00:04:45,900
+And the first attempt actually succeeded?
+
+99
+00:04:46,000 --> 00:04:46,900
+It went through.
+
+100
+00:04:46,900 --> 00:04:49,733
+But on my retry, I did a retry.
+
+101
+00:04:49,733 --> 00:04:52,333
+I didn't wait on the timeout long enough.
+
+102
+00:04:52,333 --> 00:04:53,833
+How am I going to handle that?
+
+103
+00:04:53,833 --> 00:04:56,166
+I also have retry storms.
+
+104
+00:04:56,166 --> 00:05:00,966
+If I set my read time times too
+short to short, I can overwhelm servers.
+
+105
+00:05:01,833 --> 00:05:05,000
+If you're scaling on the back end,
+I can exhaust lots of resources.
+
+106
+00:05:05,466 --> 00:05:08,000
+There's also some hidden latency
+in retries.
+
+107
+00:05:08,000 --> 00:05:12,600
+Every time I call a retry,
+it can multiply.
+
+108
+00:05:13,133 --> 00:05:14,900
+The back end server
+that's accepting those,
+
+109
+00:05:14,900 --> 00:05:18,366
+it can multiply the latency,
+on responding.
+
+110
+00:05:18,366 --> 00:05:21,533
+So remember that if you are doing retries,
+
+111
+00:05:21,533 --> 00:05:26,800
+you should always pair them
+with into potent operations.
+
+112
+00:05:27,533 --> 00:05:30,700
+Backoff strategies
+and a maximum number of attempts.
+
+113
+00:05:31,433 --> 00:05:33,266
+So keep that in mind okay.
+
+114
+00:05:33,266 --> 00:05:36,100
+Let's talk about into potent
+and safe retries.
+
+115
+00:05:36,100 --> 00:05:38,666
+Right. An operation is into potent.
+
+116
+00:05:38,666 --> 00:05:42,333
+If repeating it has the same effect
+as running it once.
+
+117
+00:05:42,900 --> 00:05:46,866
+Now in the rest interface, get put
+
+118
+00:05:47,800 --> 00:05:51,800
+and patch are all into potent calls.
+
+119
+00:05:52,300 --> 00:05:55,500
+So if I call them over and over again,
+I should get the same result
+
+120
+00:05:55,500 --> 00:05:56,033
+on the back end.
+
+121
+00:05:56,033 --> 00:05:59,300
+Service shouldn't really change
+much of what's going on.
+
+122
+00:05:59,300 --> 00:06:00,300
+Even with a patch.
+
+123
+00:06:00,300 --> 00:06:03,033
+Should be the same patch as before.
+
+124
+00:06:03,033 --> 00:06:07,633
+A post, on the other hand,
+is not into potent by default by I.
+
+125
+00:06:07,666 --> 00:06:10,466
+When I do a post,
+I'm going to create something new.
+
+126
+00:06:10,466 --> 00:06:15,533
+All right, so if you have to have
+good strategies on the server side
+
+127
+00:06:15,533 --> 00:06:19,066
+and also on the client side for
+into potent operations to make them safe
+
+128
+00:06:19,466 --> 00:06:24,766
+use into potency keys, that's technique
+where I specify individual ID
+
+129
+00:06:24,866 --> 00:06:28,400
+keys, for the post that I'm going in.
+
+130
+00:06:28,633 --> 00:06:33,533
+And then on the back end
+I can store and do dedupe requests.
+
+131
+00:06:33,533 --> 00:06:37,133
+If it's the same requests coming through,
+I can do that and say,
+
+132
+00:06:37,133 --> 00:06:41,033
+I've already accepted that request
+and I can accept that post requests again.
+
+133
+00:06:41,766 --> 00:06:46,066
+So let you retry
+without having duplication, side effects
+
+134
+00:06:47,333 --> 00:06:47,733
+okay.
+
+135
+00:06:47,733 --> 00:06:49,533
+Let's talk about backoff strategies.
+
+136
+00:06:49,533 --> 00:06:53,666
+So a backoff strategy remember it's
+how much time I'm going to wait
+
+137
+00:06:53,666 --> 00:06:55,300
+before I retry.
+
+138
+00:06:55,300 --> 00:06:59,200
+And then how long am I going to do that
+before I completely don't do it anymore?
+
+139
+00:06:59,466 --> 00:07:03,033
+There's a fixed backoff where I say, I'm
+going to wait a certain amount of time
+
+140
+00:07:03,033 --> 00:07:06,033
+between retries,
+and then I'm going to retry again.
+
+141
+00:07:06,033 --> 00:07:09,300
+There's a linear backoff
+where I'm adding a little bit of time
+
+142
+00:07:09,533 --> 00:07:12,533
+to it, like, 100 milliseconds.
+
+143
+00:07:12,733 --> 00:07:16,733
+So at first is 200 milliseconds,
+and the next time I retry, it's
+
+144
+00:07:16,733 --> 00:07:19,900
+going to be 300 milliseconds,
+then 405 hundred
+
+145
+00:07:20,300 --> 00:07:23,300
+until I reach my maximum
+number of retries.
+
+146
+00:07:23,333 --> 00:07:28,233
+Another one that seems to be
+the most popular is a exponential backoff,
+
+147
+00:07:28,233 --> 00:07:34,266
+where I have 100, 200, 400, 800.
+
+148
+00:07:34,266 --> 00:07:34,933
+You get it.
+
+149
+00:07:34,933 --> 00:07:38,600
+And then sometimes I add a little jitter
+in there where I do a random number.
+
+150
+00:07:38,766 --> 00:07:40,766
+So it's not as predictable.
+
+151
+00:07:40,766 --> 00:07:43,766
+Sometimes when you add
+a little bit of chaos in the system,
+
+152
+00:07:43,833 --> 00:07:45,233
+it behaves a little bit better.
+
+153
+00:07:45,233 --> 00:07:46,666
+So it's not as predictable.
+
+154
+00:07:48,533 --> 00:07:49,200
+Okay.
+
+155
+00:07:49,200 --> 00:07:53,133
+Another important thing that you need
+to do here is have a retry budget.
+
+156
+00:07:53,133 --> 00:07:56,566
+How many times
+am I going to retry before I fail myself
+
+157
+00:07:57,066 --> 00:08:00,433
+and and tell
+whoever called me, that, hey,
+
+158
+00:08:00,433 --> 00:08:03,666
+I can't do this operation
+or in your logic,
+
+159
+00:08:03,666 --> 00:08:06,000
+you you handle those and say,
+I'm just not going to
+
+160
+00:08:06,000 --> 00:08:07,500
+I'm not going to send that information.
+
+161
+00:08:07,500 --> 00:08:10,266
+I'm not going to ask for that. I'll do it
+another way.
+
+162
+00:08:10,266 --> 00:08:14,400
+Whatever your strategy is,
+you do need to have a maximum, retry.
+
+163
+00:08:14,800 --> 00:08:17,100
+And what are you going to do
+when you retry?
+
+164
+00:08:17,100 --> 00:08:20,100
+Is exhausted when it fails.
+
+165
+00:08:20,100 --> 00:08:20,833
+Right.
+
+166
+00:08:20,833 --> 00:08:23,933
+You can do this on number of retry
+or time limit.
+
+167
+00:08:24,333 --> 00:08:26,133
+Either one works pretty well.
+
+168
+00:08:26,133 --> 00:08:29,633
+And make sure that you implement
+these retry budgets per client.
+
+169
+00:08:29,633 --> 00:08:30,800
+Per server.
+
+170
+00:08:30,800 --> 00:08:33,766
+It could you have to look at the behavior
+between these servers
+
+171
+00:08:35,333 --> 00:08:36,300
+okay.
+
+172
+00:08:36,300 --> 00:08:37,233
+Circuit breaker.
+
+173
+00:08:37,233 --> 00:08:41,700
+Now circuit breaker is really cool
+because let's say that I have
+
+174
+00:08:41,700 --> 00:08:48,100
+a, a client that failed
+and I retried it five times.
+
+175
+00:08:48,100 --> 00:08:50,900
+Exponential. Back off. No problem.
+
+176
+00:08:50,900 --> 00:08:52,000
+And it failed.
+
+177
+00:08:52,000 --> 00:08:52,500
+Okay.
+
+178
+00:08:52,500 --> 00:08:55,666
+Well, all right, I handle that failure.
+
+179
+00:08:55,666 --> 00:08:58,333
+I do something else, I log it, whatever.
+
+180
+00:08:58,333 --> 00:09:02,600
+And then I have another one that fails
+another request comes in.
+
+181
+00:09:02,600 --> 00:09:04,500
+It does the same thing.
+
+182
+00:09:04,500 --> 00:09:06,933
+Why would I keep doing that thing
+over and over again?
+
+183
+00:09:06,933 --> 00:09:10,500
+So a circuit breaker says,
+when I've reached a certain threshold, I'm
+
+184
+00:09:10,500 --> 00:09:14,166
+not going to even allow those calls
+to the back end server anymore.
+
+185
+00:09:14,566 --> 00:09:16,133
+And now I log that in.
+
+186
+00:09:16,133 --> 00:09:18,500
+I can ask for some admin help.
+
+187
+00:09:18,500 --> 00:09:22,766
+Or maybe I send another
+to another client client
+
+188
+00:09:22,766 --> 00:09:27,433
+to an admin server that says, hey,
+this server appears to be down.
+
+189
+00:09:27,433 --> 00:09:29,366
+I'm not getting access to this anymore.
+
+190
+00:09:29,366 --> 00:09:30,800
+That could be your API gateway.
+
+191
+00:09:30,800 --> 00:09:34,066
+Even then, it can start doing things.
+
+192
+00:09:34,066 --> 00:09:37,066
+The idea here is that the
+the calls will fail fast
+
+193
+00:09:37,433 --> 00:09:40,533
+until the dependency shines
+shows sign of recovery.
+
+194
+00:09:40,533 --> 00:09:44,366
+So I'm not always swarming the network
+with a whole bunch of retries that can
+
+195
+00:09:44,366 --> 00:09:45,366
+cause a lot of grief.
+
+196
+00:09:46,733 --> 00:09:47,466
+Okay, another
+
+197
+00:09:47,466 --> 00:09:51,266
+thing that you make sure that you do is
+if you are doing retries
+
+198
+00:09:51,266 --> 00:09:54,266
+and how long you're waiting, log
+those for observability.
+
+199
+00:09:54,366 --> 00:09:58,466
+So if I do have something monitoring
+what's going on with my, microservice
+
+200
+00:09:58,466 --> 00:10:02,633
+architecture, I can make sure that I'm
+getting everything that I need to in there
+
+201
+00:10:02,633 --> 00:10:06,200
+to make good decisions,
+whether I need to scale automatically.
+
+202
+00:10:06,433 --> 00:10:10,733
+But maybe I need to like, restarts
+some microservices
+
+203
+00:10:11,000 --> 00:10:14,000
+or whatever the case may be.
+
+204
+00:10:14,300 --> 00:10:17,133
+Okay,
+so let's talk about a quick example here.
+
+205
+00:10:17,133 --> 00:10:20,366
+I've got a service
+that calls a third party shipping API.
+
+206
+00:10:21,166 --> 00:10:25,733
+And in here I put a 500 millisecond,
+which is the average, right.
+
+207
+00:10:25,733 --> 00:10:27,833
+I've seen some on third party
+
+208
+00:10:27,833 --> 00:10:31,466
+up to 2 or 3 seconds,
+which you know that can happen as well.
+
+209
+00:10:31,933 --> 00:10:32,133
+Right.
+
+210
+00:10:32,133 --> 00:10:37,100
+So but every half a second I'm going to,
+I'm going to I
+
+211
+00:10:37,166 --> 00:10:40,166
+if I don't you're back in a half a second,
+I'm going to fail.
+
+212
+00:10:40,866 --> 00:10:41,300
+Right.
+
+213
+00:10:41,300 --> 00:10:44,400
+And then I'm going to try a retry
+at that time.
+
+214
+00:10:44,400 --> 00:10:45,266
+All right.
+
+215
+00:10:45,266 --> 00:10:48,433
+And I'm going to do
+an exponential back off with the jitter.
+
+216
+00:10:48,800 --> 00:10:51,900
+So I'm going to do 500 milliseconds.
+
+217
+00:10:51,900 --> 00:10:57,900
+Probably going to wait probably another
+500 millisecond maybe only let's say
+
+218
+00:10:57,900 --> 00:11:03,066
+100 milliseconds, then 204 hundred and 800
+with a little bit of a jitter,
+
+219
+00:11:03,266 --> 00:11:08,900
+a random number between 50 and -50,
+something like that.
+
+220
+00:11:09,300 --> 00:11:12,600
+If the call succeeds
+on the second attempt, we'll say it did.
+
+221
+00:11:13,266 --> 00:11:14,066
+Then the user,
+
+222
+00:11:15,500 --> 00:11:16,133
+if the.
+
+223
+00:11:16,133 --> 00:11:17,600
+So that's good news, right?
+
+224
+00:11:17,600 --> 00:11:19,833
+It it worked on the second attempt.
+
+225
+00:11:19,833 --> 00:11:23,666
+Let's say that it exhausted
+completely the limit that I had.
+
+226
+00:11:23,666 --> 00:11:25,033
+Maybe it was ten.
+
+227
+00:11:25,033 --> 00:11:30,000
+Then the request fails and returns
+A503 to the user.
+
+228
+00:11:30,000 --> 00:11:34,733
+Whoever called me, right, saying,
+hey, I've got an internal problem
+
+229
+00:11:34,733 --> 00:11:37,733
+going on here.
+
+230
+00:11:38,033 --> 00:11:38,333
+Okay.
+
+231
+00:11:38,333 --> 00:11:39,866
+Key takeaways here.
+
+232
+00:11:39,866 --> 00:11:40,833
+Use timeout.
+
+233
+00:11:40,833 --> 00:11:45,500
+It helps prevent hanging in systems
+and protects, system resources.
+
+234
+00:11:45,966 --> 00:11:49,833
+Retries can improve reliability,
+but it must be controlled.
+
+235
+00:11:49,833 --> 00:11:50,166
+Right.
+
+236
+00:11:50,166 --> 00:11:55,400
+Have a good backoff strategy and jitter
+to prevent any synchronized retry storms.
+
+237
+00:11:55,400 --> 00:11:58,133
+That that can happen into potency.
+
+238
+00:11:58,133 --> 00:12:01,533
+Make sure you understand that both
+on the server side and the client side.
+
+239
+00:12:01,833 --> 00:12:04,266
+Make sure that you are in your retries.
+
+240
+00:12:04,266 --> 00:12:08,833
+Having a strategy
+for not into potent calls.
+
+241
+00:12:09,233 --> 00:12:14,466
+And then also, use retry limits
+so that you can fail.
+
+242
+00:12:14,633 --> 00:12:17,900
+Effectively,
+up the chain if you need to.

@@ -1,4 +1,12 @@
 = Scaling Strategies
+:revnumber: 1.0
+:revealjs_theme: black
+:revealjs_transition: slide
+:revealjs_slideNumber: true
+:revealjs_history: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 
 == 1. Motivation: Growth Breaks Assumptions
 
@@ -10,29 +18,33 @@ Systems are often designed for early traffic, then suddenly face:
 
 When load increases, what used to be "fast enough" can become slow or unreliable. Scaling is about **sustaining performance and reliability as demand grows**.
 
----
-
+[.columns]
 == 2. Two Fundamental Directions: Vertical vs Horizontal
-
+[.column]
+--
 **Vertical scaling (scale up)**
+
 Add more resources to a single machine:
 
 - More CPU
 - More memory
 - Faster storage
+--
 
+[.column]
+--
 **Horizontal scaling (scale out)**
+
 Add more machines and distribute load:
 
 - More servers behind a load balancer
 - Partition data or services across nodes
+--
 
-Tradeoff summary:
 
-- Vertical scaling is simpler but hits hardware limits.
-- Horizontal scaling is more flexible but increases system complexity.
+== 2b. Tradeoffs and Directions
 
-[plantuml]
+[plantuml, format=svg, width=100%]
 ....
 @startuml
   title Scaling Directions
@@ -48,38 +60,42 @@ left to right direction
 @enduml
 ....
 
----
 
+[.columns]
 == 3. Stateless vs Stateful Implications
 
+[.column]
+--
 Scaling strategies depend on whether the service is **stateless** or **stateful**.
 
-- **Stateless services** scale horizontally easily:
+**Stateless services** scale horizontally easily:
 - Any node can handle any request.
 - Use a load balancer to distribute traffic.
 
-- **Stateful services** are harder:
+**Stateful services** are harder:
 - Session data or local state ties requests to a specific node.
 - Requires sticky sessions, replication, or external state stores.
+--
 
+[.column]
+--
 This is why many architectures push state **out** of application servers and into shared systems.
 
-[plantuml]
+[plantuml, format=svg, width=100%]
 ....
 @startuml
   title Stateless vs Stateful
 left to right direction
   rectangle "Stateless Services" as Stateless {
-    Stateless -> LoadBalancer : Handle Any Request
+    Stateless --> LoadBalancer : Handle Any Request
   }
   rectangle "Stateful Services" as Stateful {
-    Stateful -> StickySessions : Maintain Session
+    Stateful --> StickySessions : Maintain Session
     Stateful -> Replication : Share State
   }
 @enduml
 ....
-
----
+--
 
 == 4. The Scaling Ladder: Common Tactics
 
@@ -94,6 +110,10 @@ Keep repeated results in memory (Redis, CDN, in-process cache).
 3. **Scale vertically**
 Buy bigger machines for immediate relief.
 
+== 4b. The Scaling Ladder: Later Steps
+
+Teams usually scale in stages:
+
 4. **Scale horizontally**
 Add more nodes and distribute load.
 
@@ -102,23 +122,21 @@ Shard databases or split services.
 
 Each step adds cost and complexity; teams should not jump to the most complex step first.
 
----
-
+[.columns]
 == 5. Load Balancing and Traffic Distribution
 
+[.column]
+--
 Horizontal scaling usually depends on a **load balancer**:
 
 - Routes requests across multiple servers
 - Health checks remove failing nodes
 - Can be layer 4 (TCP) or layer 7 (HTTP)
+--
 
-Key concerns:
-
-- **Even distribution** of load
-- **Fast failover**
-- **Minimal overhead**
-
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ....
 @startuml
   title Load Balancing
@@ -130,17 +148,30 @@ Key concerns:
   }
 @enduml
 ....
+--
 
----
+== 5b. Load Balancer Concerns
 
+Key concerns:
+
+- **Even distribution** of load
+- **Fast failover**
+- **Minimal overhead**
+
+[.columns]
 == 6. Caching as a Scaling Strategy
 
+[.column]
+--
 Caching reduces load without adding servers:
 
 - **Client-side caching** (browser cache, mobile cache)
 - **Edge caching** (CDNs)
 - **Server-side caching** (Redis, in-memory caches)
+--
 
+[.column]
+--
 Caching tradeoffs:
 
 - Stale data
@@ -148,26 +179,34 @@ Caching tradeoffs:
 - Memory costs
 
 Good caching strategy often delays the need for more expensive scaling steps.
+--
 
----
+[.columns]
+
 
 == 7. Data Layer Scaling
 
-The data layer is often the bottleneck. Common approaches:
-
+[.column]
+--
+**Common Aproaches**
 - **Read replicas**: copy data for read-heavy workloads
 - **Sharding**: split data across multiple databases
 - **Partitioning**: split data by key or time
+--
 
-Tradeoffs:
-
+[.column]
+--
+**Tradeoffs:**
 - Replication lag
 - Complex queries across shards
 - Operational overhead for backups and migrations
 
 Scaling data is usually the hardest part of scaling systems.
+--
 
-[plantuml]
+[.column]
+--
+[plantuml, format=svg, width=100%]
 ....
 @startuml
   title Data Layer Scaling
@@ -180,12 +219,13 @@ Scaling data is usually the hardest part of scaling systems.
   SH --> Database : "Split Data"
 @enduml
 ....
-
----
+--
 
 == 8. Asynchronous Workloads and Queues
 
-Not all scaling is about handling live requests. Offload work:
+Not all scaling is about handling live requests.
+
+Offload work:
 
 - Use **message queues** (SQS, RabbitMQ, Kafka)
 - Process tasks asynchronously
@@ -197,8 +237,6 @@ Benefits:
 - Allows background workers to scale separately
 
 This is a core scaling tool for workloads like video processing, email sending, and analytics pipelines.
-
----
 
 == 9. Cost and Complexity Tradeoffs
 
@@ -215,8 +253,6 @@ Sometimes the best scaling move is:
 - Reducing features that drive expensive load
 - Improving efficiency instead of adding machines
 
----
-
 == 10. Example Scenario
 
 Imagine a product that launches and traffic doubles:
@@ -227,8 +263,6 @@ Imagine a product that launches and traffic doubles:
 4. They add read replicas and later shard by customer ID.
 
 Each step is more complex but also more scalable.
-
----
 
 == 11. Key Takeaways
 

@@ -1,0 +1,119 @@
+= Circuit Breakers and Bulkheads
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+== Goals
+- Define circuit breakers and bulkheads in microservices
+- Explain why cascading failures happen
+- Identify breaker states and thresholds
+- Describe bulkhead isolation approaches
+- Recognize when to apply each pattern
+- List common pitfalls to avoid
+
+== Circuit Breaker Basics
+- Protects upstream services from failing dependencies
+- Fail-fast behavior reduces tail latency
+- Uses a rolling error or timeout window
+- States: closed, open, half-open
+- Half-open probes allow recovery
+- Works best with short timeouts
+
+[.columns]
+[.column]
+--
+- Breaker opens on error threshold
+- Fallbacks provide degraded output
+- Observability is required for tuning
+- Use safe defaults and conservative probes
+- Do not retry aggressively in open state
+- Treat breaker state as SLO signal
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Service A" as A
+participant "Circuit Breaker" as CB
+database "Dependency" as D
+
+Client -> A: Request
+A -> CB: Call dependency
+alt Closed (healthy)
+  CB -> D: Forward call
+  D --> CB: Response
+  CB --> A: Response
+else Open (unhealthy)
+  CB --> A: Fail fast / fallback
+end
+@enduml
+----
+--
+
+== Bulkhead Basics
+- Isolates resources per dependency or feature
+- Prevents noisy neighbors from starving others
+- Can be thread pools, queues, or connection pools
+- Works well with separate timeouts per pool
+- Align pools to business-critical paths
+- Keep pools small but sufficient
+
+== Example: Bulkhead Pools
+[.columns]
+[.column]
+--
+- Separate pool per dependency
+- Limits damage from slow services
+- Preserves capacity for critical flows
+- Pool sizing requires load testing
+- Add backpressure when pool is full
+- Monitor saturation and queue depth
+--
+[.column]
+--
+[source,python]
+----
+from concurrent.futures import ThreadPoolExecutor
+
+catalog_pool = ThreadPoolExecutor(max_workers=10)
+payments_pool = ThreadPoolExecutor(max_workers=4)
+
+# Isolated capacity so a slow payment gateway
+# cannot block catalog lookups.
+def fetch_catalog():
+    pass
+
+def charge_card():
+    pass
+
+catalog_pool.submit(fetch_catalog)
+payments_pool.submit(charge_card)
+----
+--
+
+== When to Use
+- Dependencies have unpredictable latency
+- One feature can exhaust shared resources
+- You need safe degradation on partial failure
+- High-volume traffic spikes are common
+- Critical paths must stay responsive
+- You require clear isolation boundaries
+
+== Architectural Tradeoffs
+- Scalability: isolation improves resilience but reduces shared capacity
+- Reliability: fewer cascades, but partial feature outages are common
+- Latency: fail-fast is faster, but fallbacks may be limited
+- Cost: more pools and queues increase baseline capacity
+- Complexity: tuning thresholds and pools adds overhead
+- Operations: breaker metrics must drive runbooks
+
+== Pitfalls and Recap
+- One global pool negates isolation
+- Thresholds too low create frequent opens
+- Missing fallback causes hard failures
+- Ignoring breaker metrics hides instability
+- Aggressive retries fight the breaker
+- Recap: breakers fail fast, bulkheads isolate load

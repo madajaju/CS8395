@@ -1,6 +1,10 @@
-= Stateless vs Stateful Services
+# Stateless vs Stateful Microservices: Design Trade‑Offs, Scaling, and Where State Lives
 
-== 1. Motivation: Why State Matters
+Video: https://youtu.be/x8lQrDvzWQY
+
+This lecture explains the differences between stateless and stateful services, why state matters, and how those choices impact scalability, reliability, and deployment. You’ll learn common patterns for managing state (shared stores, sticky sessions, JWTs), the risks of shared databases, and practical trade‑offs between performance and resilience. Ideal for architects deciding how to structure microservices for scale.
+
+## 1. Motivation: Why State Matters
 
 Every system needs to remember something:
 
@@ -17,7 +21,7 @@ The architectural question is **where that memory lives**. This choice affects:
 
 ---
 
-== 2. Core Definitions
+## 2. Core Definitions
 
 **Stateless service**
 - Does not retain client-specific data between requests.
@@ -31,7 +35,7 @@ In practice, most systems include both, but the distribution of state is a major
 
 ---
 
-== 3. Why Stateless Services Scale Easily
+## 3. Why Stateless Services Scale Easily
 
 When services are stateless:
 
@@ -44,7 +48,7 @@ This makes stateless design a default goal for horizontally scalable systems.
 
 ---
 
-== 4. Why Stateful Services Are Sometimes Necessary
+## 4. Why Stateful Services Are Sometimes Necessary
 
 Some workloads require local or persistent state:
 
@@ -57,7 +61,7 @@ State enables efficiency and correctness but introduces operational complexity.
 
 ---
 
-== 5. Common Examples
+## 5. Common Examples
 
 **Stateless**
 - REST APIs that read/write from shared databases
@@ -71,7 +75,7 @@ State enables efficiency and correctness but introduces operational complexity.
 
 ---
 
-== 6. Managing State in Scalable Systems
+## 6. Managing State in Scalable Systems
 
 While shared databases often introduce coupling, they can be beneficial in scalable systems. 
 
@@ -89,7 +93,7 @@ In contrast, it’s crucial to implement effective strategies to manage this cou
 
 ---
 
-== 7. Session State and User Context
+## 7. Session State and User Context
 
 Classic web apps stored session data in memory on a single server. This creates problems:
 
@@ -104,7 +108,7 @@ Modern alternatives:
 
 ---
 
-== 8. Reliability and Failure Modes
+## 8. Reliability and Failure Modes
 
 **Stateless systems**
 - Easier to recover after failures.
@@ -118,7 +122,7 @@ State increases both responsibility and risk.
 
 ---
 
-== 9. Tradeoffs and Design Choices
+## 9. Tradeoffs and Design Choices
 
 Stateless systems:
 
@@ -136,7 +140,7 @@ The right choice depends on performance requirements, cost, and operational matu
 
 ---
 
-== 10. Example Scenario
+## 10. Example Scenario
 
 A shopping cart service can be built in two ways:
 
@@ -151,7 +155,7 @@ Most modern systems choose the stateless approach because it scales better.
 
 ---
 
-== 11. Key Takeaways
+## 11. Key Takeaways
 
 - Stateless services scale and recover more easily.
 - Stateful services are sometimes unavoidable but require stronger operations.

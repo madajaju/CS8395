@@ -1,0 +1,965 @@
+﻿1
+00:00:00,000 --> 00:00:00,300
+Okay.
+
+2
+00:00:00,300 --> 00:00:03,666
+In this lecture we're going to talk about
+stateless and staple services,
+
+3
+00:00:04,300 --> 00:00:07,300
+what the differences are
+and when to use them
+
+4
+00:00:07,333 --> 00:00:10,333
+and what the benefits are of each type.
+
+5
+00:00:10,666 --> 00:00:14,166
+So, why state matters?
+
+6
+00:00:14,166 --> 00:00:15,933
+First off, why do I need
+
+7
+00:00:15,933 --> 00:00:19,000
+your people always saying, oh,
+all your microservice should be stateless.
+
+8
+00:00:19,366 --> 00:00:21,633
+They can't be right.
+
+9
+00:00:21,633 --> 00:00:24,000
+They can't be.
+You need some kind of state sometimes.
+
+10
+00:00:24,000 --> 00:00:26,266
+Like who's logged in,
+
+11
+00:00:26,266 --> 00:00:30,900
+what items are in your cart,
+where the workload is in its life cycle?
+
+12
+00:00:30,900 --> 00:00:32,866
+These are all state.
+
+13
+00:00:32,866 --> 00:00:35,166
+Now there's arguments
+and we'll show you some techniques
+
+14
+00:00:35,166 --> 00:00:39,866
+where I can go actually fully stateless,
+but there's some trade offs for it.
+
+15
+00:00:39,866 --> 00:00:43,433
+So the key here is that you have to answer
+is where does the memory live
+
+16
+00:00:44,566 --> 00:00:47,000
+and the and the choices that it affects.
+
+17
+00:00:47,000 --> 00:00:47,333
+Right.
+
+18
+00:00:47,333 --> 00:00:52,500
+Scalability, reliability deployment strategies, costs, all those I have a play.
+
+19
+00:00:53,566 --> 00:00:54,766
+So core definitions.
+
+20
+00:00:54,766 --> 00:00:58,066
+First off stateless service
+means that it does
+
+21
+00:00:58,066 --> 00:01:01,233
+not retain any client specific data
+between requests.
+
+22
+00:01:01,466 --> 00:01:03,433
+It's not storing anything persistent.
+
+23
+00:01:03,433 --> 00:01:07,333
+Each request contains all the information
+it needs to process it.
+
+24
+00:01:08,800 --> 00:01:11,866
+So when that request comes
+in everything's in there
+
+25
+00:01:11,866 --> 00:01:14,866
+that it needs in order to process it,
+give you an output.
+
+26
+00:01:14,866 --> 00:01:18,366
+The state there is no state of of that,
+
+27
+00:01:18,366 --> 00:01:21,366
+microservice going on at all.
+
+28
+00:01:21,600 --> 00:01:24,600
+A stateful service will retain the data
+
+29
+00:01:24,666 --> 00:01:27,200
+across multiple requests,
+
+30
+00:01:27,200 --> 00:01:30,600
+and the requests depend on the prior
+state of what's happened.
+
+31
+00:01:30,600 --> 00:01:31,400
+Right?
+
+32
+00:01:31,400 --> 00:01:34,300
+In practice, most systems include both
+
+33
+00:01:34,300 --> 00:01:37,400
+full stateful and stateless services.
+
+34
+00:01:37,400 --> 00:01:39,533
+We see this all the time, right?
+
+35
+00:01:39,533 --> 00:01:42,833
+It's important to understand what they are
+when it comes to scaling,
+
+36
+00:01:42,833 --> 00:01:45,833
+which we will talk about
+in the scaling lecture.
+
+37
+00:01:46,266 --> 00:01:51,433
+But needless to say, stateless is a lot
+easier to scale than stateful services.
+
+38
+00:01:53,166 --> 00:01:55,266
+Okay, stateless services are
+
+39
+00:01:55,266 --> 00:01:59,000
+easy to scale
+because there is no data involved.
+
+40
+00:01:59,333 --> 00:02:02,533
+I can spin these things up
+all over the place, and I can distribute
+
+41
+00:02:02,933 --> 00:02:06,033
+the, the workload across,
+
+42
+00:02:06,500 --> 00:02:10,266
+the services,
+independent of each other.
+
+43
+00:02:10,266 --> 00:02:13,966
+No, no big deal, because I'm not storing
+any state in some cases.
+
+44
+00:02:13,966 --> 00:02:16,300
+Some people use like function
+as a service.
+
+45
+00:02:16,300 --> 00:02:18,833
+Great function service is stateless.
+
+46
+00:02:18,833 --> 00:02:21,833
+That falls into the nano service
+
+47
+00:02:21,833 --> 00:02:25,466
+and might not be the my most effective way
+to use your resources.
+
+48
+00:02:25,933 --> 00:02:28,666
+And it may introduce latency,
+but that that's
+
+49
+00:02:28,666 --> 00:02:32,933
+a good example of a simple, 
+stateless, microservice.
+
+50
+00:02:33,166 --> 00:02:37,466
+But think of it this way the microservice
+is there to do one specific thing,
+
+51
+00:02:38,200 --> 00:02:41,966
+to take the data that comes in
+and do something with it
+
+52
+00:02:41,966 --> 00:02:44,966
+and then produce data that comes out
+and never stored state.
+
+53
+00:02:45,400 --> 00:02:46,100
+Right?
+
+54
+00:02:46,100 --> 00:02:50,266
+I can easily add and remove instances
+at will when, when I do this.
+
+55
+00:02:50,266 --> 00:02:53,533
+So it's very it's very good for scaling.
+
+56
+00:02:55,866 --> 00:02:58,200
+Why do I need stateful services?
+
+57
+00:02:58,200 --> 00:02:59,866
+Well,
+
+58
+00:02:59,866 --> 00:03:04,933
+if I, if I need to store, persistence
+anywhere, I'm, I'm needed.
+
+59
+00:03:04,933 --> 00:03:06,466
+You know,
+
+60
+00:03:06,466 --> 00:03:08,333
+store the database somewhere.
+
+61
+00:03:08,333 --> 00:03:10,666
+Maybe it's inventory in an inventory.
+
+62
+00:03:10,666 --> 00:03:13,333
+I'm saying I've got state there.
+
+63
+00:03:13,333 --> 00:03:15,033
+Maybe I want speed up.
+
+64
+00:03:15,033 --> 00:03:19,066
+Maybe I want to be able to speed
+up, lookups and things like that.
+
+65
+00:03:19,066 --> 00:03:24,133
+I may have some caches in there
+if maybe I have a shipping service
+
+66
+00:03:24,133 --> 00:03:27,433
+that is calling a back
+end zip code lookup service,
+
+67
+00:03:27,866 --> 00:03:30,500
+I may want to start caching
+some of those zip code
+
+68
+00:03:30,500 --> 00:03:34,000
+addresses in my cache
+that now all of a sudden I'm stateful.
+
+69
+00:03:34,300 --> 00:03:35,400
+All right.
+
+70
+00:03:35,400 --> 00:03:37,933
+Anything that I'm storing in memory,
+
+71
+00:03:37,933 --> 00:03:41,933
+becomes stateful,
+even if I have like a memory pipeline
+
+72
+00:03:42,233 --> 00:03:46,300
+where maybe I'm doing
+several things through the process is
+
+73
+00:03:46,366 --> 00:03:50,833
+as long as it can go down in any point in
+time and I lose information,
+
+74
+00:03:52,200 --> 00:03:54,533
+that means I'm in a state for a situation.
+
+75
+00:03:54,533 --> 00:03:58,366
+So if they're in memory processing
+pipelines, that could cause problems
+
+76
+00:03:58,366 --> 00:04:02,033
+or long running workflows,
+they are stateful.
+
+77
+00:04:02,466 --> 00:04:02,733
+All right.
+
+78
+00:04:02,733 --> 00:04:05,733
+So you got to watch out for that.
+
+79
+00:04:05,866 --> 00:04:06,466
+All right.
+
+80
+00:04:06,466 --> 00:04:09,466
+Some common examples
+I think I've already talked about this,
+
+81
+00:04:09,566 --> 00:04:13,500
+stateless
+reading, writing from a database.
+
+82
+00:04:13,933 --> 00:04:17,600
+The thing in the middle is stateless.
+
+83
+00:04:19,633 --> 00:04:23,100
+The stateful one is the actual database
+and message queues.
+
+84
+00:04:23,100 --> 00:04:26,100
+Those are the stateful
+once the stateless ones might be,
+
+85
+00:04:27,600 --> 00:04:30,700
+you know, read,
+just reading and writing from a database
+
+86
+00:04:30,933 --> 00:04:36,866
+and passing the information through
+authentication gateways, using tokens.
+
+87
+00:04:37,100 --> 00:04:41,666
+Just, authenticating and passing
+the information on I can have
+
+88
+00:04:41,666 --> 00:04:42,966
+I can do that all day long.
+
+89
+00:04:42,966 --> 00:04:45,200
+That's no big deal.
+
+90
+00:04:45,200 --> 00:04:46,366
+Okay.
+
+91
+00:04:46,366 --> 00:04:51,000
+Managing state in scalable systems,
+this can be really difficult if
+
+92
+00:04:51,466 --> 00:04:54,400
+if I have multiple,
+
+93
+00:04:54,400 --> 00:04:59,000
+microservices that are engaged
+in some kind of a transaction where,
+
+94
+00:04:59,100 --> 00:05:04,666
+I need to be able to pass information
+from one microservice to another.
+
+95
+00:05:04,966 --> 00:05:07,200
+There's lots of different techniques.
+
+96
+00:05:07,200 --> 00:05:08,800
+And why why do you need this?
+
+97
+00:05:08,800 --> 00:05:11,633
+Well,
+I might need some central data control
+
+98
+00:05:11,633 --> 00:05:14,266
+for consistent updates
+across multiple services.
+
+99
+00:05:14,266 --> 00:05:20,200
+I can reduce latency, by comparing,
+to synchronize multiple data sources.
+
+100
+00:05:20,200 --> 00:05:23,300
+I can simplify my architecture
+based off of,
+
+101
+00:05:23,300 --> 00:05:26,300
+complex state replication architecture.
+
+102
+00:05:26,666 --> 00:05:31,200
+I can have cross service queries that are
+easier with shared aggregate data access.
+
+103
+00:05:31,666 --> 00:05:34,666
+These are, things that I can,
+
+104
+00:05:35,300 --> 00:05:39,866
+use in scaling systems
+where I need to have some kind of a state.
+
+105
+00:05:40,933 --> 00:05:43,933
+Another technique is,
+
+106
+00:05:44,366 --> 00:05:47,366
+passing
+in, in the request that the request,
+
+107
+00:05:47,933 --> 00:05:50,933
+continues to grow its context
+as it's passing through.
+
+108
+00:05:51,800 --> 00:05:52,366
+Right.
+
+109
+00:05:52,366 --> 00:05:54,433
+There are some dangerous for shared
+databases.
+
+110
+00:05:54,433 --> 00:05:57,833
+You've increased coupling
+and probably decreased the cohesion.
+
+111
+00:05:57,833 --> 00:06:02,966
+At the same time, you need to make sure
+that I have version schemas so that all
+
+112
+00:06:02,966 --> 00:06:08,133
+the microservices using, the same shared
+schema knows about any changes to it.
+
+113
+00:06:08,500 --> 00:06:12,233
+And you still need to have those clear
+API boundaries between teams
+
+114
+00:06:12,733 --> 00:06:15,733
+and make sure that you have defined
+ownership.
+
+115
+00:06:16,266 --> 00:06:19,133
+Typically you want to steer away
+from shared databases.
+
+116
+00:06:19,133 --> 00:06:23,166
+So it's more you should look
+for another option if you can.
+
+117
+00:06:23,166 --> 00:06:25,800
+This should be a last resort.
+
+118
+00:06:25,800 --> 00:06:26,166
+All right.
+
+119
+00:06:26,166 --> 00:06:29,733
+Another thing that we could do
+is session state and use your context.
+
+120
+00:06:29,733 --> 00:06:34,666
+This is another state that you would,
+store typically a web
+
+121
+00:06:34,666 --> 00:06:38,400
+app store this session
+data in memory on a single server,
+
+122
+00:06:39,533 --> 00:06:41,000
+and the client
+
+123
+00:06:41,000 --> 00:06:44,000
+side in the browser will sort store
+the session ID.
+
+124
+00:06:44,766 --> 00:06:47,766
+If I'm scaling on the back end,
+
+125
+00:06:47,900 --> 00:06:51,766
+then I don't I'm not guaranteed
+where this session is going to land,
+
+126
+00:06:51,766 --> 00:06:56,000
+where a new request from the user is going
+to land if I have multiple web servers.
+
+127
+00:06:56,000 --> 00:07:01,400
+So I use something called sticky sessions
+where I'm storing the session
+
+128
+00:07:01,800 --> 00:07:04,900
+in a central,
+
+129
+00:07:04,900 --> 00:07:08,633
+shared memory repository
+or a shared repository database
+
+130
+00:07:09,000 --> 00:07:14,200
+like Redis is a great example,
+or some kind of, server or something.
+
+131
+00:07:14,433 --> 00:07:17,466
+And then if a web server goes down, then,
+you know,
+
+132
+00:07:17,466 --> 00:07:20,466
+the other web server can pick up
+where they left off.
+
+133
+00:07:20,500 --> 00:07:25,600
+So this builds my resiliency, which is
+good, but also introduces some complexity.
+
+134
+00:07:26,066 --> 00:07:28,000
+So here watch out for that.
+
+135
+00:07:28,000 --> 00:07:31,200
+Another option is stateless JWT
+
+136
+00:07:31,766 --> 00:07:35,000
+stateless tokens where I'm storing
+everything in the token.
+
+137
+00:07:35,000 --> 00:07:41,166
+So anytime I get a response
+back from a server I get that JWT token
+
+138
+00:07:41,166 --> 00:07:41,700
+back in there.
+
+139
+00:07:41,700 --> 00:07:44,700
+It has all the information that I need,
+so it's all self-contained.
+
+140
+00:07:45,133 --> 00:07:48,766
+That's another option,
+but it does increase the payload.
+
+141
+00:07:48,766 --> 00:07:54,333
+And the response, which could be
+bad if it gets really large.
+
+142
+00:07:55,666 --> 00:07:58,066
+So reliability and failure modes.
+
+143
+00:07:58,066 --> 00:07:58,766
+Let's talk about this.
+
+144
+00:07:58,766 --> 00:08:03,066
+So stateless systems they're very easy
+to recover from is something fails.
+
+145
+00:08:03,066 --> 00:08:06,466
+It fails on typically stateless systems.
+
+146
+00:08:06,466 --> 00:08:09,366
+Microservices are doing something
+very quickly
+
+147
+00:08:09,366 --> 00:08:12,000
+not long term workloads inside there.
+
+148
+00:08:12,000 --> 00:08:12,300
+Right.
+
+149
+00:08:12,300 --> 00:08:16,533
+So you're not going to lose, 
+critical data very much, right?
+
+150
+00:08:16,533 --> 00:08:20,233
+If you don't get something back,
+you just do a retry, into potent,
+
+151
+00:08:20,733 --> 00:08:26,200
+you know, get or put or even patch then.
+
+152
+00:08:26,200 --> 00:08:28,200
+Hey, I just try it again.
+
+153
+00:08:28,200 --> 00:08:31,033
+If it failed, it'll start up
+another system.
+
+154
+00:08:31,033 --> 00:08:31,866
+Stateful.
+
+155
+00:08:31,866 --> 00:08:34,966
+You've got to protect your data
+through replication, backups,
+
+156
+00:08:34,966 --> 00:08:38,633
+recovery procedures,
+all those things you will need.
+
+157
+00:08:38,633 --> 00:08:41,000
+And there are systems
+where you do need state.
+
+158
+00:08:41,000 --> 00:08:43,000
+So you got to
+come up with those strategies
+
+159
+00:08:44,466 --> 00:08:45,233
+okay.
+
+160
+00:08:45,233 --> 00:08:47,566
+Trade offs. We always need to talk about
+trade offs.
+
+161
+00:08:47,566 --> 00:08:51,766
+Stateless systems are easier to scale
+and deploy, easier to automate.
+
+162
+00:08:51,766 --> 00:08:56,133
+In CI, CD pipelines and easier
+with orchestration.
+
+163
+00:08:56,133 --> 00:08:59,600
+All that stuff with admin feedback loops,
+all that is easier,
+
+164
+00:09:00,000 --> 00:09:03,066
+but they require
+some kind of external state management.
+
+165
+00:09:03,466 --> 00:09:08,700
+All right, stateful systems,
+they can be faster for local operations
+
+166
+00:09:08,700 --> 00:09:12,466
+like I'm caching something so I don't have
+to hit a microservice every time.
+
+167
+00:09:13,133 --> 00:09:17,000
+I can reduce network, hops
+and the amount of,
+
+168
+00:09:17,533 --> 00:09:20,900
+repeated access that I need for things,
+but they are harder
+
+169
+00:09:20,900 --> 00:09:22,233
+to scale and recover from.
+
+170
+00:09:22,233 --> 00:09:26,000
+So you've got to make the choice
+based off of your architecture
+
+171
+00:09:26,300 --> 00:09:29,233
+and your use models.
+
+172
+00:09:29,233 --> 00:09:30,666
+Okay. Examples.
+
+173
+00:09:30,666 --> 00:09:31,800
+Just give a couple examples.
+
+174
+00:09:31,800 --> 00:09:36,200
+Stateful,
+a cart stored on the server memory.
+
+175
+00:09:36,700 --> 00:09:37,633
+It's fast.
+
+176
+00:09:37,633 --> 00:09:40,833
+It breaks, on server failure and scale.
+
+177
+00:09:40,833 --> 00:09:46,133
+So you got to be careful that a card
+stored in Redis or a database, right.
+
+178
+00:09:46,333 --> 00:09:50,733
+Slightly more latency,
+but it survives any scaling failures
+
+179
+00:09:50,733 --> 00:09:54,633
+because now I've, I've,
+I can scale Redis or the database
+
+180
+00:09:54,633 --> 00:09:58,033
+independent
+of the microservices themselves.
+
+181
+00:09:59,866 --> 00:10:00,100
+All right.
+
+182
+00:10:00,100 --> 00:10:01,400
+So key takeaways.
+
+183
+00:10:01,400 --> 00:10:02,866
+And you need to understand
+
+184
+00:10:02,866 --> 00:10:06,133
+the stateless services is store
+no persistent data whatsoever.
+
+185
+00:10:06,766 --> 00:10:08,966
+Right.
+And that they're easier to recover from.
+
+186
+00:10:08,966 --> 00:10:09,866
+Easier to scale.
+
+187
+00:10:09,866 --> 00:10:14,266
+All that stateful services
+are sometimes unavoidable.
+
+188
+00:10:14,266 --> 00:10:16,133
+Now a lot of times you're unavoidable.
+
+189
+00:10:16,133 --> 00:10:17,866
+But not everything has to be stateful.
+
+190
+00:10:17,866 --> 00:10:22,333
+You can you can limit the number, 
+and they require stronger operations
+
+191
+00:10:22,633 --> 00:10:25,433
+as I have. I'm
+dealing with persistent data.
+
+192
+00:10:25,433 --> 00:10:25,633
+Right.
+
+193
+00:10:25,633 --> 00:10:28,733
+The core design question here is
+where does the state live?
+
+194
+00:10:28,733 --> 00:10:30,466
+It's got to live somewhere.
+
+195
+00:10:30,466 --> 00:10:35,766
+It could live in a client
+generated token that gets passed around.
+
+196
+00:10:35,766 --> 00:10:37,200
+That's one option.
+
+197
+00:10:37,200 --> 00:10:41,700
+But the most common patterns that we see,
+we have stateless application servers
+
+198
+00:10:42,033 --> 00:10:45,400
+with shared state stores on the back end
+
+199
+00:10:46,666 --> 00:10:49,066
+or back end, servers.
+
+200
+00:10:49,066 --> 00:10:50,800
+This kind of breaks
+a little bit of the pattern
+
+201
+00:10:50,800 --> 00:10:54,133
+that we talked about, about horizontal
+versus vertical, which you kind of
+
+202
+00:10:54,133 --> 00:10:57,133
+come up with your strategy of
+how are you going to handle this?
+
+203
+00:10:57,333 --> 00:10:58,066
+Okay.
+
+204
+00:10:58,066 --> 00:11:00,766
+You want to use utilize shared databases
+
+205
+00:11:00,766 --> 00:11:04,433
+sparingly
+only when it simplifies your architecture.
+
+206
+00:11:04,433 --> 00:11:07,700
+But I understand that it introduces
+coupling
+
+207
+00:11:08,300 --> 00:11:13,400
+and which can cause for version shift,
+
+208
+00:11:13,633 --> 00:11:17,400
+there's a lot of,
+schema problems and all those things.
+
+209
+00:11:18,366 --> 00:11:21,166
+So watch out for watch out for that.
+
+210
+00:11:21,166 --> 00:11:25,566
+We talk about shared database
+in other lectures in the downsides of it.
+
+211
+00:11:25,566 --> 00:11:27,600
+So use it very sparingly.
