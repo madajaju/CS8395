@@ -1,0 +1,103 @@
+= Why Blocking Systems Fail
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain why blocking I/O limits scalability
+- Show how latency spikes cause thread starvation
+- Connect queue growth to timeout cascades
+- Identify practical mitigation patterns
+
+== Blocking Request Model
+- One request occupies one worker while waiting
+- Downstream latency consumes upstream capacity
+- Throughput becomes bounded by active workers
+- Queue depth rises before visible outages
+- Tail latency grows faster than average latency
+
+[.columns]
+== Why It Fails Under Load
+[.column]
+--
+- Slow dependency calls block caller threads
+- More concurrent traffic fills worker pools
+- Queueing delay appears even for healthy paths
+- Retries increase pressure at every layer
+- System fails by saturation, not crash
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Service A" as A
+participant "Service B" as B
+
+Client -> A: Request
+A -> B: Sync call (thread blocked)
+... latency spike ...
+B --> A: Late response / timeout
+A --> Client: Timeout
+@enduml
+----
+--
+
+== Typical Failure Chain
+- Dependency latency rises suddenly
+- Active thread count approaches max
+- New requests wait in queue
+- Timeouts trigger retries
+- Retries create a feedback loop
+- Service becomes unavailable
+
+== Capacity Intuition
+- Arrival rate must stay below effective service rate
+- Waiting time is part of service time in blocking systems
+- Longer waits mean fewer requests completed per second
+- Adding threads increases memory/context-switch overhead
+- More threads do not remove dependency latency
+
+[.columns]
+== Mitigation Options
+[.column]
+--
+- Tight client timeouts
+- Bounded retries with jitter
+- Circuit breakers for fail-fast behavior
+- Bulkheads for isolated resource pools
+- Backpressure and bounded queues
+--
+[.column]
+--
+[source,python]
+----
+timeout_ms = 300
+max_retries = 2
+
+for attempt in range(max_retries + 1):
+    try:
+        return call_dependency(timeout=timeout_ms)
+    except TimeoutError:
+        if attempt == max_retries:
+            raise
+        sleep(jittered_backoff(attempt))
+----
+--
+
+== Tradeoffs
+- Blocking style is straightforward for simple workloads
+- Debugging call stacks is easier than async event chains
+- Resilience degrades quickly when dependencies slow
+- High-concurrency workloads often require async boundaries
+
+== Recap
+- Blocking systems fail by resource saturation
+- Slow dependencies create queue and timeout cascades
+- Reliability requires bounded waiting and bounded retries
+- Use isolation and async decoupling where latency is variable

@@ -1,0 +1,108 @@
+= Spring WebFlux and Reactor Overview
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain `Mono` and `Flux` reactive types
+- Show how WebFlux handles non-blocking I/O
+- Apply timeout and fallback operators
+- Recognize reactive misuse patterns
+
+== Overview
+- WebFlux is Spring's reactive web stack
+- Reactor models async flow as `Mono` and `Flux`
+- Operator chains transform and compose signals
+- Backpressure supports stable demand-aware flow
+- Works best with reactive drivers and clients
+- Requires async observability discipline
+
+[.columns]
+== Reactive Request Path
+[.column]
+--
+- Controller returns a `Mono` or `Flux`
+- Pipeline executes non-blocking dependency calls
+- Signals flow through operators
+- Response completes on terminal signal
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "WebFlux Controller" as C
+participant "Reactor Pipeline" as R
+participant "Dependency" as D
+
+Client -> C: HTTP request
+C -> R: build Mono/Flux chain
+R -> D: non-blocking call
+D --> R: async signal
+R --> C: onNext/onComplete
+C --> Client: HTTP response
+@enduml
+----
+--
+
+[.columns]
+== Example: Mono.zip
+[.column]
+--
+- Compose independent calls concurrently
+- Map tuple into response DTO
+- Avoid blocking join patterns
+--
+[.column]
+--
+[source,java]
+----
+@GetMapping("/dashboard/{id}")
+public Mono<DashboardDto> dashboard(@PathVariable String id) {
+  Mono<User> user = userClient.getUser(id);
+  Mono<List<Order>> orders = orderClient.getOrders(id);
+
+  return Mono.zip(user, orders)
+      .map(t -> new DashboardDto(t.getT1(), t.getT2()));
+}
+----
+--
+
+[.columns]
+== Example: Timeout + Fallback
+[.column]
+--
+- Bound waiting time for dependencies
+- Convert timeout to graceful fallback
+- Keeps tail latency under control
+--
+[.column]
+--
+[source,java]
+----
+return inventoryClient.check(sku)
+    .timeout(Duration.ofMillis(300))
+    .onErrorReturn(InventoryStatus.unknown());
+----
+--
+
+== When to Use
+- High-concurrency I/O-heavy APIs
+- Streaming endpoints and event-driven flows
+- Teams with reactive tooling and tracing readiness
+
+== Tradeoffs and Pitfalls
+- Reactive + blocking mix defeats benefits
+- Unbounded `flatMap` can create overload
+- Operator-heavy pipelines raise learning curve
+- Track queue depth, latency, and error rates by stage
+
+== Recap
+- WebFlux/Reactor improves concurrency for non-blocking I/O
+- Success depends on end-to-end reactive dependencies
+- Timeouts, fallback, and observability are non-negotiable

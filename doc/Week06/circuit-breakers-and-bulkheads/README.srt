@@ -1,0 +1,1129 @@
+﻿1
+00:00:00,000 --> 00:00:00,200
+All right.
+
+2
+00:00:00,200 --> 00:00:00,766
+In this lecture
+
+3
+00:00:00,766 --> 00:00:05,033
+we're going to talk about circuit breaker
+and bulkhead design patterns.
+
+4
+00:00:05,600 --> 00:00:08,033
+Now it's important to understand
+what a circuit breaker does.
+
+5
+00:00:08,033 --> 00:00:11,466
+And bulkhead does with respect
+to microservice architectures.
+
+6
+00:00:11,500 --> 00:00:13,666
+We're going to talk about that
+in this lecture
+
+7
+00:00:13,666 --> 00:00:16,666
+where explain why cascading failures
+happen.
+
+8
+00:00:16,700 --> 00:00:21,000
+We're going to identify breaker states
+and thresholds and what to set those out.
+
+9
+00:00:21,466 --> 00:00:25,366
+And we'll also describe what a bulkhead
+and bulkhead isolation means.
+
+10
+00:00:25,700 --> 00:00:29,033
+And then 
+when to apply each one of these patterns.
+
+11
+00:00:29,033 --> 00:00:32,833
+And of course the pitfalls and tradeoffs
+of doing it like we always talk about
+
+12
+00:00:32,833 --> 00:00:34,200
+in these lectures.
+
+13
+00:00:34,200 --> 00:00:36,633
+So first all circuit breaker, basics.
+
+14
+00:00:36,633 --> 00:00:39,700
+So a circuit breaker actually protects
+
+15
+00:00:39,700 --> 00:00:43,533
+upstream services
+from failing, dependencies.
+
+16
+00:00:43,700 --> 00:00:49,000
+So if I have an upstream service, service
+a that depends on service B,
+
+17
+00:00:49,633 --> 00:00:52,633
+and service B is locked up
+
+18
+00:00:52,633 --> 00:00:55,633
+or it looks like it might fail,
+I fail fast.
+
+19
+00:00:55,933 --> 00:00:59,300
+Instead of waiting for a response,
+comes back.
+
+20
+00:00:59,400 --> 00:01:04,766
+I come out of resource whatever I do a
+fast fail instead, which frees up service.
+
+21
+00:01:04,766 --> 00:01:07,966
+A to go on and do its behavior
+that it was doing before.
+
+22
+00:01:08,533 --> 00:01:11,466
+So this prevents like,
+
+23
+00:01:12,766 --> 00:01:16,766
+errors in service B or service
+
+24
+00:01:16,766 --> 00:01:20,466
+B depends on the service C from cascading
+all the way up through the things.
+
+25
+00:01:20,466 --> 00:01:22,766
+Instead I get a timeout.
+
+26
+00:01:22,766 --> 00:01:26,666
+Instead I get, an error right away
+instead of it just sitting and blocking.
+
+27
+00:01:26,833 --> 00:01:27,666
+Right.
+
+28
+00:01:27,666 --> 00:01:31,966
+The key states to a circuit breaker
+that you should have are closed,
+
+29
+00:01:32,300 --> 00:01:35,833
+open and half open,
+just like a normal circuit breaker.
+
+30
+00:01:36,000 --> 00:01:38,833
+If I get overloaded, I throw the breaker.
+
+31
+00:01:38,833 --> 00:01:42,533
+The power shuts off
+and saves things from catching on fire
+
+32
+00:01:42,533 --> 00:01:46,533
+or exploding or whatever
+the case may be, or locking up completely.
+
+33
+00:01:46,533 --> 00:01:50,266
+And that's
+what we're doing with this half open means
+
+34
+00:01:50,533 --> 00:01:55,300
+that, probes are allow for recovery,
+but I'm not taking any more requests.
+
+35
+00:01:55,300 --> 00:01:56,300
+So it's like
+
+36
+00:01:56,300 --> 00:01:59,733
+you can do a health check on me,
+but I'm not going to take
+
+37
+00:01:59,733 --> 00:02:01,966
+any more requests right now. Right.
+
+38
+00:02:01,966 --> 00:02:07,533
+So that's the concept behind, and these
+work really well with short timeouts.
+
+39
+00:02:07,533 --> 00:02:09,400
+They're best with short timeouts
+
+40
+00:02:09,400 --> 00:02:12,933
+so that I, can't combine
+with the circuit breaker.
+
+41
+00:02:12,933 --> 00:02:16,033
+I can easily
+get back to a well known state
+
+42
+00:02:16,466 --> 00:02:19,333
+right when the breaker is open.
+
+43
+00:02:19,333 --> 00:02:23,266
+It means I can take,
+I can take, requests coming in.
+
+44
+00:02:23,833 --> 00:02:28,600
+And it also means that I can also send,
+errors back appropriately.
+
+45
+00:02:29,100 --> 00:02:31,200
+I also need a fallback position.
+
+46
+00:02:31,200 --> 00:02:34,700
+So I need to know what to do in case I do.
+
+47
+00:02:34,700 --> 00:02:37,433
+Kid a circuit breaker.
+And I get that back.
+
+48
+00:02:37,433 --> 00:02:39,300
+I need to know on the client side
+
+49
+00:02:39,300 --> 00:02:43,200
+and also on the server side,
+what my fallback position is going to be.
+
+50
+00:02:43,566 --> 00:02:44,166
+Right?
+
+51
+00:02:44,166 --> 00:02:47,000
+That's why we use that half open as well.
+
+52
+00:02:47,000 --> 00:02:51,766
+So I can still have some observability,
+and see what's going on.
+
+53
+00:02:52,433 --> 00:02:55,800
+With the health of the system
+that gives me some observability
+
+54
+00:02:55,800 --> 00:02:59,066
+that I can automate,
+some things to do, like kill the server
+
+55
+00:02:59,433 --> 00:03:03,666
+or service and, and continue
+on spinning up another one.
+
+56
+00:03:03,933 --> 00:03:05,600
+Whatever the case may be.
+
+57
+00:03:05,600 --> 00:03:06,366
+Right.
+
+58
+00:03:06,366 --> 00:03:09,166
+Another thing that you want to avoid is
+
+59
+00:03:09,166 --> 00:03:12,666
+don't aggressively retry in an open state.
+
+60
+00:03:13,066 --> 00:03:13,300
+Right.
+
+61
+00:03:13,300 --> 00:03:16,633
+Because you could end up
+in a race condition that you want to do
+
+62
+00:03:17,000 --> 00:03:19,866
+treat the, the breaker state
+
+63
+00:03:19,866 --> 00:03:22,866
+as a US, signal.
+
+64
+00:03:23,266 --> 00:03:23,600
+Right.
+
+65
+00:03:24,800 --> 00:03:25,500
+That's a good way
+
+66
+00:03:25,500 --> 00:03:28,500
+to think about it, because everything is
+asynchronous under the covers.
+
+67
+00:03:28,500 --> 00:03:31,833
+So this is what it looks like in, but,
+
+68
+00:03:31,900 --> 00:03:34,900
+sequence diagram that we have here.
+
+69
+00:03:34,933 --> 00:03:37,933
+Client sends a request to service a,
+
+70
+00:03:38,300 --> 00:03:42,633
+I call a request under
+the needs to covers service
+
+71
+00:03:42,666 --> 00:03:45,666
+B, which has a circuit breaker
+inside there, right.
+
+72
+00:03:46,166 --> 00:03:49,166
+Or it could be just a dependency on
+
+73
+00:03:49,366 --> 00:03:53,466
+an external resource,
+like, the, file system or something.
+
+74
+00:03:53,466 --> 00:03:54,466
+Right.
+
+75
+00:03:54,466 --> 00:03:57,300
+I'm going to call that dependency
+through the circuit breaker.
+
+76
+00:03:57,300 --> 00:04:01,266
+The circuit breaker is going to forward
+the call on to like the file system
+
+77
+00:04:01,266 --> 00:04:04,266
+or whatever it gets. The response back.
+
+78
+00:04:04,533 --> 00:04:04,833
+All right.
+
+79
+00:04:04,833 --> 00:04:07,600
+I'm closed at that point
+because I'm not going to take any more.
+
+80
+00:04:07,600 --> 00:04:09,000
+And the response comes back,
+
+81
+00:04:10,100 --> 00:04:12,966
+I can open and and I'm good to go.
+
+82
+00:04:12,966 --> 00:04:15,966
+If I'm in a closed state
+
+83
+00:04:16,000 --> 00:04:18,233
+and I get a request in,
+
+84
+00:04:18,233 --> 00:04:22,066
+I can fail quickly with the fail fast
+fallback.
+
+85
+00:04:22,400 --> 00:04:24,433
+I mean, that's
+the idea of the circuit breaker.
+
+86
+00:04:24,433 --> 00:04:28,366
+If another request comes in and I'm saying
+I can only take one request at a time,
+
+87
+00:04:28,633 --> 00:04:32,033
+I can fail fast, possibly service a can.
+
+88
+00:04:32,033 --> 00:04:36,933
+Then I request some, requests,
+another resource, or actually send it
+
+89
+00:04:37,000 --> 00:04:40,333
+all the way back to the client and ask it
+
+90
+00:04:40,333 --> 00:04:43,333
+to hit another service for the same.
+
+91
+00:04:43,466 --> 00:04:45,633
+For the same information.
+
+92
+00:04:45,633 --> 00:04:48,500
+Okay, here is an example
+
+93
+00:04:48,500 --> 00:04:52,800
+of what it looks like in Node.js.
+
+94
+00:04:52,966 --> 00:04:56,133
+So I have a class that's called
+Circuit Breaker that I can create.
+
+95
+00:04:56,600 --> 00:04:59,766
+And the key elements that are in here
+that I have are the state,
+
+96
+00:05:00,033 --> 00:05:03,233
+the number of failures, a threshold on
+
+97
+00:05:03,233 --> 00:05:06,300
+the number of failures, reset timeouts
+and things like that.
+
+98
+00:05:06,300 --> 00:05:09,266
+So on this one,
+I have a failure threshold of three.
+
+99
+00:05:09,266 --> 00:05:11,766
+Once I hit that failure
+threshold of three, the circuit breaker,
+
+100
+00:05:12,966 --> 00:05:14,700
+goes to a closed state.
+
+101
+00:05:14,700 --> 00:05:17,433
+I also have a method here called exac.
+
+102
+00:05:17,433 --> 00:05:21,366
+So, the exact method here
+is just handling the state.
+
+103
+00:05:21,366 --> 00:05:25,133
+And then we'll call
+whatever was passed in, to the exact.
+
+104
+00:05:25,133 --> 00:05:29,033
+So it's like a, it's like a proxy
+
+105
+00:05:29,033 --> 00:05:32,033
+to a function
+that's, that's going to be running.
+
+106
+00:05:32,333 --> 00:05:32,966
+Right.
+
+107
+00:05:32,966 --> 00:05:36,666
+And in here you can easily see the state
+when the state is open.
+
+108
+00:05:37,533 --> 00:05:40,533
+I'm going to go go ahead and,
+
+109
+00:05:40,800 --> 00:05:43,966
+hit my fall fallback
+when the state is closed.
+
+110
+00:05:44,600 --> 00:05:47,600
+I can go ahead in and do a
+
+111
+00:05:48,566 --> 00:05:49,433
+I got that backwards.
+
+112
+00:05:49,433 --> 00:05:51,233
+When it's open, I can access it.
+
+113
+00:05:51,233 --> 00:05:54,233
+When it's closed, I get, I get the,
+
+114
+00:05:56,133 --> 00:05:58,300
+Get the the fail quickly.
+
+115
+00:05:58,300 --> 00:06:00,366
+Okay. So that's the Node.js.
+
+116
+00:06:00,366 --> 00:06:03,466
+Let's take a look at go.
+Same sort of thing.
+
+117
+00:06:03,500 --> 00:06:08,066
+I have a structure here where I store
+the state, the failures, the threshold.
+
+118
+00:06:08,366 --> 00:06:12,966
+And then next time
+I want to try and it's a proxy call here.
+
+119
+00:06:13,100 --> 00:06:16,566
+So I'm going to check the states,
+see what I'm allowed to do.
+
+120
+00:06:16,566 --> 00:06:19,233
+And if I'm allowed to do it,
+I go ahead and do it.
+
+121
+00:06:19,233 --> 00:06:21,466
+And I count how many failures I have.
+
+122
+00:06:21,466 --> 00:06:25,900
+If the failures are there, then
+I switch the state appropriately, right.
+
+123
+00:06:26,066 --> 00:06:29,900
+So you can see the circuit breaker
+is kind of in the middle and intercepting
+
+124
+00:06:29,900 --> 00:06:32,900
+any of the calls
+to the underlying resource.
+
+125
+00:06:33,600 --> 00:06:34,433
+Okay.
+
+126
+00:06:34,433 --> 00:06:36,366
+So that's the circuit breaker.
+
+127
+00:06:36,366 --> 00:06:37,800
+Let's talk about bulk bulkheads.
+
+128
+00:06:37,800 --> 00:06:42,166
+So a bulkhead isolates resources
+per dependency or features.
+
+129
+00:06:42,166 --> 00:06:45,633
+So where a circuit breaker
+is all resources,
+
+130
+00:06:46,000 --> 00:06:49,600
+the bulkhead is like,
+hey, I'm, I'm going to isolate
+
+131
+00:06:49,600 --> 00:06:52,833
+the resource to the specific type
+of requests coming in.
+
+132
+00:06:53,200 --> 00:06:55,966
+It prevents
+noisy neighbors from starving each other.
+
+133
+00:06:55,966 --> 00:06:59,100
+And you may even with a bulkhead,
+you may even start
+
+134
+00:06:59,100 --> 00:07:02,100
+a new thread that just handles
+those types of resources.
+
+135
+00:07:02,433 --> 00:07:06,766
+And, you're going to put a bulkhead
+with probably
+
+136
+00:07:06,766 --> 00:07:10,400
+a circuit breaker on it for each bulkhead,
+which could be pretty cool, right?
+
+137
+00:07:11,200 --> 00:07:14,533
+So, that's that's one of the things
+
+138
+00:07:14,533 --> 00:07:18,200
+that you can design in your system as,
+as you're doing it.
+
+139
+00:07:18,533 --> 00:07:23,000
+And this works really
+well if you have very well defined,
+
+140
+00:07:23,533 --> 00:07:26,800
+requests that come in
+that are hitting external resources
+
+141
+00:07:27,066 --> 00:07:30,433
+that, you know, could be blocking
+and things like that,
+
+142
+00:07:30,700 --> 00:07:33,666
+the idea here is that you want to keep
+the pools of those,
+
+143
+00:07:33,666 --> 00:07:37,100
+connections
+or those thread pools, small.
+
+144
+00:07:37,100 --> 00:07:40,666
+So you're not spending all your time
+managing threads, which could be,
+
+145
+00:07:40,833 --> 00:07:41,633
+kind of a pain.
+
+146
+00:07:43,000 --> 00:07:43,733
+All right, so
+
+147
+00:07:43,733 --> 00:07:48,600
+here's an example of a thread, pool
+in, Python care.
+
+148
+00:07:49,000 --> 00:07:52,600
+And they do have, thread pools,
+which is really kind of nice.
+
+149
+00:07:53,133 --> 00:07:55,766
+Where I've got my pool of threads,
+
+150
+00:07:55,766 --> 00:07:59,300
+I'm going to go out and use those,
+threads
+
+151
+00:07:59,300 --> 00:08:03,400
+appropriately for the different types
+of, calls that are coming in.
+
+152
+00:08:03,800 --> 00:08:04,500
+All right.
+
+153
+00:08:04,500 --> 00:08:09,533
+So that's, that's kind
+of, the, idea behind, bulkheads there.
+
+154
+00:08:09,800 --> 00:08:10,833
+Right.
+
+155
+00:08:10,833 --> 00:08:14,766
+So make sure, though,
+that when you, have your bulkhead
+
+156
+00:08:14,766 --> 00:08:17,900
+and you're using pools for that,
+you want to separate the pool
+
+157
+00:08:17,900 --> 00:08:21,200
+per dependency that you have
+so you don't get,
+
+158
+00:08:21,200 --> 00:08:25,200
+dependencies on these external resources
+that can block each other.
+
+159
+00:08:25,633 --> 00:08:29,500
+And that will limit the damage
+from slow services on the on the back end.
+
+160
+00:08:29,500 --> 00:08:33,833
+So let's say that I am accessing
+another microservice on the back end.
+
+161
+00:08:34,100 --> 00:08:37,800
+I can set up a thread
+to just go and talk to that microservice.
+
+162
+00:08:38,000 --> 00:08:41,900
+And another thread to talk to 
+microservice C or D, right.
+
+163
+00:08:41,900 --> 00:08:44,166
+So that's the concept behind it.
+
+164
+00:08:44,166 --> 00:08:47,933
+This this allows you to scale,
+
+165
+00:08:48,300 --> 00:08:52,500
+more effectively
+and that your one service microservice
+
+166
+00:08:52,500 --> 00:08:58,266
+in the middle, is it, the same causing
+all the back pressure on a pill,
+
+167
+00:08:58,266 --> 00:09:02,500
+or a stream, calls
+to your microservice architecture.
+
+168
+00:09:04,066 --> 00:09:04,600
+All right.
+
+169
+00:09:04,600 --> 00:09:07,333
+When best to use this primarily.
+
+170
+00:09:07,333 --> 00:09:10,333
+You want to use this
+when you have unpredictable latency
+
+171
+00:09:10,600 --> 00:09:13,633
+or or it's latency
+that you do know what it is.
+
+172
+00:09:13,633 --> 00:09:14,833
+And it takes a long time,
+
+173
+00:09:14,833 --> 00:09:18,366
+but most of the time
+it's going to be unpredictable, a latency.
+
+174
+00:09:18,366 --> 00:09:21,366
+And this can easily happen
+if you have a lot of microservices.
+
+175
+00:09:21,766 --> 00:09:24,500
+And because the networks involved. Right.
+
+176
+00:09:24,500 --> 00:09:28,833
+And if you've got a noisy network, it
+could take some time to get things back.
+
+177
+00:09:28,833 --> 00:09:30,400
+So you got to watch out for that.
+
+178
+00:09:30,400 --> 00:09:34,900
+You can also use it
+when you've got one feature that, can,
+
+179
+00:09:34,933 --> 00:09:37,933
+exhaust shared resources very quickly.
+
+180
+00:09:38,633 --> 00:09:40,533
+That's another way of isolation.
+
+181
+00:09:40,533 --> 00:09:44,800
+If you need a safe degradation
+or partial failure,
+
+182
+00:09:45,700 --> 00:09:48,600
+that's another way to do it,
+because you've almost like taking
+
+183
+00:09:48,600 --> 00:09:52,366
+your microservice and split it into
+into these different pools.
+
+184
+00:09:52,533 --> 00:09:57,500
+To do it, it's really good to handle high
+volume traffic spikes that are common,
+
+185
+00:09:57,800 --> 00:10:03,133
+handle critical paths to stay responsive,
+or require clear isolation boundaries
+
+186
+00:10:03,300 --> 00:10:06,400
+which could be if you're dealing, with,
+
+187
+00:10:06,400 --> 00:10:09,800
+secret or, encrypted type
+
+188
+00:10:09,800 --> 00:10:12,833
+data and things like that, or if you're
+dealing with those sorts of things.
+
+189
+00:10:12,833 --> 00:10:16,400
+So that's another way to use
+some of the architectural trade offs.
+
+190
+00:10:16,400 --> 00:10:17,666
+This is important to understand.
+
+191
+00:10:17,666 --> 00:10:19,700
+Scalability is one of those. Right.
+
+192
+00:10:19,700 --> 00:10:22,800
+Because now the isolation
+improves resiliency.
+
+193
+00:10:23,000 --> 00:10:26,966
+But it could reduce any shared capacity
+that you had.
+
+194
+00:10:26,966 --> 00:10:27,266
+Right.
+
+195
+00:10:27,266 --> 00:10:28,900
+Because if you have a set of
+
+196
+00:10:28,900 --> 00:10:31,766
+pool of threads out there
+and you've only allocated
+
+197
+00:10:31,766 --> 00:10:35,066
+a certain number to a one bulkhead,
+that could be an issue.
+
+198
+00:10:35,066 --> 00:10:35,766
+Right?
+
+199
+00:10:35,766 --> 00:10:39,366
+And reliability
+could, be a trade off here too,
+
+200
+00:10:39,366 --> 00:10:44,433
+because you have fewer cascades but
+partial feature outages could be common.
+
+201
+00:10:44,433 --> 00:10:47,300
+So you've got to be able to,
+
+202
+00:10:47,300 --> 00:10:50,866
+program to handle, 
+not getting all the information inspected.
+
+203
+00:10:50,866 --> 00:10:52,666
+Only part partial. Right.
+
+204
+00:10:54,200 --> 00:10:56,833
+Fail fast is quicker,
+
+205
+00:10:56,833 --> 00:11:01,733
+than this, like a short circuit
+or a circuit breaker would be faster.
+
+206
+00:11:02,166 --> 00:11:04,200
+But fallbacks, can be limited.
+
+207
+00:11:04,200 --> 00:11:07,566
+So latency could be an issue, 
+using bulkhead.
+
+208
+00:11:07,966 --> 00:11:11,000
+But, that's something
+you've got to determine, right.
+
+209
+00:11:11,000 --> 00:11:13,100
+What's your trade off there? Feel fast.
+
+210
+00:11:13,100 --> 00:11:16,866
+I know I'm going to fail faster or latency
+because I'm going to spin up
+
+211
+00:11:16,866 --> 00:11:19,266
+other, other pools of threads
+and things like that.
+
+212
+00:11:19,266 --> 00:11:21,433
+I could be blocked for a little bit.
+
+213
+00:11:21,433 --> 00:11:24,900
+The cost could be higher
+because more pools or more,
+
+214
+00:11:25,433 --> 00:11:28,100
+queues increase the baseline capacity
+
+215
+00:11:28,100 --> 00:11:32,133
+of your microservice, which means maybe
+instead of a one gig microservice,
+
+216
+00:11:32,133 --> 00:11:36,366
+you've got a five or 6 or 8
+gig microservice running in the cloud.
+
+217
+00:11:36,366 --> 00:11:37,866
+I may need a bigger instance.
+
+218
+00:11:37,866 --> 00:11:38,866
+Things like that.
+
+219
+00:11:38,866 --> 00:11:42,000
+Complexity, is another issue, but
+
+220
+00:11:42,866 --> 00:11:45,500
+you're trading complexity
+for all these benefits.
+
+221
+00:11:45,500 --> 00:11:47,300
+So these are the sorts of things
+
+222
+00:11:47,300 --> 00:11:51,000
+that you're going to have to weigh
+when you're designing your system.
+
+223
+00:11:52,100 --> 00:11:53,033
+Okay.
+
+224
+00:11:53,033 --> 00:11:56,033
+One thing to also avoid some pitfalls.
+
+225
+00:11:56,066 --> 00:12:01,766
+Avoid one global, pool because that
+negates the whole isolation concept.
+
+226
+00:12:02,166 --> 00:12:05,166
+If your thresholds are too low,
+then you're going to create
+
+227
+00:12:05,200 --> 00:12:08,833
+a frequent opens, of new, threads.
+
+228
+00:12:08,833 --> 00:12:10,700
+That could be an issue as well. Right?
+
+229
+00:12:10,700 --> 00:12:13,266
+Because you're introducing overhead.
+
+230
+00:12:13,266 --> 00:12:17,000
+Make sure you don't miss any
+the fallback, causes
+
+231
+00:12:17,400 --> 00:12:20,400
+and make sure you have the appropriate,
+
+232
+00:12:20,833 --> 00:12:23,000
+fallbacks when things fail. Right.
+
+233
+00:12:23,000 --> 00:12:24,366
+What are you going to do?
+
+234
+00:12:24,366 --> 00:12:27,800
+If you just have one catch all,
+that might not be the right thing to do.
+
+235
+00:12:27,800 --> 00:12:32,733
+You may need to know why things failed and
+and fallback appropriately,
+
+236
+00:12:33,500 --> 00:12:35,900
+and then make sure you don't ignore
+the breaker
+
+237
+00:12:35,900 --> 00:12:39,400
+metrics because they can actually hide
+instability there.
+
+238
+00:12:39,400 --> 00:12:42,566
+So put those in your observability
+in your health check
+
+239
+00:12:42,800 --> 00:12:45,733
+saying hey, of of all of
+
+240
+00:12:45,733 --> 00:12:49,666
+if you're running like a 10
+or 20% fail rate
+
+241
+00:12:49,666 --> 00:12:53,733
+on everything, that could,
+that could be pretty high, right?
+
+242
+00:12:53,733 --> 00:12:56,333
+So you want to look and see why
+that's happening.
+
+243
+00:12:56,333 --> 00:13:00,300
+Also, aggressive retries
+can actually fight a circuit breaker.
+
+244
+00:13:00,300 --> 00:13:02,800
+And then you'll actually
+get thrashing on your network.
+
+245
+00:13:02,800 --> 00:13:05,666
+So you got to watch out for those okay.
+
+246
+00:13:05,666 --> 00:13:10,100
+Breakers fail fast and bulkheads
+isolate load.
+
+247
+00:13:10,166 --> 00:13:12,566
+Those are the two main
+things you need to remember.

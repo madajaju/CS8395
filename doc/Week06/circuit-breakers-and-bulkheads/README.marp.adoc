@@ -4,6 +4,11 @@
 :source-highlighter: highlightjs
 :revealjs_slideNumber: true
 
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/Y5AXjGaAWdA
+
 == Goals
 - Define circuit breakers and bulkheads in microservices
 - Explain why cascading failures happen
@@ -13,6 +18,7 @@
 - List common pitfalls to avoid
 
 == Circuit Breaker Basics
+
 - Protects upstream services from failing dependencies
 - Fail-fast behavior reduces tail latency
 - Uses a rolling error or timeout window
@@ -20,9 +26,8 @@
 - Half-open probes allow recovery
 - Works best with short timeouts
 
-[.columns]
-[.column]
---
+== Circuit Breaker Basics Cont
+
 - Breaker opens on error threshold
 - Fallbacks provide degraded output
 - Observability is required for tuning
@@ -30,8 +35,8 @@
 - Do not retry aggressively in open state
 - Treat breaker state as SLO signal
 --
-[.column]
---
+
+== Circuit Breaker
 [plantuml, format=svg, width=100%]
 ----
 @startuml
@@ -51,7 +56,102 @@ else Open (unhealthy)
 end
 @enduml
 ----
---
+
+
+== Example: Circuit Breaker in Node.js
+[source,javascript]
+----
+class CircuitBreaker {
+  constructor(action, { failureThreshold = 3, resetTimeoutMs = 5000 } = {}) {
+    this.action = action;
+    this.failureThreshold = failureThreshold;
+    this.resetTimeoutMs = resetTimeoutMs;
+    this.state = "CLOSED";
+    this.failures = 0;
+    this.nextTry = 0;
+  }
+
+  async exec(...args) {
+    if (this.state === "OPEN" && Date.now() < this.nextTry) {
+      return { source: "fallback", data: "cached-profile" };
+    }
+
+    if (this.state === "OPEN") this.state = "HALF_OPEN";
+
+    try {
+      const result = await this.action(...args);
+      this.failures = 0;
+      this.state = "CLOSED";
+      return { source: "remote", data: result };
+    } catch {
+      this.failures += 1;
+      if (this.failures >= this.failureThreshold) {
+        this.state = "OPEN";
+        this.nextTry = Date.now() + this.resetTimeoutMs;
+      }
+      return { source: "fallback", data: "cached-profile" };
+    }
+  }
+}
+
+const fetchProfile = async (id) => {
+  throw new Error("downstream timeout");
+};
+
+const breaker = new CircuitBreaker(fetchProfile, { failureThreshold: 2 });
+breaker.exec("u-123").then(console.log);
+----
+
+== Example: Circuit Breaker in Go
+[source,go]
+----
+package main
+
+import (
+	"errors"
+	"fmt"
+	"time"
+)
+
+type Breaker struct {
+	state       string
+	failures    int
+	threshold   int
+	nextAttempt time.Time
+}
+
+func (b *Breaker) Call(fn func() (string, error)) string {
+	now := time.Now()
+	if b.state == "OPEN" && now.Before(b.nextAttempt) {
+		return "fallback: cached-profile"
+	}
+	if b.state == "OPEN" {
+		b.state = "HALF_OPEN"
+	}
+
+	resp, err := fn()
+	if err == nil {
+		b.state = "CLOSED"
+		b.failures = 0
+		return "remote: " + resp
+	}
+
+	b.failures++
+	if b.failures >= b.threshold {
+		b.state = "OPEN"
+		b.nextAttempt = now.Add(5 * time.Second)
+	}
+	return "fallback: cached-profile"
+}
+
+func main() {
+	breaker := &Breaker{state: "CLOSED", threshold: 2}
+	call := func() (string, error) { return "", errors.New("dependency timeout") }
+
+	fmt.Println(breaker.Call(call))
+fmt.Println(breaker.Call(call))
+}
+----
 
 == Bulkhead Basics
 - Isolates resources per dependency or feature
@@ -61,8 +161,8 @@ end
 - Align pools to business-critical paths
 - Keep pools small but sufficient
 
-== Example: Bulkhead Pools
 [.columns]
+== Example: Bulkhead Pools
 [.column]
 --
 - Separate pool per dependency

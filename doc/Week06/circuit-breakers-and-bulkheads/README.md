@@ -1,5 +1,7 @@
 # Circuit Breakers and Bulkheads
 
+Video: https://youtu.be/Y5AXjGaAWdA
+
 **Outcomes**
 - Explain circuit breakers and bulkheads at an architectural level
 - Recognize when to apply each pattern

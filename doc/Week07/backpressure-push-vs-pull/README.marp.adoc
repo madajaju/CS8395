@@ -1,0 +1,225 @@
+= Backpressure Push vs Pull
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Define backpressure and why it is required
+- Distinguish push and pull flow-control models
+- Select overload policies by business criticality
+- Decide when to use push, pull, or hybrid demand-signaled flow
+
+== Overview
+- Backpressure prevents fast producers from overwhelming slow consumers
+- Throughput mismatch is normal in distributed systems
+- Without explicit flow control, queue growth hides instability
+- Bounded demand keeps latency and memory predictable
+- Good systems degrade gracefully under overload
+- Policy must match business semantics
+
+== Why It Matters
+- No backpressure leads to rising latency and queue depth
+- Memory pressure increases as buffers grow
+- Timeouts and retries amplify load during incidents
+- Cascading failures become more likely
+- Backpressure creates predictable overload behavior
+- Reliability improves when limits are explicit
+
+[.columns]
+== Push vs Pull
+[.column]
+--
+Push:
+
+- Producer emits when ready
+- Low delivery latency under healthy load
+- Risk of consumer overload without strict limits
+- Requires bounded queues and reject/drop policies
+--
+[.column]
+--
+Pull:
+
+- Consumer requests work when ready
+- Natural pacing and concurrency control
+- Better stability for variable processing cost
+- Slightly higher latency from polling/leases
+--
+
+== Hybrid Demand-Signaled Flow
+- Consumer requests `n` items via demand signal
+- Producer emits only up to requested amount
+- No new demand means producer pauses
+- Combines push efficiency with pull safety
+- Common model in reactive streams implementations
+- Strong fit for high-concurrency I/O paths
+
+[.columns]
+== Diagram: Pull With Backpressure
+[.column]
+--
+- Producer writes work to queue
+- Consumer polls only when ready
+- Queue returns up to requested batch size
+- Full queue signals pressure upstream
+- Throughput can reduce without total failure
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+participant Producer
+participant Queue
+participant Consumer
+
+Producer -> Queue: publish()
+Consumer -> Queue: poll(10)
+Queue --> Consumer: up to 10 messages
+Queue --> Producer: slow down / full
+@enduml
+----
+--
+
+[.columns]
+== Diagram: Push Overload vs Demand
+[.column]
+--
+- Pure push can flood slow consumers
+- Demand-signaled flow caps in-flight items
+- Safer memory profile during traffic bursts
+- More predictable latency under pressure
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+participant Producer
+participant Consumer
+
+== Pure Push (risky) ==
+Producer -> Consumer: onNext x1000
+note right of Consumer
+Queue grows
+latency rises
+possible OOM
+end note
+
+== Demand-Signaled (safer) ==
+Consumer -> Producer: request(3)
+Producer -> Consumer: onNext(1)
+Producer -> Consumer: onNext(2)
+Producer -> Consumer: onNext(3)
+Producer -> Consumer: pause
+@enduml
+----
+--
+
+[.columns]
+== Example: API Gateway Protection
+[.column]
+--
+- Inbound spike reaches `5000` RPS
+- Dependency can sustain `1500` RPS
+- Gateway enforces token-bucket limit
+- Excess requests receive `429`
+- Protects downstream from timeout cascade
+--
+[.column]
+--
+[source,text]
+----
+limit = 1500 rps
+burst = 300
+
+if tokens_available():
+  forward(request)
+else:
+  return 429 Too Many Requests
+----
+--
+
+[.columns]
+== Example: Pull Worker Batching
+[.column]
+--
+- Worker polls queue in bounded batches
+- Concurrency cap limits active work
+- Batch size can be tuned during incidents
+- Throughput drops before full system failure
+--
+[.column]
+--
+[source,text]
+----
+while running:
+  msgs = queue.poll(max_items=10, timeout=100ms)
+  process_with_limit(msgs, concurrency=8)
+----
+--
+
+[.columns]
+== Example: Reactive Demand Signal
+[.column]
+--
+- Subscriber sets initial demand
+- Processes item then requests one more
+- Bounded in-flight work avoids overload
+- Works well with non-blocking pipelines
+--
+[.column]
+--
+[source,text]
+----
+onSubscribe(sub):
+  sub.request(50)
+
+onNext(item):
+  handle(item)
+  sub.request(1)
+----
+--
+
+== Policy by Business Semantics
+- Never drop: payments, orders, financial transactions
+- May drop/sample: debug logs, high-cardinality telemetry
+- Delay/retry: notifications and non-critical enrichment
+- Dead-letter: unprocessable events requiring inspection
+- Keep policy explicit per topic or endpoint
+- Monitor reject/drop rates continuously
+
+== When to Use What
+- Choose push for low-latency fan-out where some drop is acceptable
+- Choose pull for durable jobs with strict throughput control
+- Choose hybrid demand-signaled for stable high-concurrency streaming
+- Prefer per-domain policies over one global strategy
+- Document overflow behavior in API and event contracts
+- Validate policy with load tests, not assumptions
+
+== Decision Checklist
+1. Is data loss acceptable for this workload?
+2. Do consumers have variable processing time?
+3. Is low latency more important than strict durability?
+4. Are queue depth, lag, reject rate, and retries observable?
+5. Is overflow behavior (`drop`, `retry`, `dead-letter`, `429`) explicit?
+
+== Architectural Tradeoffs
+- Stability: bounded flow strongly improves resilience
+- Throughput: peak throughput may be lower by design
+- Freshness: buffering and retries increase end-to-end latency
+- Complexity: policies and failure paths add implementation effort
+- Operations: dashboards and alerts are required for tuning
+- Cost: extra capacity may be needed to absorb bursts safely
+
+== Pitfalls and Recap
+- Unbounded queues used as hidden buffers
+- One policy applied to every message type
+- Critical events dropped without audit trail
+- Aggressive retries during active overload
+- Missing metrics for lag and saturation
+- Recap: backpressure is a control contract, not an optional optimization

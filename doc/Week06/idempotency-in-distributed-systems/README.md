@@ -1,5 +1,7 @@
 # Idempotency in Distributed Systems
 
+Video: https://youtu.be/tUdcA0fJon0
+
 **Outcomes**
 - Explain idempotency and why it matters in distributed systems
 - Recognize when to enforce it

@@ -1,0 +1,116 @@
+= Go Concurrency Overview
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain goroutines, channels, and worker pools
+- Recognize when Go concurrency improves throughput
+- Apply cancellation and bounded concurrency safely
+- Identify common race and deadlock risks
+
+== Overview
+- Goroutines are lightweight concurrent tasks
+- Channels coordinate work with explicit communication
+- `select` handles multiple async events
+- `context` carries cancellation and deadlines
+- Worker pools bound resource usage
+- Concurrency is most useful for I/O-heavy paths
+
+[.columns]
+== Fan-Out/Fan-In Pattern
+[.column]
+--
+- Start independent calls in parallel goroutines
+- Collect results on channels
+- Combine once all required responses arrive
+- Reduce total request latency
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Handler" as H
+participant "Inventory Goroutine" as I
+participant "Pricing Goroutine" as P
+queue "results channel" as C
+
+Client -> H: request
+H -> I: fetch inventory
+H -> P: fetch price
+I -> C: inventory
+P -> C: price
+H -> C: receive both
+H --> Client: response
+@enduml
+----
+--
+
+[.columns]
+== Example: Channel Aggregation
+[.column]
+--
+- Two downstream calls in parallel
+- Buffered channel avoids first-send blocking
+- Handler waits for both values then merges
+--
+[.column]
+--
+[source,go]
+----
+results := make(chan string, 2)
+
+go func() { results <- callInventory() }()
+go func() { results <- callPricing() }()
+
+inv := <-results
+price := <-results
+response := combine(inv, price)
+----
+--
+
+[.columns]
+== Example: Bounded Worker Pool
+[.column]
+--
+- Fixed workers cap active processing
+- Queue absorbs moderate bursts
+- Stable behavior under sustained load
+--
+[.column]
+--
+[source,go]
+----
+jobs := make(chan Job, 100)
+for i := 0; i < 8; i++ {
+  go worker(jobs)
+}
+
+for _, job := range incoming {
+  jobs <- job
+}
+close(jobs)
+----
+--
+
+== When to Use
+- Independent I/O calls per request
+- Background processing with controlled concurrency
+- Services needing robust timeout and cancellation behavior
+
+== Tradeoffs and Pitfalls
+- Throughput improves for I/O-heavy workloads
+- Race conditions and deadlocks add complexity
+- Unbounded goroutines can cause memory pressure
+- Always propagate `context` to downstream calls
+
+== Recap
+- Go concurrency is a practical scaling tool for I/O paths
+- Channels and worker pools provide explicit control
+- Bounded concurrency plus cancellation keeps services stable

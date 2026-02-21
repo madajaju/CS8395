@@ -1,0 +1,104 @@
+= Async Patterns Overview
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Compare common asynchronous communication patterns
+- Choose async styles by business need
+- Understand reliability requirements in async flows
+- Recognize operational and debugging tradeoffs
+
+== Why Async
+- Decouples request acceptance from processing completion
+- Improves throughput under variable latency
+- Absorbs traffic bursts with queues or streams
+- Reduces tight coupling across service boundaries
+- Enables eventual consistency for long workflows
+
+[.columns]
+== Sync vs Async
+[.column]
+--
+Synchronous:
+
+- Caller waits for full completion
+- Simpler control flow
+- Higher coupling to dependency latency
+- Poor burst tolerance
+--
+[.column]
+--
+Asynchronous:
+
+- Caller gets fast acknowledgement
+- Processing finishes later
+- Better throughput under load
+- Requires explicit status tracking
+--
+
+== Common Async Patterns
+- Fire-and-forget event publication
+- Queue + worker consumers
+- Request-acknowledge with status endpoint
+- Async request-reply via callback/webhook/topic
+- Orchestration with explicit workflow state
+
+[.columns]
+== Example: Order Flow
+[.column]
+--
+- Client submits order
+- API returns `202 Accepted` + `orderId`
+- Service publishes `OrderCreated`
+- Payment and inventory process independently
+- Final status event updates order state
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Order API" as API
+queue "Event Bus" as Bus
+participant "Payment Worker" as Pay
+participant "Inventory Worker" as Inv
+
+Client -> API: POST /orders
+API --> Client: 202 Accepted + orderId
+API -> Bus: Publish OrderCreated
+Bus -> Pay: Consume
+Bus -> Inv: Consume
+@enduml
+----
+--
+
+== Reliability Requirements
+- Idempotent handlers for duplicate delivery
+- Correlation IDs for tracing distributed flow
+- Retry policy with dead-letter handling
+- Durable storage for critical messages
+- Explicit timeout and compensation behavior
+
+== API Design Implications
+- Return immediate acknowledgement for long work
+- Provide status/read model endpoint
+- Document eventual consistency expectations
+- Include error states and retry semantics
+- Publish clear event schemas
+
+== Tradeoffs
+- Better resilience and burst handling
+- Higher cognitive load for developers
+- Harder debugging across async boundaries
+- Requires strong observability discipline
+
+== Recap
+- Async improves concurrency by decoupling timing
+- Pattern choice depends on workflow criticality
+- Reliability comes from idempotency, retries, and tracing

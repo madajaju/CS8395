@@ -4,6 +4,11 @@
 :source-highlighter: highlightjs
 :revealjs_slideNumber: true
 
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/p77vdIimBlI
+
 == Goals
 - Explain graceful shutdown and request draining
 - Identify where shutdown failures occur
@@ -12,7 +17,9 @@
 - Apply in deploys and autoscaling
 - Avoid common shutdown pitfalls
 
+[.columns]
 == Overview
+[.column]
 - Stop accepting new requests first
 - Allow in-flight work to complete
 - Deregister from the load balancer early
@@ -20,7 +27,6 @@
 - Close resources in safe order
 - Emit logs and metrics for shutdown
 
-[.columns]
 [.column]
 --
 - Protects user experience during deploys
@@ -30,8 +36,8 @@
 - Reduces timeouts for clients
 - Enables safer rollbacks
 --
-[.column]
---
+
+== Request Draining
 [plantuml, format=svg, width=100%]
 ----
 @startuml
@@ -49,9 +55,10 @@ S --> LB: Drain complete
 S -> S: Shutdown
 @enduml
 ----
---
+
 
 == Design Notes
+
 - Separate readiness from liveness probes
 - Do not accept new connections during drain
 - Make handlers idempotent to allow retries
@@ -59,8 +66,8 @@ S -> S: Shutdown
 - Choose a timeout that matches SLOs
 - Close shared resources last
 
-== Example: Go Shutdown
 [.columns]
+== Example: Go Shutdown
 [.column]
 --
 - Listen for SIGTERM or SIGINT
@@ -88,8 +95,91 @@ _ = server.Shutdown(ctx)
 ----
 --
 
-== Example: Kubernetes Draining
 [.columns]
+== Example: Node.js Shutdown
+[.column]
+--
+- Handle SIGTERM and SIGINT explicitly
+- Stop accepting new connections first
+- Let in-flight requests finish during timeout
+- Force-close remaining sockets at deadline
+- Close shared clients after server drain
+- Exit cleanly so orchestrator can replace pod
+--
+[.column]
+--
+[source,javascript]
+----
+const http = require("http");
+
+const server = http.createServer(async (req, res) => {
+  await new Promise((r) => setTimeout(r, 200));
+  res.end("ok");
+});
+
+server.listen(8080);
+
+const shutdown = (signal) => {
+  console.log(`received ${signal}, starting drain`);
+  server.close(() => {
+    console.log("drain complete, exiting");
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    console.error("force exit after drain timeout");
+    process.exit(1);
+  }, 20000).unref();
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+----
+--
+
+[.columns]
+== Example: Python Shutdown
+[.column]
+--
+- Capture SIGTERM and SIGINT from the runtime
+- Mark app as draining to reject new work
+- Finish active requests within timeout
+- Stop serving before closing dependencies
+- Keep timeout bounded to avoid stuck exits
+- Emit logs for each shutdown phase
+--
+[.column]
+--
+[source,python]
+----
+import signal
+import threading
+from wsgiref.simple_server import make_server
+
+draining = threading.Event()
+
+def app(environ, start_response):
+    if draining.is_set():
+        start_response("503 Service Unavailable", [("Content-Type", "text/plain")])
+        return [b"draining"]
+    start_response("200 OK", [("Content-Type", "text/plain")])
+    return [b"ok"]
+
+httpd = make_server("0.0.0.0", 8080, app)
+
+def shutdown(signum, frame):
+    print(f"received signal {signum}, starting drain")
+    draining.set()
+    threading.Timer(20, httpd.shutdown).start()
+
+signal.signal(signal.SIGTERM, shutdown)
+signal.signal(signal.SIGINT, shutdown)
+httpd.serve_forever()
+----
+--
+
+[.columns]
+== Example: Kubernetes Draining
 [.column]
 --
 - terminationGracePeriodSeconds controls drain window

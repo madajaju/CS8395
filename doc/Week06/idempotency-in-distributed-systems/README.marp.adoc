@@ -4,6 +4,11 @@
 :source-highlighter: highlightjs
 :revealjs_slideNumber: true
 
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/tUdcA0fJon0
+
 == Goals
 - Define idempotency in distributed systems
 - Explain why retries are common
@@ -12,15 +17,18 @@
 - Avoid duplicate side effects
 - Recognize tradeoffs and pitfalls
 
+[.columns]
 == Overview
+[.column]
+--
 - Repeat the same request, get the same result
 - Protects against retry duplicates
 - Essential for payments and orders
 - Safe for at-least-once delivery
 - Requires server-side storage
 - Must replay the same response
+--
 
-[.columns]
 [.column]
 --
 - Networks are unreliable by default
@@ -30,8 +38,9 @@
 - Prevents duplicate writes
 - Improves user trust and consistency
 --
-[.column]
---
+
+== Idempotency
+
 [plantuml, format=svg, width=100%]
 ----
 @startuml
@@ -53,7 +62,7 @@ else Seen
 end
 @enduml
 ----
---
+
 
 == Core Concepts
 - GET, PUT, DELETE are idempotent by definition
@@ -63,8 +72,8 @@ end
 - TTL controls deduplication window
 - Response replay must be consistent
 
-== Example: Client Request
 [.columns]
+== Example: Client Request
 [.column]
 --
 - Use a UUID per logical request
@@ -87,8 +96,8 @@ Content-Type: application/json
 ----
 --
 
-== Example: Server Dedup
 [.columns]
+== Example: Server Dedup
 [.column]
 --
 - Reject missing keys for unsafe ops

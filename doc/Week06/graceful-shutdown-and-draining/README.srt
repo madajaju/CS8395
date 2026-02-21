@@ -1,0 +1,1005 @@
+﻿1
+00:00:00,100 --> 00:00:00,566
+Okay.
+
+2
+00:00:00,566 --> 00:00:01,300
+In this lecture we're
+
+3
+00:00:01,300 --> 00:00:05,400
+going to talk about graceful shutdown
+and draining of your microservices.
+
+4
+00:00:05,433 --> 00:00:10,900
+Now this is unique to distributed systems
+because if I do a graceful shutdown
+
+5
+00:00:10,900 --> 00:00:14,666
+in a normal application, I can handle
+all that in the application itself.
+
+6
+00:00:15,166 --> 00:00:17,800
+Like, hey,
+I'm going to do a shutdown close
+
+7
+00:00:17,800 --> 00:00:21,300
+on my database socket command,
+you know, finish writing things out.
+
+8
+00:00:21,333 --> 00:00:22,766
+It's pretty simple.
+
+9
+00:00:22,766 --> 00:00:28,600
+In microservice architectures,
+it can be a lot more complicated
+
+10
+00:00:28,600 --> 00:00:31,533
+because I've got all of these processes
+that are running.
+
+11
+00:00:31,533 --> 00:00:36,300
+I need to shut them down, but
+they may be partially processing things.
+
+12
+00:00:36,333 --> 00:00:38,500
+So I need to have a strategy to do this.
+
+13
+00:00:38,500 --> 00:00:42,100
+So that's what we mean
+a graceful shutdown right.
+
+14
+00:00:42,766 --> 00:00:47,366
+Instead of
+even if someone did a kill or a Sigint
+
+15
+00:00:47,666 --> 00:00:50,766
+on, one of your processes,
+that's a microservice,
+
+16
+00:00:51,033 --> 00:00:55,000
+you need to capture that and shut down
+gracefully so you don't get corruption
+
+17
+00:00:55,000 --> 00:00:55,700
+in your database.
+
+18
+00:00:55,700 --> 00:00:58,233
+That's one of the reasons
+why we need to do that. Okay.
+
+19
+00:00:58,233 --> 00:01:02,500
+There's lots of different reasons
+why us, microservices could go down.
+
+20
+00:01:02,500 --> 00:01:05,500
+We want to make sure
+that if it does go down hard,
+
+21
+00:01:05,500 --> 00:01:08,933
+that when we come back up
+that we can handle things appropriately.
+
+22
+00:01:09,133 --> 00:01:12,133
+And then also,
+if there's any outstanding requests
+
+23
+00:01:12,300 --> 00:01:15,900
+that we handle those,
+appropriately as well, we want to drain
+
+24
+00:01:16,133 --> 00:01:20,533
+any of the timeouts or ordering on
+any upstream requests that are coming in.
+
+25
+00:01:20,800 --> 00:01:21,066
+All right.
+
+26
+00:01:21,066 --> 00:01:23,500
+So those are the sorts of things
+we need to look at.
+
+27
+00:01:23,500 --> 00:01:26,933
+And then we can talk about any, pitfalls,
+with doing this. So
+
+28
+00:01:28,166 --> 00:01:30,833
+here is the order of operations
+on a graceful shutdown.
+
+29
+00:01:30,833 --> 00:01:36,433
+First stop accepting new requests on that,
+microservice.
+
+30
+00:01:36,466 --> 00:01:39,533
+It's not just good enough
+to just turn everything off
+
+31
+00:01:39,700 --> 00:01:43,900
+because you still have some things
+to finish working on.
+
+32
+00:01:44,200 --> 00:01:48,666
+So that's the next thing you stop
+new requests from coming in first,
+
+33
+00:01:49,566 --> 00:01:51,833
+then you say, I'm going to finish
+
+34
+00:01:51,833 --> 00:01:55,433
+any of the things
+that are in in flight to finish.
+
+35
+00:01:55,433 --> 00:01:58,266
+So maybe I have some requests
+that are out there.
+
+36
+00:01:58,266 --> 00:02:01,633
+They might be requests out there
+for some underlying service.
+
+37
+00:02:01,933 --> 00:02:04,933
+I need to wait for those to come back.
+Okay.
+
+38
+00:02:05,200 --> 00:02:08,833
+Then the next thing I need to do is
+I need to deregister myself
+
+39
+00:02:09,233 --> 00:02:11,666
+from the load balancer. Right.
+
+40
+00:02:11,666 --> 00:02:14,600
+And you can either do that
+before the in flight or after.
+
+41
+00:02:14,600 --> 00:02:16,566
+It depends on
+how you've architected things.
+
+42
+00:02:16,566 --> 00:02:18,233
+But either way we'll do that.
+
+43
+00:02:18,233 --> 00:02:21,866
+And then you want to enforce the maximum
+drain timeout.
+
+44
+00:02:21,866 --> 00:02:22,200
+Right.
+
+45
+00:02:22,200 --> 00:02:24,333
+Because I can't sit there
+
+46
+00:02:24,333 --> 00:02:28,433
+and try and drain for minutes or hours
+when someone's asked me to do this.
+
+47
+00:02:28,433 --> 00:02:31,433
+So you want to
+you want to give a limit to it
+
+48
+00:02:31,866 --> 00:02:33,966
+so that you do shut down,
+
+49
+00:02:33,966 --> 00:02:37,666
+even if you lose some of the requests
+that you may have outstanding.
+
+50
+00:02:38,600 --> 00:02:41,466
+Make sure that you do close
+any of your resources.
+
+51
+00:02:41,466 --> 00:02:44,800
+Maybe you have a
+socket open to a database or
+
+52
+00:02:46,100 --> 00:02:46,566
+excuse me,
+
+53
+00:02:46,566 --> 00:02:49,566
+to a file system or something like that.
+
+54
+00:02:49,666 --> 00:02:53,266
+Make sure that you close those resources
+appropriately.
+
+55
+00:02:53,566 --> 00:02:57,100
+Also, omit
+any logs and metrics for the shutdown.
+
+56
+00:02:57,133 --> 00:02:58,600
+I'm shutting down.
+
+57
+00:02:58,600 --> 00:03:02,500
+I'm finishing up X number of requests,
+whatever the case may be.
+
+58
+00:03:02,500 --> 00:03:04,266
+Right.
+
+59
+00:03:04,266 --> 00:03:08,433
+And this will also protect
+the user experience to the deploy.
+
+60
+00:03:08,433 --> 00:03:10,700
+They're not going to have all this stuff
+laying around sitting there.
+
+61
+00:03:10,700 --> 00:03:11,633
+Right.
+
+62
+00:03:11,633 --> 00:03:14,766
+Also remember
+you got to watch out for partial rights
+
+63
+00:03:15,166 --> 00:03:17,866
+because that could cause corruption
+in your database
+
+64
+00:03:17,866 --> 00:03:21,333
+or in your file system
+wherever you're persisting.
+
+65
+00:03:21,500 --> 00:03:22,733
+Data. Right.
+
+66
+00:03:22,733 --> 00:03:24,066
+And then you want to keep
+
+67
+00:03:24,066 --> 00:03:27,600
+all your background jobs
+that you may have running consistent here.
+
+68
+00:03:28,066 --> 00:03:30,733
+So that they're all kind of shutting down
+the same way.
+
+69
+00:03:30,733 --> 00:03:32,433
+All your microservices. Right.
+
+70
+00:03:33,400 --> 00:03:34,566
+So this,
+
+71
+00:03:34,566 --> 00:03:38,200
+this whole concept, we got to look
+at all of these, different things.
+
+72
+00:03:38,433 --> 00:03:42,033
+Another thing that you may want to look at
+is reduce your timeouts for clients,
+
+73
+00:03:42,500 --> 00:03:45,633
+so that they're not sitting,
+waiting on a five minute timeout
+
+74
+00:03:46,100 --> 00:03:50,866
+that, you know, hey, I didn't hear
+from this thing in 15 seconds or 30s.
+
+75
+00:03:51,133 --> 00:03:52,933
+And I know the right thing to do,
+
+76
+00:03:52,933 --> 00:03:55,933
+and it enables safer rollbacks
+and things like that.
+
+77
+00:03:57,000 --> 00:04:00,000
+Okay, so this is what it looks like
+in sequence diagram.
+
+78
+00:04:00,033 --> 00:04:02,566
+A request comes in to the load balancer.
+
+79
+00:04:02,566 --> 00:04:06,700
+It's going to, route
+the request to a service that's out there.
+
+80
+00:04:07,100 --> 00:04:11,966
+And all of a sudden I get that,
+I get the hey, you need to shut down.
+
+81
+00:04:12,266 --> 00:04:15,866
+First thing I'm going to do, deregister
+and then drain.
+
+82
+00:04:15,866 --> 00:04:16,566
+Right?
+
+83
+00:04:16,566 --> 00:04:20,066
+Which means I'm going to tell the load
+balancer I'm not taking anything else.
+
+84
+00:04:20,333 --> 00:04:23,566
+I'm going to stop any new requests
+that do, sneak in
+
+85
+00:04:23,566 --> 00:04:26,133
+and not do those and reject them
+right away.
+
+86
+00:04:26,133 --> 00:04:28,866
+And then I'm going to finish
+all my in-flight work,
+
+87
+00:04:28,866 --> 00:04:32,533
+and then I'm going to tell the load
+balancer I'm completely done
+
+88
+00:04:32,533 --> 00:04:33,466
+de registering.
+
+89
+00:04:33,466 --> 00:04:37,666
+I finish my drain
+and I'm going to shut down that instance.
+
+90
+00:04:38,633 --> 00:04:40,733
+It's pretty straightforward.
+
+91
+00:04:40,733 --> 00:04:41,833
+Okay.
+
+92
+00:04:41,833 --> 00:04:47,800
+So you want to make sure that you are
+separating readiness from liveness probes.
+
+93
+00:04:47,800 --> 00:04:52,033
+So so
+I may still want to give a health update
+
+94
+00:04:52,033 --> 00:04:55,033
+and say the health update maybe,
+
+95
+00:04:55,266 --> 00:04:58,300
+I'm actually, shutting down right now.
+
+96
+00:04:58,300 --> 00:05:00,166
+That might be a good health update.
+
+97
+00:05:00,166 --> 00:05:03,566
+So if someone's, hitting you
+for your health check,
+
+98
+00:05:04,000 --> 00:05:07,333
+you should return something and say,
+hey, I'm.
+
+99
+00:05:07,600 --> 00:05:08,966
+I'm shutting down.
+
+100
+00:05:08,966 --> 00:05:11,966
+That's a good thing to give to, like,
+a load balancer
+
+101
+00:05:12,033 --> 00:05:15,700
+or, an external observer
+to see what's going on
+
+102
+00:05:15,700 --> 00:05:18,100
+so that that makes it, important.
+
+103
+00:05:18,100 --> 00:05:23,066
+Also, make sure that all your handlers
+and any retries are independent,
+
+104
+00:05:23,066 --> 00:05:27,066
+which means that if they run
+the same command multiple times,
+
+105
+00:05:27,066 --> 00:05:30,600
+my state does not change on the back
+end, right?
+
+106
+00:05:30,933 --> 00:05:34,866
+That I'm guaranteed
+the I'm guaranteed the same state
+
+107
+00:05:34,866 --> 00:05:37,866
+regardless of how many times
+I call the same thing right?
+
+108
+00:05:38,300 --> 00:05:38,700
+And then,
+
+109
+00:05:40,066 --> 00:05:40,866
+make sure that
+
+110
+00:05:40,866 --> 00:05:44,500
+you are closing
+all the shared resources last.
+
+111
+00:05:44,800 --> 00:05:46,000
+So I got everything done.
+
+112
+00:05:46,000 --> 00:05:49,166
+Now I can close all the
+all those resources that I have in there.
+
+113
+00:05:49,333 --> 00:05:50,500
+Okay. All right.
+
+114
+00:05:50,500 --> 00:05:53,500
+So here's a simple example in go,
+
+115
+00:05:53,800 --> 00:05:56,800
+where I can see,
+
+116
+00:05:57,400 --> 00:06:01,333
+un listing for this
+sig term or sig int right.
+
+117
+00:06:01,333 --> 00:06:04,700
+Someone does it forces a shut down.
+
+118
+00:06:05,166 --> 00:06:08,166
+I call server shutdown with a timeout,
+
+119
+00:06:08,466 --> 00:06:11,466
+and then I stop
+any new requests immediately.
+
+120
+00:06:11,800 --> 00:06:14,633
+And then I let in-flight work finish.
+
+121
+00:06:14,633 --> 00:06:17,933
+I log the start and end of the training.
+
+122
+00:06:18,566 --> 00:06:21,000
+So I do that at the start,
+and then at the end,
+
+123
+00:06:21,000 --> 00:06:25,233
+and then I exit with a clear status code,
+say why did I shutdown?
+
+124
+00:06:25,233 --> 00:06:28,666
+Which was that
+sig, sig or sig term that I got.
+
+125
+00:06:29,633 --> 00:06:32,033
+Pretty straightforward stuff
+
+126
+00:06:32,033 --> 00:06:32,633
+okay.
+
+127
+00:06:32,633 --> 00:06:35,633
+Node.js example very similar.
+
+128
+00:06:35,833 --> 00:06:38,633
+I handle the sig int I call.
+
+129
+00:06:38,633 --> 00:06:41,633
+I stop accepting any new connection
+requests.
+
+130
+00:06:41,800 --> 00:06:44,800
+I let everything finish,
+then I need to have finish.
+
+131
+00:06:45,066 --> 00:06:49,200
+Then I force close
+any remaining sockets at the deadline.
+
+132
+00:06:49,500 --> 00:06:51,133
+I close shared client.
+
+133
+00:06:51,133 --> 00:06:55,700
+I close the shared clients
+I have somewhere else
+
+134
+00:06:55,700 --> 00:06:59,033
+after the server drain
+and then I exit cleanly
+
+135
+00:06:59,466 --> 00:07:02,200
+so everything goes through that shutdown
+
+136
+00:07:02,200 --> 00:07:05,200
+method that that I've, created there.
+
+137
+00:07:05,500 --> 00:07:07,000
+Okay,
+
+138
+00:07:07,000 --> 00:07:08,033
+one more example.
+
+139
+00:07:08,033 --> 00:07:10,000
+Python example.
+
+140
+00:07:10,000 --> 00:07:10,900
+Same thing.
+
+141
+00:07:10,900 --> 00:07:13,966
+I captured this Sigint,
+which you can see here,
+
+142
+00:07:15,166 --> 00:07:16,600
+capture the Sigint.
+
+143
+00:07:16,600 --> 00:07:19,466
+I marked the app as draining to reject
+
+144
+00:07:19,466 --> 00:07:22,466
+any new work.
+
+145
+00:07:22,633 --> 00:07:22,900
+Right.
+
+146
+00:07:22,900 --> 00:07:25,900
+I'm draining, my app.
+
+147
+00:07:26,133 --> 00:07:30,300
+I finish any active request within
+a timeout, so I put my timeout in there.
+
+148
+00:07:30,600 --> 00:07:35,866
+Once I hit that timeout, I stop serving
+before any closed, dependencies.
+
+149
+00:07:36,100 --> 00:07:39,633
+I keep the timeout
+bounded to avoid any struck exits,
+
+150
+00:07:39,966 --> 00:07:42,466
+and then I emit logs
+on the shutdown phase.
+
+151
+00:07:42,466 --> 00:07:45,000
+So very similar.
+
+152
+00:07:45,000 --> 00:07:49,300
+And you can you can use these patterns
+in each one of the languages.
+
+153
+00:07:49,600 --> 00:07:52,600
+Just a little bit
+different implementation for each one.
+
+154
+00:07:53,300 --> 00:07:56,333
+Now in Kubernetes I can do
+
+155
+00:07:56,333 --> 00:07:59,333
+Kubernetes draining as well
+when I'm draining,
+
+156
+00:07:59,633 --> 00:08:04,166
+actual requests to spin up new instances.
+
+157
+00:08:04,466 --> 00:08:06,100
+Right. So this is actually pretty cool.
+
+158
+00:08:06,100 --> 00:08:10,600
+I can show I can show this with a simple,
+Kubernetes,
+
+159
+00:08:10,966 --> 00:08:14,200
+method here where I've got a pre stop,
+
+160
+00:08:14,500 --> 00:08:18,100
+I'm going to sleep for 10s,
+then I'm going to kick it in the can here,
+
+161
+00:08:18,100 --> 00:08:22,200
+where I'm actually going to force
+the microservice to stop from the outside.
+
+162
+00:08:22,766 --> 00:08:23,000
+All right.
+
+163
+00:08:23,000 --> 00:08:26,400
+So it's kind of it's
+really an interesting design pattern.
+
+164
+00:08:26,433 --> 00:08:26,900
+This one.
+
+165
+00:08:28,066 --> 00:08:28,400
+All right.
+
+166
+00:08:28,400 --> 00:08:29,700
+Architectural trade offs.
+
+167
+00:08:29,700 --> 00:08:33,400
+So this is a big one. Reliability.
+
+168
+00:08:33,400 --> 00:08:36,400
+This is this is an important one because,
+
+169
+00:08:38,000 --> 00:08:40,700
+I'm reducing the dropped requests.
+
+170
+00:08:40,700 --> 00:08:43,700
+Even though there could be
+a timeout still. So
+
+171
+00:08:44,800 --> 00:08:47,700
+my reliability could be a little bit
+questionable.
+
+172
+00:08:47,700 --> 00:08:49,766
+Latency is an issue here
+
+173
+00:08:49,766 --> 00:08:53,300
+because I'm doing a longer drain windows
+for slower rollouts.
+
+174
+00:08:53,766 --> 00:08:57,000
+So if I'm shutting something down,
+I could take a little bit longer
+
+175
+00:08:57,133 --> 00:09:00,133
+to finish shutting that down
+before I spin up the new instance.
+
+176
+00:09:00,133 --> 00:09:00,900
+Right.
+
+177
+00:09:00,900 --> 00:09:04,300
+Cost could be an issue
+because there's extra capacity
+
+178
+00:09:04,300 --> 00:09:10,200
+for staying online during a drain,
+but maybe not to too much scalability.
+
+179
+00:09:10,533 --> 00:09:13,300
+Safe scaling in leads to,
+
+180
+00:09:13,300 --> 00:09:16,300
+my load balancing coordination.
+
+181
+00:09:16,466 --> 00:09:22,133
+As I got, maybe I have five instances
+running of a certain microservice.
+
+182
+00:09:22,400 --> 00:09:25,733
+And I called shut down on two of them,
+and they take a couple of minutes
+
+183
+00:09:25,733 --> 00:09:27,066
+to shut down.
+
+184
+00:09:27,066 --> 00:09:31,000
+I'm still holding on to to those, slots,
+which means I'm
+
+185
+00:09:31,000 --> 00:09:35,300
+only accepting three at that time,
+while the other two are shutting down.
+
+186
+00:09:35,300 --> 00:09:38,900
+When they're completely shut down,
+the new ones will spin up in their places.
+
+187
+00:09:39,000 --> 00:09:42,366
+So I'm losing some scalability
+for a short period of time.
+
+188
+00:09:42,666 --> 00:09:45,166
+And then also complexity
+is an issue with these,
+
+189
+00:09:46,500 --> 00:09:47,900
+with these shutdowns.
+
+190
+00:09:47,900 --> 00:09:48,266
+Right.
+
+191
+00:09:48,266 --> 00:09:52,833
+I have to handle, signal handling,
+which is kind of a pain.
+
+192
+00:09:52,833 --> 00:09:56,900
+Sometimes I need to handle order
+ordering of finishing up requests
+
+193
+00:09:56,900 --> 00:09:57,900
+and all those sorts of things.
+
+194
+00:09:57,900 --> 00:10:00,900
+So you got, 
+these are some architectural trade offs,
+
+195
+00:10:01,166 --> 00:10:04,666
+but the benefits are pretty substantial,
+
+196
+00:10:04,866 --> 00:10:08,366
+which is, consistency in my data
+on the back end.
+
+197
+00:10:08,366 --> 00:10:10,300
+And things like that. Right.
+
+198
+00:10:10,300 --> 00:10:11,066
+All right.
+
+199
+00:10:11,066 --> 00:10:13,566
+Some pitfalls to, to watch out for.
+
+200
+00:10:13,566 --> 00:10:16,566
+Don't forget to deregister
+from the load balancer.
+
+201
+00:10:16,933 --> 00:10:18,733
+Right. This instance is running.
+
+202
+00:10:18,733 --> 00:10:22,000
+I need to say I'm going to deregister
+because I don't want any more instance.
+
+203
+00:10:22,133 --> 00:10:24,900
+I don't want any more stuff
+coming to me. Right.
+
+204
+00:10:24,900 --> 00:10:29,133
+Make sure that your drain timeout
+is not too short
+
+205
+00:10:29,666 --> 00:10:33,200
+or you're going to consistently get bad.
+
+206
+00:10:34,133 --> 00:10:36,400
+State out of out of the back end of it.
+
+207
+00:10:36,400 --> 00:10:40,566
+Make sure that you close all those database connections before responses complete.
+
+208
+00:10:41,633 --> 00:10:43,333
+Make sure
+that you don't before they're complete,
+
+209
+00:10:43,333 --> 00:10:45,000
+but make sure that you close them
+at the end.
+
+210
+00:10:45,000 --> 00:10:46,966
+Otherwise you end up with open sockets.
+
+211
+00:10:46,966 --> 00:10:49,966
+You can run out of sockets
+on your operating system.
+
+212
+00:10:50,000 --> 00:10:50,566
+All right.
+
+213
+00:10:50,566 --> 00:10:54,200
+And make sure you're not ignoring
+any background jobs that are spun up,
+
+214
+00:10:54,200 --> 00:10:58,066
+or you end up with a bunch
+of zombie processes on the back end,
+
+215
+00:10:58,566 --> 00:11:02,200
+which could, pollute your process space
+and cause
+
+216
+00:11:02,200 --> 00:11:05,966
+a lot of issues
+on using resources that you may not have.
+
+217
+00:11:06,466 --> 00:11:07,333
+All right.
+
+218
+00:11:07,333 --> 00:11:13,100
+So remember, drain your traffic,
+finish the work, and shutdown cleanly.
+
+219
+00:11:13,100 --> 00:11:15,733
+Those those are the key
+things on shutdown and drain.

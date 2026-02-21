@@ -4,6 +4,11 @@
 :source-highlighter: highlightjs
 :revealjs_slideNumber: true
 
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+Video: https://youtu.be/olgzvjRmopw
+
 == Goals
 - Explain why load balancing is needed
 - Compare Layer 4 and Layer 7 approaches
@@ -12,15 +17,18 @@
 - Recognize design tradeoffs
 - Avoid common configuration pitfalls
 
+[.columns]
 == Overview
+[.column]
+--
 - Distributes traffic across instances
 - Improves availability and throughput
 - Enables horizontal scaling
 - Supports rolling deployments
 - Removes unhealthy nodes from rotation
 - Reduces hot spots and overloads
+--
 
-[.columns]
 [.column]
 --
 - Layer 4 balances connections
@@ -30,27 +38,41 @@
 - Draining prevents dropped requests
 - Observability confirms distribution
 --
-[.column]
---
+
+== Layer 4 and Layer 7
 [plantuml, format=svg, width=100%]
 ----
 @startuml
+skinparam shadowing false
+left to right direction
+
+rectangle "Layer 4 LB\n(TCP/UDP)" as L4
+rectangle "Layer 7 LB\n(HTTP/HTTPS)" as L7
+rectangle "App A" as A
+rectangle "App B" as B
+
 actor Client
-participant "Load Balancer" as LB
-participant "Service A" as A
-participant "Service B" as B
-participant "Service C" as C
 
-Client -> LB: Request
-LB -> A: Route (healthy)
-A --> LB: Response
-LB --> Client: Response
+Client --> L4: TCP connection\n(dst IP:port)
+L4 --> A: Route by IP/port/protocol
+L4 --> B: Route by connection policy
 
-LB -> B: Health check
-LB -> C: Health check
+Client --> L7: HTTP request\n(host/path/headers)
+L7 --> A: Route /api/*
+L7 --> B: Route /static/*
+
+note bottom of L4
+Transport-level decisions:
+IP, port, protocol, connection state
+end note
+
+note bottom of L7
+Application-level decisions:
+host, path, method, headers, cookies
+end note
 @enduml
 ----
---
+
 
 == Algorithms
 - Round robin for uniform instances

@@ -1,0 +1,107 @@
+= Python FastAPI Async Overview
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain async endpoint execution in FastAPI
+- Identify workloads that benefit from `async def`
+- Apply safe async composition patterns
+- Recognize blocking hazards and limits
+
+== Overview
+- FastAPI supports coroutine endpoints via `async def`
+- `await` yields control during I/O wait
+- ASGI servers drive concurrent request execution
+- Async improves utilization for waiting-heavy paths
+- Connection pooling and timeouts remain essential
+- Bounded concurrency avoids downstream overload
+
+[.columns]
+== Async Request Lifecycle
+[.column]
+--
+- Client request enters async handler
+- Handler awaits external dependency calls
+- Event loop schedules other ready tasks
+- Handler resumes and returns response
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "FastAPI Handler" as H
+participant "ASGI Loop" as L
+participant "External API" as X
+
+Client -> H: GET /summary/{id}
+H -> L: await I/O
+L -> X: async request
+X --> L: response
+L --> H: resume coroutine
+H --> Client: JSON response
+@enduml
+----
+--
+
+[.columns]
+== Example: Async Aggregation
+[.column]
+--
+- Run independent I/O calls concurrently
+- Gather results before returning response
+- Keeps request path non-blocking
+--
+[.column]
+--
+[source,python]
+----
+@app.get('/summary/{user_id}')
+async def summary(user_id: str):
+    profile_task = user_client.fetch(user_id)
+    usage_task = usage_client.fetch(user_id)
+    profile, usage = await asyncio.gather(profile_task, usage_task)
+    return {'profile': profile, 'usage': usage}
+----
+--
+
+[.columns]
+== Example: Async-Only Path
+[.column]
+--
+- Use async client libraries end-to-end
+- Avoid blocking calls in async handlers
+- Add explicit timeout policies
+--
+[.column]
+--
+[source,python]
+----
+@app.get('/report')
+async def report():
+    data = await analytics_client.fetch()
+    return {'rows': len(data)}
+----
+--
+
+== When to Use
+- API orchestration with multiple I/O dependencies
+- High-concurrency HTTP workloads
+- Services needing efficient wait-time utilization
+
+== Tradeoffs and Pitfalls
+- Blocking libraries inside async handlers hurt concurrency
+- CPU-heavy work needs process/thread offloading
+- Missing timeout/cancellation causes request buildup
+- Monitor worker saturation and p95/p99 latency
+
+== Recap
+- FastAPI async is effective for I/O-bound services
+- Keep the dependency stack non-blocking
+- Pair async patterns with clear resource limits

@@ -1,5 +1,7 @@
 # Graceful Shutdown and Draining
 
+Video: https://youtu.be/p77vdIimBlI
+
 **Outcomes**
 - Explain graceful shutdown and request draining
 - Recognize when to apply it

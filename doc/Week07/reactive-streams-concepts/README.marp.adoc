@@ -1,0 +1,246 @@
+= Reactive Streams Concepts
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain the reactive streams model and key signals
+- Understand demand-driven flow control with `request(n)`
+- Evaluate when stream pipelines are a good fit
+- Decide when reactive streams are the wrong tool
+- Recognize common operator and lifecycle pitfalls
+
+== Overview
+- Reactive streams model asynchronous sequences
+- Consumers request demand explicitly from producers
+- The contract aims for non-blocking, bounded processing
+- Producers and consumers can run at different speeds
+- Backpressure keeps throughput stable under load
+- Standard signals define lifecycle and error handling
+
+[.columns]
+== Why It Matters
+[.column]
+--
+- Push-only systems can overload downstream services
+- Unbounded queues create latency and memory spikes
+- Backpressure avoids uncontrolled producer emission
+- Better fit for high-concurrency I/O workloads
+- Helps maintain predictable resource usage
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Producer
+participant "Reactive Pipeline" as Pipe
+actor Consumer
+
+Producer -> Pipe: emits events rapidly
+Pipe -> Consumer: onNext(...)
+Consumer -> Pipe: request(2)
+Pipe -> Producer: pull/allow next 2
+note right of Pipe
+Demand controls flow:
+no request => no more emission
+end note
+@enduml
+----
+--
+
+== Why Teams Use Reactive Streams
+- Backpressure by contract via `request(n)`
+- High concurrency with fewer blocked threads
+- Composable operator chains (`map`, `flatMap`, `buffer`)
+- Clear lifecycle and terminal signals
+- Better fit for bursty, latency-variable I/O workloads
+- Easier to apply resilience patterns consistently
+
+== Core Concepts
+- Publisher: source of stream elements
+- Subscriber: consumer of stream elements
+- Subscription: contract that exposes `request(n)` and `cancel()`
+- Signals: `onSubscribe`, `onNext`, `onError`, `onComplete`
+- Operators: `map`, `filter`, `flatMap`, `reduce`
+- Terminal signals: stream ends with `onComplete` or `onError`
+
+[.columns]
+== Backpressure Walkthrough
+[.column]
+--
+- Consumer requests only what it can handle
+- Producer must not exceed requested demand
+- No demand means emission pauses
+- This prevents unbounded memory growth
+- Throughput stays stable under burst traffic
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+participant Consumer as C
+participant Publisher as P
+
+C -> P: request(2)
+P --> C: onNext(item1)
+P --> C: onNext(item2)
+... no more demand ...
+P -> P: pause emission
+C -> P: request(1)
+P --> C: onNext(item3)
+@enduml
+----
+--
+
+[.columns]
+== Stream Lifecycle
+[.column]
+--
+- Subscriber calls `subscribe(...)`
+- Publisher returns `onSubscribe(subscription)`
+- Subscriber asks for `n` items
+- Publisher emits up to `n` `onNext` values
+- Stream terminates with complete or error
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+participant Publisher
+participant Subscriber
+
+Subscriber -> Publisher: subscribe()
+Publisher --> Subscriber: onSubscribe(subscription)
+Subscriber -> Publisher: request(3)
+Publisher --> Subscriber: onNext(item1)
+Publisher --> Subscriber: onNext(item2)
+Publisher --> Subscriber: onNext(item3)
+Publisher --> Subscriber: onComplete()
+@enduml
+----
+--
+
+[.columns]
+== Example: Java Flow API
+[.column]
+--
+- Uses JDK `Flow` reactive interfaces
+- Subscriber requests data in small batches
+- Backpressure is enforced by demand
+- Completion is explicit and terminal
+--
+[.column]
+--
+[source,java]
+----
+SubmissionPublisher<Integer> publisher = new SubmissionPublisher<>();
+
+publisher.subscribe(new Flow.Subscriber<>() {
+  private Flow.Subscription sub;
+
+  public void onSubscribe(Flow.Subscription s) {
+    sub = s;
+    sub.request(2);
+  }
+
+  public void onNext(Integer item) {
+    System.out.println("item=" + item);
+    sub.request(1);
+  }
+
+  public void onError(Throwable t) { t.printStackTrace(); }
+  public void onComplete() { System.out.println("done"); }
+});
+
+publisher.submit(10);
+publisher.submit(20);
+publisher.close();
+----
+--
+
+[.columns]
+== Example: Node.js (RxJS)
+[.column]
+--
+- Stream operators transform values in stages
+- Time-based operators shape event flow
+- Error channel is separated from data channel
+- Useful for event and API composition
+--
+[.column]
+--
+[source,javascript]
+----
+const { from, of } = require("rxjs");
+const { map, filter, mergeMap, catchError } = require("rxjs/operators");
+
+from([1, 2, 3, 4, 5]).pipe(
+  filter((x) => x % 2 === 1),
+  map((x) => x * 10),
+  mergeMap((x) => of({ value: x, status: "ok" })),
+  catchError((err) => of({ status: "error", message: err.message }))
+).subscribe({
+  next: (v) => console.log(v),
+  error: (e) => console.error(e),
+  complete: () => console.log("complete")
+});
+----
+--
+
+== Practical Uses
+- Streaming APIs and incremental responses
+- Event processing pipelines with transform stages
+- I/O-heavy integrations where blocking is expensive
+- Real-time analytics or telemetry processing
+- Fan-out and fan-in workflows with controlled demand
+
+== Example: Streaming Endpoint Fit
+- Use when clients can consume partial results over time
+- Good for notifications, progress feeds, and large incremental payloads
+- Strong fit for long-running workflows with intermediate status
+- Avoid for simple CRUD endpoints with one quick DB call
+- Prefer simpler synchronous style when latency and load are low
+
+== When to Use Reactive Streams
+- Workload is I/O-bound with unpredictable latency
+- Throughput and concurrency matter more than per-request simplicity
+- You need bounded resource usage under burst traffic
+- Team can support non-blocking stack and reactive observability
+- Event or stream semantics are required by the business flow
+
+== When NOT to Use Reactive Streams
+- Simple CRUD service with low concurrency
+- CPU-bound logic where reactive adds little benefit
+- Team lacks reactive tooling and debugging experience
+- Critical path still relies on blocking calls
+- Operational simplicity is the top priority
+
+== Decision Checklist
+Choose reactive streams if at least 3 are true:
+
+1. Traffic is bursty or concurrency is high.
+2. Downstream latency is variable.
+3. Overload protection needs demand-aware flow control.
+4. End-to-end non-blocking infrastructure is available.
+5. Output is event-driven or incremental over time.
+
+== Architectural Tradeoffs
+- Throughput: strong for concurrent I/O-heavy workloads
+- Resource safety: demand reduces overload risk
+- Complexity: operator chains can be harder to debug
+- Team fit: requires shared reactive mental model
+- Observability: tracing async stages is essential
+
+== Common Pitfalls and Recap
+- Mixing blocking calls inside reactive pipelines
+- Unlimited buffering between operators
+- Ignoring cancellation, timeout, and retry semantics
+- Overusing reactive style for simple CRUD paths
+- Recap: reactive streams add demand-aware contracts for stable async flow

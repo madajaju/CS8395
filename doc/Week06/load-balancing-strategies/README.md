@@ -1,5 +1,7 @@
 # Load Balancing Strategies
 
+Video: https://youtu.be/olgzvjRmopw
+
 **Outcomes**
 - Explain common load balancing strategies
 - Recognize when to apply each strategy

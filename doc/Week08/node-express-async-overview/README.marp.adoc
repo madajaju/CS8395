@@ -1,0 +1,110 @@
+= Node Express Async Overview
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain event loop behavior in Express services
+- Use async handlers to improve responsiveness
+- Apply bounded concurrency and timeout controls
+- Recognize blocking risks in Node APIs
+
+== Overview
+- Node executes JavaScript on an event loop
+- I/O operations complete asynchronously
+- `async/await` keeps non-blocking logic readable
+- Streaming avoids large in-memory buffering
+- Event loop lag is a key health signal
+- Concurrency limits protect downstream dependencies
+
+[.columns]
+== Request Flow
+[.column]
+--
+- Handler triggers async downstream calls
+- Event loop continues serving other requests
+- Handler resumes when promises resolve
+- Response is sent after merge/transform
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Express Handler" as H
+participant "Event Loop" as EL
+participant "Dependency" as D
+
+Client -> H: HTTP request
+H -> EL: schedule async I/O
+EL -> D: non-blocking call
+D --> EL: resolved/rejected
+EL --> H: resume handler
+H --> Client: HTTP response
+@enduml
+----
+--
+
+[.columns]
+== Example: Parallel Fetch
+[.column]
+--
+- `Promise.all` reduces total latency
+- Best for independent downstream calls
+- Add per-call timeouts in production
+--
+[.column]
+--
+[source,javascript]
+----
+app.get('/profile/:id', async (req, res) => {
+  const id = req.params.id;
+  const [user, orders] = await Promise.all([
+    userClient.get(id),
+    orderClient.listByUser(id)
+  ]);
+  res.json({ user, orders });
+});
+----
+--
+
+[.columns]
+== Example: Stream Output
+[.column]
+--
+- Avoid building full payload in memory
+- Stream producer output directly to client
+- Works well for exports and large responses
+--
+[.column]
+--
+[source,javascript]
+----
+app.get('/export', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  const stream = createExportStream();
+  stream.pipe(res);
+});
+----
+--
+
+== When to Use
+- I/O-bound gateway and aggregation APIs
+- High concurrent connection counts
+- Streaming and event-driven HTTP endpoints
+
+== Tradeoffs and Pitfalls
+- Blocking CPU work stalls progress for all requests
+- Unbounded fan-out can overload dependencies
+- Missing timeout/cancellation increases tail latency
+- Monitor event loop lag and heap growth
+
+== Recap
+- Node async is strong for high-concurrency I/O paths
+- Keep handlers non-blocking and concurrency bounded
+- Combine async patterns with resilience controls
