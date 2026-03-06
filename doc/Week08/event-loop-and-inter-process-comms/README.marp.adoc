@@ -1,0 +1,516 @@
+= Event Loop and Inter-Process Communication in Microservices
+:backend: revealjs
+:revealjs_theme: white
+:source-highlighter: highlightjs
+:revealjs_slideNumber: true
+
+:revealjs_width: "100%"
+:revealjs_height: "100%"
+
+== Goals
+- Explain the microservice event loop execution model
+- Show how blocking I/O reduces throughput
+- Introduce `Promise`, `async`, and `await`
+- Compare 2-service and 3-service event-driven communication
+- Contrast single-thread vs multi-thread models across languages
+
+== Overview
+- Event loops maximize I/O concurrency when handlers stay non-blocking
+- Blocking calls stall progress and increase queueing delay
+- Async primitives keep code readable while preserving concurrency
+- Event-driven architecture decouples services using a broker
+- Different languages implement this with different runtimes
+- Common reliability patterns still apply across all stacks
+
+[.columns]
+== Simple Event Loop Flow
+[.column]
+--
+- Handler receives request
+- Starts non-blocking I/O operation
+- Returns control to event loop immediately
+- Continuation runs when I/O completion event arrives
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Service Handler" as H
+participant "Event Loop" as EL
+database "DB" as DB
+
+Client -> H: HTTP request
+H -> EL: schedule handler work
+EL -> H: run handler
+H -> DB: start query (non-blocking)
+H --> EL: return control
+DB --> EL: completion event
+EL -> H: resume continuation
+H --> Client: HTTP response
+@enduml
+----
+--
+
+[.columns]
+== Blocking I/O Problem
+[.column]
+--
+- A synchronous call blocks the loop thread
+- Other requests wait in queue
+- Tail latency and timeout risk increase under load
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor "Client A" as A
+actor "Client B" as B
+participant "Event Loop" as EL
+participant "Handler A" as HA
+participant "Handler B" as HB
+database "Slow I/O" as IO
+
+A -> EL: Request A
+EL -> HA: run handler A
+HA -> IO: synchronous read (blocking)
+note over EL
+Loop blocked.
+Request B waits.
+end note
+B -> EL: Request B (queued)
+IO --> HA: data
+HA --> EL: complete
+EL --> A : response
+EL -> HB: run handler B
+HB --> B: response
+@enduml
+----
+--
+
+[.columns]
+== Promises and async/await
+[.column]
+--
+- Promise states: pending, fulfilled, rejected
+- `await` pauses only the current async function
+- Event loop continues processing other work
+- Continuation resumes after Promise resolution
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+actor Client2
+participant "Async Handler" as H
+participant "Event Loop" as EL
+participant "Promise" as P
+participant "Promise2" as P2
+database "External API" as API
+database "Fast API2" as API2
+Client -> EL: Request
+EL -> H: run async handler
+H -> API: start HTTP call
+H -> P: pending
+H --> EL: yield on await
+Client2 -> EL: Request
+EL -> H: run async handler
+H -> API2: start HTTP call
+H -> P2: pending
+H --> EL: yield on await
+API2 --> P2: resolve(value)
+P2 --> EL: enqueue continuation
+EL -> H: resume after await
+H --> Client2: response
+
+API --> P: resolve(value)
+P --> EL: enqueue continuation
+EL -> H: resume after await
+H --> Client: response
+@enduml
+----
+--
+
+[.columns]
+== Code: Event Loop + async/await
+[.column]
+--
+- Non-blocking request handler
+- `await` yields while I/O is in progress
+--
+[.column]
+--
+[source,javascript]
+----
+app.get('/dashboard/:id', async (req, res) => {
+  const id = req.params.id;
+  const [user, orders] = await Promise.all([
+    userClient.getUser(id),
+    orderClient.getOrders(id)
+  ]);
+  res.json({ user, orders });
+});
+----
+--
+
+[.columns]
+== Code: Blocking I/O (Anti-Pattern)
+[.column]
+--
+- Synchronous disk read blocks loop
+- Other requests wait
+--
+[.column]
+--
+[source,javascript]
+----
+import fs from 'fs';
+
+app.get('/report', (req, res) => {
+  const file = fs.readFileSync('./large.json', 'utf8');
+  res.send(file);
+});
+----
+--
+
+[.columns]
+== Two Microservices: Event-Driven Flow
+[.column]
+--
+- `Order Service` persists order
+- Publishes `OrderCreated`
+- `Inventory Service` consumes and reserves stock
+- Services are decoupled in time
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Order Service" as O
+queue "Event Bus / Broker" as B
+participant "Inventory Service" as I
+database "Inventory DB" as IDB
+
+Client -> O: POST /orders
+O -> O: persist order
+O -/ B: publish OrderCreated
+O --> Client: 202/201
+B -/ I: deliver OrderCreated
+I -> IDB: reserve stock
+IDB -> I : reserved
+I -/ B : publish InventoryReserved
+B -/ O : deliver InventoryReserved
+@enduml
+----
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Order Service" as O
+participant "Inventory Service" as I
+database "Inventory DB" as IDB
+
+Client -> O: POST /orders
+O -> O: persist order
+O -> I: reserveInventory
+I -> IDB: reserve stock
+IDB -> I: deliverInventory
+I --> O : 200
+O --> Client: 202/201
+@enduml
+----
+
+[.columns]
+== Code: 2-Service Event-Driven
+[.column]
+--
+- Order service publishes
+- Inventory service consumes
+--
+[.column]
+--
+[source,javascript]
+----
+// producer
+await broker.publish('orders.events', {
+  type: 'OrderCreated',
+  orderId
+});
+
+// consumer
+broker.subscribe('orders.events', async (e) => {
+  if (e.type === 'OrderCreated') await inventory.reserve(e.orderId);
+});
+----
+--
+
+[.columns]
+== Three Microservices: Choreography
+[.column]
+--
+- `Order Service` publishes `OrderCreated`
+- `Inventory Service` publishes `InventoryReserved`
+- `Payment Service` publishes `PaymentAuthorized`
+- Order is confirmed asynchronously
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Order Service" as O
+participant "Inventory Service" as I
+participant "Payment Service" as P
+queue "Event Bus / Broker" as B
+
+Client -> O: Create Order
+O -/ B: OrderCreated(orderId)
+O --> Client: 202/201
+B -/ I: OrderCreated(orderId)
+I -/ B: InventoryReserved(orderId)
+B -/ P: InventoryReserved(orderId)
+P -/ B: PaymentAuthorized(orderId)
+B -/ O: PaymentAuthorized(orderId)
+O -/ O: mark Confirmed
+O --/ Client: Ordered
+@enduml
+----
+--
+
+[.columns]
+== Code: 3-Service Choreography
+[.column]
+--
+- Inventory emits reservation
+- Payment emits authorization
+- Order marks confirmed
+--
+[.column]
+--
+[source,javascript]
+----
+broker.subscribe('orders.events', async (e) => {
+  if (e.type === 'OrderCreated') {
+    await inventory.reserve(e.orderId);
+    await broker.publish('inventory.events', { type: 'InventoryReserved', orderId: e.orderId });
+  }
+});
+
+broker.subscribe('inventory.events', async (e) => {
+  if (e.type === 'InventoryReserved') {
+    await payments.authorize(e.orderId);
+    await broker.publish('payments.events', { type: 'PaymentAuthorized', orderId: e.orderId });
+  }
+});
+----
+--
+
+[.columns]
+== Another IPC Method: Synchronous REST
+[.column]
+--
+- Service A calls Service B over HTTP directly
+- Request/response is immediate and easy to reason about
+- No broker required for basic interaction
+- But services become runtime-coupled
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor Client
+participant "Service A" as A
+participant "Service B" as B
+database "Service B DB" as DB
+
+Client -> A: POST /checkout
+A -> B: POST /reserve (HTTP)
+B -> DB: write reservation
+DB --> B: ok
+B --> A: 200 OK
+A --> Client: 200 OK
+@enduml
+----
+--
+
+[.columns]
+== Code: Synchronous REST IPC
+[.column]
+--
+- Direct Service A -> Service B call
+- Add timeout and fallback
+--
+[.column]
+--
+[source,javascript]
+----
+app.post('/checkout', async (req, res) => {
+  try {
+    const r = await axios.post(
+      'http://inventory-service/reserve',
+      { orderId: req.body.orderId },
+      { timeout: 300 }
+    );
+    res.json(r.data);
+  } catch {
+    res.status(503).json({ status: 'degraded' });
+  }
+});
+----
+--
+
+[.columns]
+== Blocking Risks in REST Chains
+[.column]
+--
+- Service A waits while Service B is slow
+- Worker/event-loop capacity remains occupied
+- New requests queue, timeout, or fail
+- Retries can create cascading overload
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+actor "Client 1" as C1
+actor "Client 2" as C2
+participant "Service A Handler" as A
+participant "Service B (slow)" as B
+
+C1 -> A: request #1
+A -> B: sync REST call (wait)
+note over A
+Capacity held while waiting.
+end note
+C2 -> A: request #2
+note over A
+Request #2 queues.
+May timeout.
+end note
+B --> A: delayed response
+A --> C1: response
+A --> C2: delayed/timeout
+@enduml
+----
+--
+
+== REST IPC vs Event-Driven IPC
+[cols="2,2,3,3", options="header"]
+|===
+| Method | Strength | Main Risk | Mitigation
+
+| Synchronous REST
+| Immediate request/response
+| Blocking and tight runtime coupling
+| Timeout, circuit breaker, bulkhead, fallback
+
+| Event-driven (broker)
+| Temporal decoupling and async resilience
+| Eventual consistency and duplicate delivery
+| Idempotency, DLQ, correlation IDs, retries
+|===
+
+== Language Comparison
+[cols="1,2,1,1,3", options="header"]
+|===
+| Language | Typical Model | Single-Thread Event Loop | Multi-Thread | Notes
+
+| Node.js
+| Event loop + async I/O
+| Yes
+| Optional
+| Best for I/O-heavy APIs; avoid CPU-heavy blocking handlers.
+
+| Python
+| `asyncio`/ASGI or thread/process workers
+| Yes (with `asyncio`)
+| Yes
+| Async FastAPI uses event loop; sync stacks often use worker threads.
+
+| Java
+| Reactive (Netty/WebFlux) or thread-per-request
+| Yes (reactive stack)
+| Yes
+| Spring MVC is often thread-per-request; WebFlux is reactive/event-loop based.
+
+| Go
+| Goroutines + runtime scheduler + netpoll
+| No (not JS-style)
+| Yes
+| Uses M:N scheduling; concurrency controlled with goroutines/channels/context.
+
+| Rust
+| Async runtime (`tokio`) or blocking threads
+| Yes (runtime executor)
+| Yes
+| `async/.await` on executor; offload blocking work.
+|===
+
+[.columns]
+== Single-Thread vs Multi-Thread Models
+[.column]
+--
+- Single-thread loop: minimal thread overhead
+- Great with non-blocking I/O
+- Sensitive to blocking operations
+--
+[.column]
+--
+[plantuml, format=svg, width=100%]
+----
+@startuml
+rectangle "Single-Thread Event Loop" as S {
+  queue "Task Queue" as Q
+  rectangle "Loop Thread" as LT
+  database "Async I/O" as IO
+  Q -> LT: next task
+  LT -> IO: start I/O
+  IO ---> Q: completion task
+}
+
+actor Client1
+actor Client2
+actor Client3
+rectangle "Multi-Thread Workers" as M {
+  rectangle "Worker 1" as W1
+  rectangle "Worker 2" as W2
+  rectangle "Worker N" as WN
+  database "I/O" as BIO
+  W1 -down-> BIO: req A
+  W2 -down-> BIO: req B
+  WN -down-> BIO: req N
+}
+Client1 --> W1
+Client2 --> W2
+Client3 --> WN
+Client1 --> LT
+Client2 --> LT
+Client3 --> LT
+@enduml
+----
+--
+
+== Common Patterns Across All Languages
+- Keep I/O paths non-blocking or bounded
+- Add timeout, retry, and backoff policies
+- Limit fan-out and queue depth
+- Propagate cancellation across downstream calls
+- Build idempotent event consumers
+- Use correlation IDs and distributed tracing
+
+== Recap
+- Event loops improve concurrency for waiting-heavy workloads
+- Blocking I/O can stall service progress
+- `Promise`, `async`, and `await` preserve non-blocking flow
+- Event-driven communication scales from 2-service to 3-service choreography
+- Language runtimes differ, but reliability patterns are shared
