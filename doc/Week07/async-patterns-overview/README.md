@@ -1,5 +1,7 @@
 # Async Patterns Overview
 
+Video: https://youtu.be/yTbAFsfLgyQ
+
 **Outcomes**
 - Compare common asynchronous interaction patterns
 - Choose async patterns for appropriate business workflows

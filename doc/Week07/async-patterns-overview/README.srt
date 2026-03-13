@@ -1,0 +1,936 @@
+﻿1
+00:00:00,666 --> 00:00:01,133
+Okay.
+
+2
+00:00:01,133 --> 00:00:03,500
+In this lecture
+I'm going to talk about async patterns.
+
+3
+00:00:03,500 --> 00:00:05,266
+Kind of just a high level overview.
+
+4
+00:00:05,266 --> 00:00:08,266
+There'll be several follow on courses
+for each one of these patterns.
+
+5
+00:00:08,333 --> 00:00:12,033
+But I want to let you know
+what those patterns are and the benefits
+
+6
+00:00:12,033 --> 00:00:15,033
+over synchronous
+and the drawbacks as well.
+
+7
+00:00:15,200 --> 00:00:17,766
+So we're going to compare
+some of the common asynchronous
+
+8
+00:00:17,766 --> 00:00:19,200
+communication patterns.
+
+9
+00:00:19,200 --> 00:00:24,533
+We're going to choose async styles
+by business need right.
+
+10
+00:00:24,533 --> 00:00:25,900
+And that's a that's a big deal.
+
+11
+00:00:25,900 --> 00:00:28,900
+So you can't you got to understand
+the business side of things as well
+
+12
+00:00:29,200 --> 00:00:33,000
+and understand reliability requirements
+on asynchronous flows
+
+13
+00:00:33,233 --> 00:00:36,166
+and recognize
+any operational debugging trade offs.
+
+14
+00:00:36,166 --> 00:00:38,900
+In in using asynchronous.
+
+15
+00:00:38,900 --> 00:00:41,033
+So let's talk about asynchronous.
+
+16
+00:00:41,033 --> 00:00:43,500
+We already learn with synchronous calls
+or blocking
+
+17
+00:00:43,500 --> 00:00:47,300
+type calls that I can end up with 
+a lot of issues.
+
+18
+00:00:47,300 --> 00:00:47,633
+Right.
+
+19
+00:00:47,633 --> 00:00:51,366
+One is coupling between,
+coupling on performance
+
+20
+00:00:51,366 --> 00:00:53,633
+between one microservice and another.
+
+21
+00:00:53,633 --> 00:00:57,500
+So if microservice A is making a blocking
+call on microservice B,
+
+22
+00:00:58,700 --> 00:00:59,600
+I'm blocked.
+
+23
+00:00:59,600 --> 00:01:03,200
+And if microservice B is slow,
+that makes microservice a slow.
+
+24
+00:01:03,200 --> 00:01:06,333
+And there could be a cascading effect
+with asynchronous.
+
+25
+00:01:06,666 --> 00:01:11,766
+I decouple that, request
+I and what happens now
+
+26
+00:01:11,766 --> 00:01:18,166
+is asynchronous or microservice
+A can absolutely continue to process,
+
+27
+00:01:18,166 --> 00:01:21,166
+even though it might be waiting
+on something from microservice B
+
+28
+00:01:21,600 --> 00:01:25,033
+is just going to catch that later
+on when it's done processing.
+
+29
+00:01:25,033 --> 00:01:28,266
+So microservice
+A can continue to process, right?
+
+30
+00:01:28,266 --> 00:01:32,700
+So it absorbs a lot of that traffic burst
+with, you know, queues and streams
+
+31
+00:01:32,700 --> 00:01:34,033
+and different techniques
+
+32
+00:01:34,033 --> 00:01:37,966
+that are out there and reduces that tight
+coupling across the service boundaries.
+
+33
+00:01:38,200 --> 00:01:39,900
+And people are like, wow, this is awesome.
+
+34
+00:01:39,900 --> 00:01:42,566
+We should just be doing everything
+asynchronous.
+
+35
+00:01:42,566 --> 00:01:45,566
+There are some trade offs
+which I'll talk about in in a minute, but
+
+36
+00:01:46,066 --> 00:01:49,166
+eventually, it,
+
+37
+00:01:49,166 --> 00:01:52,166
+it does a great job
+for like a long workflows,
+
+38
+00:01:52,400 --> 00:01:56,133
+but you now have to do some coordination
+between the microservices.
+
+39
+00:01:57,000 --> 00:01:59,533
+So let's look at it
+real quick. Synchronous.
+
+40
+00:01:59,533 --> 00:02:02,200
+The caller waits for full completion.
+
+41
+00:02:02,200 --> 00:02:03,433
+Then it can continue on.
+
+42
+00:02:03,433 --> 00:02:05,933
+So it's a simple control flow right.
+
+43
+00:02:05,933 --> 00:02:08,600
+Just like we're used to
+with normal block programing.
+
+44
+00:02:08,600 --> 00:02:12,166
+Call this function wait for the response
+and then continue on.
+
+45
+00:02:12,466 --> 00:02:13,033
+Right.
+
+46
+00:02:13,033 --> 00:02:16,966
+But that means there's higher 
+coupling and dependency latency here.
+
+47
+00:02:17,300 --> 00:02:17,733
+Right.
+
+48
+00:02:17,733 --> 00:02:20,500
+Doesn't handle burst tolerance very well.
+
+49
+00:02:20,500 --> 00:02:23,833
+Synchronous,
+but easier to debug because a control
+
+50
+00:02:23,833 --> 00:02:26,866
+flow simple asynchronous.
+
+51
+00:02:27,033 --> 00:02:28,800
+The caller gets a fast acknowledgment.
+
+52
+00:02:28,800 --> 00:02:30,500
+I got what you sent me.
+
+53
+00:02:30,500 --> 00:02:32,900
+I'm going to work on it later. Right.
+
+54
+00:02:32,900 --> 00:02:35,300
+The processing finishes later.
+
+55
+00:02:35,300 --> 00:02:36,233
+I already said that.
+
+56
+00:02:36,233 --> 00:02:39,933
+And then better throughput under load
+because I can
+
+57
+00:02:39,933 --> 00:02:41,800
+I can handle a lot of things, but
+
+58
+00:02:42,766 --> 00:02:44,700
+I have to explicitly track,
+
+59
+00:02:44,700 --> 00:02:48,400
+status of that, request that I sent in.
+
+60
+00:02:48,766 --> 00:02:52,966
+And I can easily overwhelm,
+if I'm not blocking, I'm
+
+61
+00:02:52,966 --> 00:02:57,066
+just sending a bunch of asynchronous stuff
+I can easily overwhelm,
+
+62
+00:02:57,066 --> 00:03:01,100
+a downstream microservice
+with millions of requests.
+
+63
+00:03:01,500 --> 00:03:05,933
+And, I just keep sending them,
+so I need some back pressure.
+
+64
+00:03:06,233 --> 00:03:07,300
+Concepts here.
+
+65
+00:03:07,300 --> 00:03:09,966
+Synchronous gives me automatic back
+pressure. Asynchronous.
+
+66
+00:03:09,966 --> 00:03:11,233
+I got some different techniques,
+
+67
+00:03:11,233 --> 00:03:14,966
+so it's more complex,
+but the benefits are pretty huge there.
+
+68
+00:03:15,200 --> 00:03:15,500
+All right.
+
+69
+00:03:15,500 --> 00:03:20,366
+So here's here's, five common
+async patterns that we can look at right.
+
+70
+00:03:20,666 --> 00:03:24,200
+Fire and forget where I say
+go do something.
+
+71
+00:03:24,200 --> 00:03:27,166
+And I don't care
+if I ever hear back from you again.
+
+72
+00:03:27,166 --> 00:03:27,800
+Right.
+
+73
+00:03:27,800 --> 00:03:30,533
+Not my responsibility anymore
+type of thing.
+
+74
+00:03:30,533 --> 00:03:33,833
+Then there's a queue
+a plus worker consumers.
+
+75
+00:03:34,033 --> 00:03:37,066
+So this is where I'm using message
+bus in the middle where
+
+76
+00:03:37,066 --> 00:03:40,066
+I'm publishing and saying,
+hey, go do this work.
+
+77
+00:03:40,400 --> 00:03:42,600
+And there's a queue of work
+that's out there
+
+78
+00:03:42,600 --> 00:03:45,600
+that's keeping track of all the work
+that's being done right.
+
+79
+00:03:45,633 --> 00:03:49,733
+Another technique is to say request
+acknowledge with the status endpoint,
+
+80
+00:03:50,066 --> 00:03:53,266
+which says, hey, go do this.
+
+81
+00:03:53,266 --> 00:03:57,300
+And then the microservice worker
+microservice from microservice
+
+82
+00:03:57,300 --> 00:04:01,666
+B in this case would say,
+I got your request.
+
+83
+00:04:02,000 --> 00:04:04,933
+Here is a, you are I right here
+
+84
+00:04:04,933 --> 00:04:08,000
+is a, a path
+that you can check the status.
+
+85
+00:04:08,266 --> 00:04:11,466
+So then, sir, a microservice
+A would then just
+
+86
+00:04:11,800 --> 00:04:14,733
+periodically pull the status
+and things like that.
+
+87
+00:04:14,733 --> 00:04:15,233
+Right.
+
+88
+00:04:15,233 --> 00:04:16,400
+Then there's another technique.
+
+89
+00:04:16,400 --> 00:04:19,966
+It's very similar to that one,
+which is a callback or webhook
+
+90
+00:04:20,900 --> 00:04:21,700
+or a topic.
+
+91
+00:04:21,700 --> 00:04:23,800
+You can use any of those, concepts.
+
+92
+00:04:23,800 --> 00:04:28,366
+And it's an async request
+with a reply via, you know, a callback.
+
+93
+00:04:28,366 --> 00:04:33,300
+So what happens here, you know, in these
+three different, types is I can say,
+
+94
+00:04:33,633 --> 00:04:38,300
+here's my request
+and notify me on this RESTful
+
+95
+00:04:38,300 --> 00:04:41,300
+endpoint on my, on, my,
+
+96
+00:04:42,200 --> 00:04:46,966
+microservice microservice
+A says, hey, make this request.
+
+97
+00:04:47,266 --> 00:04:48,866
+I'm going to make this request
+microservice
+
+98
+00:04:48,866 --> 00:04:51,966
+B and microservice B, when you're done,
+call me back on this endpoint.
+
+99
+00:04:52,100 --> 00:04:53,833
+Tell me that you're done.
+
+100
+00:04:53,833 --> 00:04:55,100
+Pretty straightforward.
+
+101
+00:04:55,100 --> 00:04:56,900
+Webhook is very similar to that.
+
+102
+00:04:56,900 --> 00:04:58,700
+And topic is similar to that too.
+
+103
+00:04:58,700 --> 00:05:01,600
+But instead of a direct, restful call,
+
+104
+00:05:01,600 --> 00:05:05,033
+you're now putting it on on a message pass
+that I'm looking for.
+
+105
+00:05:05,533 --> 00:05:06,066
+Right.
+
+106
+00:05:06,066 --> 00:05:10,000
+And then another one is orchestration
+with explicit workflow states
+
+107
+00:05:10,300 --> 00:05:15,500
+where I and this happens, a lot
+when I've got multiple, microservices
+
+108
+00:05:15,500 --> 00:05:18,500
+working on stuff
+where I'm just handing off,
+
+109
+00:05:18,833 --> 00:05:21,500
+the workflow to someone else to do.
+
+110
+00:05:21,500 --> 00:05:25,100
+And inside the package
+that's being passed around contains
+
+111
+00:05:25,366 --> 00:05:28,533
+who's going to be notified of
+what, when, how, and where.
+
+112
+00:05:30,266 --> 00:05:30,933
+Okay.
+
+113
+00:05:30,933 --> 00:05:34,166
+So let's take a look at order flow here.
+
+114
+00:05:34,400 --> 00:05:38,300
+Because order flow is very different
+with asynchronous right.
+
+115
+00:05:38,500 --> 00:05:42,700
+Let's talk specifically about a
+a request
+
+116
+00:05:42,700 --> 00:05:45,800
+and a response with back end processing.
+
+117
+00:05:46,000 --> 00:05:46,233
+Right.
+
+118
+00:05:46,233 --> 00:05:49,233
+So in this case a client submits an order,
+
+119
+00:05:49,900 --> 00:05:53,000
+to the order API, microservice.
+
+120
+00:05:53,466 --> 00:05:54,466
+Then the order API
+
+121
+00:05:54,466 --> 00:05:58,300
+microservice says, I got it, I accepted
+the order, sends it back to the client.
+
+122
+00:05:58,300 --> 00:06:01,500
+The client can continue doing stuff
+in the background.
+
+123
+00:06:01,633 --> 00:06:04,600
+What happens next is the order API service
+
+124
+00:06:04,600 --> 00:06:07,933
+then sends an event out on an event bus.
+
+125
+00:06:07,933 --> 00:06:09,900
+So I'm using event Bus here.
+
+126
+00:06:09,900 --> 00:06:11,900
+I'm going to publish
+the order was created.
+
+127
+00:06:11,900 --> 00:06:15,466
+And then I've got a payment worker
+and an inventory worker,
+
+128
+00:06:15,800 --> 00:06:20,833
+microservice
+that are consuming that order, created
+
+129
+00:06:21,033 --> 00:06:25,133
+a message off the message bus
+and doing its work in this state.
+
+130
+00:06:25,133 --> 00:06:28,133
+Here you can see I'm not showing,
+
+131
+00:06:28,733 --> 00:06:31,133
+but in the end,
+when everything is satisfied, then
+
+132
+00:06:31,133 --> 00:06:34,766
+the final status of that event
+would be sent back to the event bus
+
+133
+00:06:35,266 --> 00:06:38,900
+and then pushed back out
+to whoever your order has been complete.
+
+134
+00:06:39,366 --> 00:06:42,800
+That goes back out to the order API,
+which in this case probably calls
+
+135
+00:06:42,800 --> 00:06:46,966
+a callback or a WebSocket connection
+back to the client saying, hey,
+
+136
+00:06:47,000 --> 00:06:48,266
+your order is done.
+
+137
+00:06:48,266 --> 00:06:51,566
+So but in the meantime,
+the client could be doing other things.
+
+138
+00:06:51,633 --> 00:06:53,433
+During that time.
+
+139
+00:06:53,433 --> 00:06:57,433
+So that shows you a kind
+of a real asynchronous, event going on.
+
+140
+00:06:57,433 --> 00:07:00,200
+You know, here are some things
+you have to worry about.
+
+141
+00:07:00,200 --> 00:07:03,033
+Reliability of these things
+can be kind of iffy, right?
+
+142
+00:07:03,033 --> 00:07:06,000
+Because I, I never get full.
+
+143
+00:07:06,000 --> 00:07:09,800
+I kind of fire it off
+and I never receive back that it happened.
+
+144
+00:07:10,266 --> 00:07:14,566
+So if you do care that it happened,
+then you may want to put a timeout
+
+145
+00:07:14,566 --> 00:07:18,900
+in the client itself that says, hey,
+in five minutes, if I haven't heard back,
+
+146
+00:07:19,333 --> 00:07:22,200
+then I'm
+going to assume that it didn't happen.
+
+147
+00:07:22,200 --> 00:07:25,200
+But we all know what assume means, right?
+
+148
+00:07:25,200 --> 00:07:29,900
+So I got to make sure that all the calls
+and I'm making this way are important,
+
+149
+00:07:30,166 --> 00:07:33,733
+which means that it can handle
+duplicate calls
+
+150
+00:07:33,733 --> 00:07:37,400
+to the same thing without creating
+duplicate things on the back end.
+
+151
+00:07:37,766 --> 00:07:38,033
+Right.
+
+152
+00:07:38,033 --> 00:07:42,766
+So I need some correlation IDs in there
+so I can trace, these distributed flows
+
+153
+00:07:42,766 --> 00:07:47,233
+because maybe somewhere in the flow
+no one picked up that event which happens.
+
+154
+00:07:47,766 --> 00:07:50,833
+So I need to I need to figure out 
+what to do with that.
+
+155
+00:07:50,833 --> 00:07:53,600
+Or maybe it's partially done
+and never finished.
+
+156
+00:07:53,600 --> 00:07:58,100
+So when that new call comes in, what am I
+going to do with that partially run,
+
+157
+00:07:59,466 --> 00:08:01,200
+workflow that had to happen?
+
+158
+00:08:01,200 --> 00:08:02,833
+Do you even know where it is?
+
+159
+00:08:02,833 --> 00:08:03,100
+Right.
+
+160
+00:08:03,100 --> 00:08:06,666
+This becomes, you know, some orchestration
+of things got to deal with.
+
+161
+00:08:07,200 --> 00:08:07,400
+Right?
+
+162
+00:08:07,400 --> 00:08:11,300
+So I need some persistence, some state,
+which we always talk about.
+
+163
+00:08:11,300 --> 00:08:15,233
+I don't want my microservices
+to have a state, but they do have state.
+
+164
+00:08:15,300 --> 00:08:16,100
+And that's something
+
+165
+00:08:16,100 --> 00:08:19,633
+I, especially in these types of things
+that I have to deal with
+
+166
+00:08:19,900 --> 00:08:23,300
+and I have to be able to handle it
+when, same request comes in again.
+
+167
+00:08:25,533 --> 00:08:25,900
+Okay.
+
+168
+00:08:25,900 --> 00:08:28,700
+Other things that you should look at,
+if you're doing asynchronous,
+
+169
+00:08:28,700 --> 00:08:32,033
+you may have to beef up your API design
+to handle
+
+170
+00:08:32,300 --> 00:08:38,000
+status and read, in endpoints or oh.
+
+171
+00:08:38,100 --> 00:08:41,066
+What's another good one
+that you can do a response.
+
+172
+00:08:41,066 --> 00:08:42,500
+You know, something something like that.
+
+173
+00:08:42,500 --> 00:08:46,500
+So if you are using asynchronous,
+you're they're handling those events
+
+174
+00:08:46,866 --> 00:08:52,366
+or you are opening up more Rest APIs
+that can handle these more asynchronous,
+
+175
+00:08:52,366 --> 00:08:55,366
+hey, I finish what you asked me
+to do type of things right?
+
+176
+00:08:56,866 --> 00:08:57,766
+Also, make sure that
+
+177
+00:08:57,766 --> 00:09:01,266
+you are publishing
+what those events, could be.
+
+178
+00:09:01,500 --> 00:09:06,666
+And explicitly
+say that in your API definitions,
+
+179
+00:09:06,666 --> 00:09:10,900
+if it's not a what I would call primary
+kicking off something,
+
+180
+00:09:10,900 --> 00:09:15,000
+but kind of a response type of,
+API, endpoint,
+
+181
+00:09:15,266 --> 00:09:19,000
+make a note of that, so that people know
+don't call this directly.
+
+182
+00:09:19,000 --> 00:09:19,366
+Right.
+
+183
+00:09:19,366 --> 00:09:22,733
+Here's my forward facing,
+
+184
+00:09:22,733 --> 00:09:26,366
+rest API, and here's my response
+kind of back in.
+
+185
+00:09:26,666 --> 00:09:29,000
+All right. So here's some trade offs
+that we see here.
+
+186
+00:09:29,000 --> 00:09:32,000
+You do have better resilience
+for burst handling.
+
+187
+00:09:32,466 --> 00:09:36,233
+But this is much harder to program
+it because things happen out of order
+
+188
+00:09:36,233 --> 00:09:37,200
+all the time. Right.
+
+189
+00:09:37,200 --> 00:09:41,000
+And it's going to be really hard
+to debug across these async boundaries.
+
+190
+00:09:41,000 --> 00:09:44,000
+This is where you get really good
+at looking at distributed logs.
+
+191
+00:09:44,466 --> 00:09:48,533
+And because timing
+is all kind of wacky here,
+
+192
+00:09:48,600 --> 00:09:51,266
+because you're not exactly sure
+when things are going to come back
+
+193
+00:09:51,266 --> 00:09:54,066
+and how to handle them or in what order
+they come back.
+
+194
+00:09:54,066 --> 00:09:56,566
+So you have to be
+somewhat cognizant of that.
+
+195
+00:09:56,566 --> 00:10:00,166
+And when you are developing your code
+that you are,
+
+196
+00:10:00,466 --> 00:10:05,566
+not writing sequential code,
+you have to write asynchronous code,
+
+197
+00:10:05,566 --> 00:10:09,100
+or you have to write code
+that can be entered in at different points
+
+198
+00:10:09,566 --> 00:10:11,533
+based off of the events
+that are coming back.
+
+199
+00:10:11,533 --> 00:10:14,166
+So those are some things
+you have to worry about. All right.
+
+200
+00:10:14,166 --> 00:10:17,900
+So to recap, async improves
+some of the concurrency problems.
+
+201
+00:10:18,200 --> 00:10:22,700
+And decoupling a promise of dependency
+but at a cost.
+
+202
+00:10:22,700 --> 00:10:27,033
+And you got to understand what that cost
+is and when to use which one.

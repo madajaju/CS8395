@@ -1,0 +1,878 @@
+﻿1
+00:00:00,000 --> 00:00:00,433
+Okay.
+
+2
+00:00:00,433 --> 00:00:03,733
+In this lecture, I'm going to talk about
+why blocking systems
+
+3
+00:00:03,733 --> 00:00:06,733
+fail specifically
+in microservice architectures.
+
+4
+00:00:07,800 --> 00:00:09,633
+So a lot of times
+
+5
+00:00:09,633 --> 00:00:13,066
+what happens is
+when I've got a microservice
+
+6
+00:00:13,066 --> 00:00:16,833
+that doing work,
+it can block any other requests coming in.
+
+7
+00:00:16,866 --> 00:00:19,633
+This is an important
+thing that we need to look for,
+
+8
+00:00:19,633 --> 00:00:21,600
+and we need to be able
+to handle these things.
+
+9
+00:00:21,600 --> 00:00:26,600
+Where I get a latency spikes,
+because maybe some underlying
+
+10
+00:00:26,600 --> 00:00:27,766
+processing that I have to do
+
+11
+00:00:27,766 --> 00:00:31,933
+is going to take longer than the normal
+for some reason, whatever the case may be.
+
+12
+00:00:32,266 --> 00:00:35,600
+And I need to be able
+to handle these sorts of situations.
+
+13
+00:00:35,633 --> 00:00:39,333
+So we're going to talk about latency
+spikes, connection
+
+14
+00:00:39,333 --> 00:00:42,333
+queue growth and timeout cascade problems.
+
+15
+00:00:42,533 --> 00:00:45,600
+And we're going to identify
+some practical mitigation patterns.
+
+16
+00:00:45,833 --> 00:00:46,933
+And then we're going to talk
+
+17
+00:00:46,933 --> 00:00:50,033
+more in depth in other lectures
+about some of the techniques.
+
+18
+00:00:51,066 --> 00:00:53,766
+So a blocking request model
+
+19
+00:00:53,766 --> 00:00:57,633
+is this when one request
+comes into a microservice from another.
+
+20
+00:00:57,700 --> 00:01:02,533
+So let's call it microservice a
+we'll ask microservice B
+
+21
+00:01:02,533 --> 00:01:06,400
+which is a worker, to do something
+when it sends that request in via
+
+22
+00:01:06,433 --> 00:01:10,333
+Rest interface,
+yet is waiting for that response back.
+
+23
+00:01:10,333 --> 00:01:14,533
+This is a typical synchronous
+processing problem, right.
+
+24
+00:01:14,833 --> 00:01:18,600
+So what happens is,
+is if microservice B takes some time,
+
+25
+00:01:18,966 --> 00:01:21,966
+then the response coming back
+takes time as well.
+
+26
+00:01:22,166 --> 00:01:25,033
+Now we normally see
+these sorts of things happen
+
+27
+00:01:25,033 --> 00:01:27,133
+when we're doing
+traditional block programing.
+
+28
+00:01:27,133 --> 00:01:32,066
+In one process, when we have a monolithic
+process where I call a function,
+
+29
+00:01:32,833 --> 00:01:35,833
+it runs through that function get
+and I get the result back.
+
+30
+00:01:35,866 --> 00:01:39,733
+The difference here is that that's a pure
+synchronous.
+
+31
+00:01:40,000 --> 00:01:41,800
+The difference here in microservices
+
+32
+00:01:41,800 --> 00:01:45,600
+is you've got an event loop
+and things are somewhat asynchronous.
+
+33
+00:01:45,600 --> 00:01:48,600
+And we're kind of forcing
+some single synchronicity on there.
+
+34
+00:01:49,033 --> 00:01:52,333
+So what happens is is these active workers
+
+35
+00:01:52,333 --> 00:01:54,666
+because multiple things can attach to it.
+
+36
+00:01:54,666 --> 00:01:58,200
+They can become very active
+and overwhelmed
+
+37
+00:01:58,200 --> 00:02:02,866
+on getting all of the results sent back
+to all the different microservices
+
+38
+00:02:02,866 --> 00:02:04,033
+that are calling them.
+
+39
+00:02:04,033 --> 00:02:06,800
+And this latency on return
+
+40
+00:02:06,800 --> 00:02:09,800
+ends up cascading a specific way.
+
+41
+00:02:09,800 --> 00:02:13,633
+If you have like timeouts
+that are not long enough and you've got,
+
+42
+00:02:13,733 --> 00:02:18,933
+microservices very active
+and with a lot of work going on,
+
+43
+00:02:19,366 --> 00:02:23,166
+you can get those timeouts that happen
+and then you can get cascading timeouts.
+
+44
+00:02:23,166 --> 00:02:25,700
+If you've got microservices
+calling microservices.
+
+45
+00:02:25,700 --> 00:02:28,700
+So that's the sort of thing
+that you have to watch out for.
+
+46
+00:02:29,000 --> 00:02:30,933
+So very simple.
+
+47
+00:02:30,933 --> 00:02:34,166
+I've got a client out
+there is calling service A.
+
+48
+00:02:34,566 --> 00:02:39,400
+It's requesting something
+and service A does some processing
+
+49
+00:02:39,533 --> 00:02:44,433
+and then it goes and it calls service
+B to say, hey, I need to do something.
+
+50
+00:02:44,633 --> 00:02:47,466
+In this other service over here
+
+51
+00:02:47,466 --> 00:02:50,233
+and service
+B is busy doing something else.
+
+52
+00:02:50,233 --> 00:02:51,400
+It could take some time.
+
+53
+00:02:51,400 --> 00:02:54,366
+That's called a latency spike.
+
+54
+00:02:54,366 --> 00:02:54,666
+Right.
+
+55
+00:02:54,666 --> 00:02:55,833
+And it's a
+
+56
+00:02:55,833 --> 00:03:00,700
+that's one of the harder things to
+to deal with is latency inconsistency.
+
+57
+00:03:01,166 --> 00:03:05,933
+These spikes, cause timing issues
+in your own microservices.
+
+58
+00:03:05,933 --> 00:03:09,133
+And if you're used to doing everything
+purely synchronous
+
+59
+00:03:09,500 --> 00:03:12,000
+and you want things
+happen in a certain way,
+
+60
+00:03:12,000 --> 00:03:14,066
+there appears to be delays,
+and then you don't know
+
+61
+00:03:14,066 --> 00:03:15,600
+if service B actually went down.
+
+62
+00:03:15,600 --> 00:03:19,100
+And you need to,
+you know, send out an alert somewhere
+
+63
+00:03:19,100 --> 00:03:23,066
+to somebody to, hey, try this
+or do I need to do a retry?
+
+64
+00:03:23,400 --> 00:03:28,166
+And you can get cascading failures,
+cascading latency spikes this way.
+
+65
+00:03:28,233 --> 00:03:30,100
+So things to watch out for.
+
+66
+00:03:30,100 --> 00:03:33,733
+But you can see that service
+now has this coupling,
+
+67
+00:03:33,733 --> 00:03:38,800
+even though it's runtime
+coupling with service B on, it's,
+
+68
+00:03:39,133 --> 00:03:43,133
+potential behavior
+based off of, latency on service B.
+
+69
+00:03:43,266 --> 00:03:46,266
+So we need ways of solving that problem.
+
+70
+00:03:46,433 --> 00:03:46,700
+Right.
+
+71
+00:03:46,700 --> 00:03:49,700
+And there's lots of different techniques
+that we're going to talk about.
+
+72
+00:03:50,000 --> 00:03:53,466
+One of the issues though
+with these latency dependencies,
+
+73
+00:03:53,466 --> 00:03:56,466
+imagine having a dozen microservices
+
+74
+00:03:57,233 --> 00:04:01,033
+and almost forming a mesh
+on how they communicate with each other.
+
+75
+00:04:01,333 --> 00:04:05,266
+You can end up with these
+really funky ways
+
+76
+00:04:05,266 --> 00:04:10,200
+that, latency is popping up in different,
+services at different times.
+
+77
+00:04:10,500 --> 00:04:14,433
+That then just slows everything down
+dramatically, right?
+
+78
+00:04:14,833 --> 00:04:17,933
+And it's really important
+when you're doing,
+
+79
+00:04:17,933 --> 00:04:21,333
+microservice inter communication
+and process communication
+
+80
+00:04:21,700 --> 00:04:26,066
+that you have timeouts
+that, are sufficiently long enough
+
+81
+00:04:26,300 --> 00:04:29,533
+but not too long that now you're blocking
+everybody else.
+
+82
+00:04:29,533 --> 00:04:32,866
+Because if I'm sitting
+waiting for a response from someone, then
+
+83
+00:04:32,866 --> 00:04:36,333
+unblocked waiting,
+and someone else could be waiting for me.
+
+84
+00:04:36,366 --> 00:04:39,300
+So you gotta play around
+with those timeouts a little bit
+
+85
+00:04:39,300 --> 00:04:41,566
+and make sure that you retry
+after those timeouts.
+
+86
+00:04:41,566 --> 00:04:45,466
+And we've talked about retry timeout
+feedback loops and
+
+87
+00:04:45,800 --> 00:04:49,000
+and having different times in there,
+
+88
+00:04:49,333 --> 00:04:52,300
+like a sleep
+or wait before you try again.
+
+89
+00:04:52,300 --> 00:04:56,066
+If you don't put a weight
+before you try again, then you could just
+
+90
+00:04:56,066 --> 00:05:00,433
+exacerbate the problem by retrying
+in a very tight close feedback loop.
+
+91
+00:05:01,833 --> 00:05:02,366
+Okay.
+
+92
+00:05:02,366 --> 00:05:06,066
+So this is where things get
+really interesting in your architecture.
+
+93
+00:05:06,066 --> 00:05:10,800
+You gotta take a look and see
+what, capacity
+
+94
+00:05:11,033 --> 00:05:14,533
+each one of your microservices
+can handle.
+
+95
+00:05:14,533 --> 00:05:16,166
+And whether you need to fire up
+
+96
+00:05:16,166 --> 00:05:19,566
+multiple instances
+of the same microservice to handle things.
+
+97
+00:05:20,000 --> 00:05:23,200
+And yeah, a lot of times
+it's trial and error, but
+
+98
+00:05:23,200 --> 00:05:27,500
+you should be planning these things out
+front, earlier than than later.
+
+99
+00:05:27,533 --> 00:05:29,100
+Just keep that in mind.
+
+100
+00:05:29,100 --> 00:05:31,500
+Something you should be looking at, right?
+
+101
+00:05:31,500 --> 00:05:36,133
+Longer wait times means fewer
+requests can be completed per second.
+
+102
+00:05:36,666 --> 00:05:41,433
+So if I have a timeout, that's longer
+and I could be blocking right now
+
+103
+00:05:41,633 --> 00:05:46,133
+some, programing languages
+like Java, for example,
+
+104
+00:05:47,200 --> 00:05:50,300
+they actually have threads per request.
+
+105
+00:05:50,733 --> 00:05:54,600
+And now there's some trade offs
+and there's some benefits to that.
+
+106
+00:05:55,133 --> 00:05:57,000
+Adding threads can increase memory
+
+107
+00:05:58,000 --> 00:05:58,700
+and context
+
+108
+00:05:58,700 --> 00:06:01,700
+switching overhead
+inside the processor itself.
+
+109
+00:06:01,800 --> 00:06:04,800
+So if I'm doing if I'm doing threads
+
+110
+00:06:04,966 --> 00:06:07,966
+per request, I can actually slow down
+the whole machine,
+
+111
+00:06:08,900 --> 00:06:10,633
+which is an interesting concept, right.
+
+112
+00:06:10,633 --> 00:06:13,933
+Because now I've got so many more context
+switching
+
+113
+00:06:13,933 --> 00:06:17,333
+going on inside of the CPU,
+which means I'm
+
+114
+00:06:17,533 --> 00:06:21,633
+moving memory in and out of the CPU,
+possibly virtual memory.
+
+115
+00:06:21,866 --> 00:06:24,933
+It could,
+it could bog the whole system down, but
+
+116
+00:06:25,633 --> 00:06:29,266
+it could be much faster
+than, handling things
+
+117
+00:06:29,466 --> 00:06:32,266
+and less complex than handling things.
+
+118
+00:06:32,266 --> 00:06:34,533
+With single threaded.
+
+119
+00:06:34,533 --> 00:06:36,233
+So you've got it.
+
+120
+00:06:36,233 --> 00:06:38,466
+You've got some trade offs here
+that you got to deal with,
+
+121
+00:06:38,466 --> 00:06:40,966
+and different languages
+handle it differently.
+
+122
+00:06:40,966 --> 00:06:45,066
+Good news is, is all the other languages
+have the concepts.
+
+123
+00:06:45,066 --> 00:06:48,166
+Some of them bake
+the concepts directly into,
+
+124
+00:06:48,700 --> 00:06:51,700
+the, the language itself
+and the frameworks that they work in.
+
+125
+00:06:52,400 --> 00:06:52,966
+Okay.
+
+126
+00:06:52,966 --> 00:06:57,633
+Also remember, adding more threads
+does not remove dependency latency.
+
+127
+00:06:58,666 --> 00:06:59,633
+Not at all.
+
+128
+00:06:59,633 --> 00:07:01,566
+You still have a dependency latency.
+
+129
+00:07:01,566 --> 00:07:05,333
+It's just now I can run
+multiple things in parallel, but I still
+
+130
+00:07:05,366 --> 00:07:08,366
+I still have some latency,
+especially in something like Java.
+
+131
+00:07:08,366 --> 00:07:10,133
+When it hits garbage collect.
+
+132
+00:07:10,133 --> 00:07:12,800
+Then it could slow everything down.
+
+133
+00:07:12,800 --> 00:07:15,033
+All of your threads.
+
+134
+00:07:15,033 --> 00:07:18,033
+So you got to watch out
+for all these sorts of things.
+
+135
+00:07:18,133 --> 00:07:21,633
+Okay, so here's some here's some
+mitigation options that you can look at.
+
+136
+00:07:22,166 --> 00:07:25,166
+You can tighten down your client timeouts.
+
+137
+00:07:25,366 --> 00:07:28,933
+And you can have retries
+that are bounded with timeout jitter.
+
+138
+00:07:29,033 --> 00:07:31,866
+So it's not the same.
+
+139
+00:07:31,866 --> 00:07:36,566
+It's not oh try again
+in 5 seconds or 500 milliseconds.
+
+140
+00:07:37,433 --> 00:07:39,733
+That, you know, those sorts of things
+
+141
+00:07:39,733 --> 00:07:43,100
+take a look at circuit breakers
+for fail fast behavior.
+
+142
+00:07:43,633 --> 00:07:44,900
+These are important.
+
+143
+00:07:44,900 --> 00:07:47,833
+Look at bulkheads,
+which we've talked about in other,
+
+144
+00:07:47,833 --> 00:07:50,833
+lectures to isolate resource pools.
+
+145
+00:07:51,266 --> 00:07:51,566
+Right.
+
+146
+00:07:51,566 --> 00:07:53,533
+So I don't have the effects of,
+
+147
+00:07:53,533 --> 00:07:56,533
+part of my program
+affecting another part of the program.
+
+148
+00:07:56,566 --> 00:08:00,133
+And look for back
+pressure and bounded queries.
+
+149
+00:08:00,633 --> 00:08:03,633
+So instead of saying,
+give me all of the orders,
+
+150
+00:08:03,933 --> 00:08:06,933
+say I'm only going
+to pass back 50 at a time.
+
+151
+00:08:06,933 --> 00:08:09,533
+And then you can paginate,
+
+152
+00:08:09,533 --> 00:08:13,400
+the rest of the rest of the, 
+orders that, that you want.
+
+153
+00:08:13,633 --> 00:08:18,733
+So these are ways to reduce that back
+pressure or the to produce back pressure
+
+154
+00:08:18,933 --> 00:08:21,933
+so that the clients aren't asking for more
+than what it really needs.
+
+155
+00:08:22,133 --> 00:08:27,733
+Decreasing the amount of, work that has
+to happen on the microservice itself.
+
+156
+00:08:28,300 --> 00:08:31,300
+So remember, there's lots of trade offs
+we have to deal with.
+
+157
+00:08:31,333 --> 00:08:35,300
+The blocking style is not just
+simple, straightforward, right?
+
+158
+00:08:36,433 --> 00:08:38,000
+It's great for simple workloads,
+
+159
+00:08:38,000 --> 00:08:41,733
+but debugging these things can be really,
+really, difficult.
+
+160
+00:08:42,333 --> 00:08:46,366
+And especially if I move to fully async
+
+161
+00:08:46,366 --> 00:08:49,400
+so synchronous it's easier to debug.
+
+162
+00:08:49,400 --> 00:08:51,466
+But there's trade offs here. Right.
+
+163
+00:08:51,466 --> 00:08:53,966
+So we have to watch out
+for those sorts of things.
+
+164
+00:08:53,966 --> 00:08:57,733
+Also make sure that you're
+looking at, resilience in this
+
+165
+00:08:58,533 --> 00:09:02,133
+and what what
+resilience plays inside this.
+
+166
+00:09:02,133 --> 00:09:05,066
+If I have a microservice
+that's kind of flaky and goes down a lot.
+
+167
+00:09:05,066 --> 00:09:10,533
+I want to make sure that I'm not blocked
+on, the client side
+
+168
+00:09:10,533 --> 00:09:14,066
+or the client microservice side
+that I have some options.
+
+169
+00:09:14,366 --> 00:09:17,600
+And then, also,
+if I have really high concurrent
+
+170
+00:09:17,600 --> 00:09:20,666
+workloads, typically
+I don't want these blocking things.
+
+171
+00:09:20,666 --> 00:09:26,133
+So I will need to move to some async, 
+technology async, techniques here.
+
+172
+00:09:27,900 --> 00:09:28,933
+Okay.
+
+173
+00:09:28,933 --> 00:09:32,333
+A recap blocking systems,
+making RESTful calls.
+
+174
+00:09:32,700 --> 00:09:34,466
+They're easier to debug.
+
+175
+00:09:34,466 --> 00:09:39,000
+And they fail
+through, resource saturation.
+
+176
+00:09:39,000 --> 00:09:40,633
+So you got to be careful there.
+
+177
+00:09:40,633 --> 00:09:43,633
+They can create slow dependencies,
+
+178
+00:09:44,333 --> 00:09:46,266
+between you know, queuing up
+
+179
+00:09:46,266 --> 00:09:49,600
+on the microservice side and timeouts,
+and you can have timeout cascades,
+
+180
+00:09:50,033 --> 00:09:53,533
+but they are a whole lot easier to debug
+and to program in.
+
+181
+00:09:53,966 --> 00:09:57,600
+So if I got a microservice
+with just a few, maybe a thousand,
+
+182
+00:09:57,766 --> 00:10:01,066
+requests, a minute
+
+183
+00:10:01,866 --> 00:10:04,933
+or less, then this is a really good, easy
+way to go.
+
+184
+00:10:05,833 --> 00:10:09,833
+It decreases the complexity
+and also makes it so I can easily move,
+
+185
+00:10:10,333 --> 00:10:13,333
+in and out of my,
+
+186
+00:10:13,666 --> 00:10:18,766
+microservice architectures
+where I always making that decision on
+
+187
+00:10:18,766 --> 00:10:22,766
+do I create a new microservice to do that,
+or do I keep it in the same code?
+
+188
+00:10:23,033 --> 00:10:25,066
+So that helps out a
+lot with that sort of thing.

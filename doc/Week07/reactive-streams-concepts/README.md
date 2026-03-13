@@ -1,5 +1,7 @@
 # Reactive Streams Concepts
 
+Video: https://youtu.be/LQ_fEMRrMxA
+
 **Outcomes**
 - Explain the reactive streams model and key signals
 - Understand demand-driven flow control

@@ -7,6 +7,8 @@
 :revealjs_width: "100%"
 :revealjs_height: "100%"
 
+Video: https://youtu.be/LQ_fEMRrMxA
+
 == Goals
 - Explain the reactive streams model and key signals
 - Understand demand-driven flow control with `request(n)`

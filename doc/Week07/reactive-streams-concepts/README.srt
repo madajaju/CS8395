@@ -1,0 +1,1289 @@
+﻿1
+00:00:00,566 --> 00:00:00,933
+All right.
+
+2
+00:00:00,933 --> 00:00:01,600
+In this lecture
+
+3
+00:00:01,600 --> 00:00:05,233
+I'm going to talk about reactive streams
+and the concepts behind them.
+
+4
+00:00:05,600 --> 00:00:11,166
+If we already if you already listen
+to the async, lecture and specifically
+
+5
+00:00:11,166 --> 00:00:16,766
+the back pressure, push pull and hybrid
+reactive systems are hybrid.
+
+6
+00:00:16,966 --> 00:00:21,333
+A push and pull and,
+and there are, libraries and frameworks
+
+7
+00:00:21,333 --> 00:00:24,833
+that have been set up to make this easier
+for the programmer to, to work with us.
+
+8
+00:00:24,833 --> 00:00:28,400
+And so we're going to talk about
+these reactive stream concepts.
+
+9
+00:00:28,666 --> 00:00:29,400
+And we're going to touch on
+
+10
+00:00:29,400 --> 00:00:32,800
+just very lightly some of the frameworks
+that are out there today.
+
+11
+00:00:34,166 --> 00:00:39,200
+So if I look at reactive streams
+it's all about asynchronous programing.
+
+12
+00:00:39,200 --> 00:00:43,700
+And it's making sequences
+based off of those asynchronous things
+
+13
+00:00:43,700 --> 00:00:48,133
+so that I can say, hey,
+I want to process this bit of data.
+
+14
+00:00:48,166 --> 00:00:50,033
+I maybe a million times, right?
+
+15
+00:00:50,033 --> 00:00:53,900
+Or this type of data
+and a million bits of it, through
+
+16
+00:00:53,900 --> 00:00:58,266
+maybe these five, 10
+or 100 different sequential steps
+
+17
+00:00:58,666 --> 00:01:02,300
+that happen and maybe, 
+maybe some might even be in parallel.
+
+18
+00:01:02,300 --> 00:01:05,300
+But there's some sequence
+that happens through these things.
+
+19
+00:01:05,300 --> 00:01:06,366
+So it's great for like,
+
+20
+00:01:08,200 --> 00:01:10,333
+oh, data processing,
+
+21
+00:01:10,333 --> 00:01:14,000
+certain certain
+things that I need do a lot of.
+
+22
+00:01:14,000 --> 00:01:14,600
+Right.
+
+23
+00:01:14,600 --> 00:01:19,533
+So this is where the consumer can remember
+consumers here are the workers, right.
+
+24
+00:01:19,533 --> 00:01:24,300
+The workers are requesting demand
+from the Up channel.
+
+25
+00:01:24,300 --> 00:01:26,600
+So it's almost backwards.
+Most of the time.
+
+26
+00:01:26,600 --> 00:01:31,800
+We go out there and say, hey,
+I need someone to do something for me.
+
+27
+00:01:31,800 --> 00:01:33,100
+Go do it right.
+
+28
+00:01:33,100 --> 00:01:35,633
+In this case, the workers are out there.
+
+29
+00:01:35,633 --> 00:01:38,966
+And in this lecture we call those
+the consumers of these requests.
+
+30
+00:01:39,433 --> 00:01:42,333
+So those workers are out there saying,
+I can handle this much.
+
+31
+00:01:42,333 --> 00:01:43,766
+I can handle this much.
+
+32
+00:01:43,766 --> 00:01:45,166
+I can handle this much.
+
+33
+00:01:45,166 --> 00:01:47,900
+And there's a contract
+that gets established between
+
+34
+00:01:47,900 --> 00:01:51,800
+the people requesting the work
+and the workers on the back end.
+
+35
+00:01:52,833 --> 00:01:53,066
+Right.
+
+36
+00:01:53,066 --> 00:01:57,666
+So the producers of the requests
+can run at different speeds in this case.
+
+37
+00:01:57,666 --> 00:01:58,366
+Right.
+
+38
+00:01:58,366 --> 00:02:01,233
+Which says that a, I may be,
+
+39
+00:02:01,233 --> 00:02:04,933
+running really fast
+as I've got to do all this stuff.
+
+40
+00:02:05,300 --> 00:02:07,600
+And, 
+there may be a whole bunch of workers
+
+41
+00:02:07,600 --> 00:02:10,200
+on the back end saying,
+I can handle ten of those.
+
+42
+00:02:10,200 --> 00:02:12,600
+And I have a million of them. Right.
+
+43
+00:02:12,600 --> 00:02:14,900
+And then another one says, I can handle,
+
+44
+00:02:14,900 --> 00:02:18,566
+1000 of those, another 50,000, 100,000,
+whatever the case may be.
+
+45
+00:02:18,800 --> 00:02:22,600
+So this allows things to run
+at different speeds, and the back pressure
+
+46
+00:02:22,600 --> 00:02:26,933
+keeps the throughput stable under load
+across all of this, which is really cool.
+
+47
+00:02:28,400 --> 00:02:28,900
+Okay.
+
+48
+00:02:28,900 --> 00:02:31,400
+Why this matters push only systems.
+
+49
+00:02:31,400 --> 00:02:36,866
+As we learned in previous, lectures,
+I can overload down service.
+
+50
+00:02:36,866 --> 00:02:42,000
+Streams are down service, microservices,
+which in this case is the consumer.
+
+51
+00:02:42,433 --> 00:02:43,100
+Right.
+
+52
+00:02:43,100 --> 00:02:46,733
+So the back pressure says, hey,
+don't overwhelm me, dude.
+
+53
+00:02:46,733 --> 00:02:49,666
+Right. I can only handle so much.
+
+54
+00:02:49,666 --> 00:02:51,766
+So that's for that back pressure concept.
+
+55
+00:02:51,766 --> 00:02:57,333
+So with the push only system, I can
+overwhelm the back end with a pull system.
+
+56
+00:02:57,633 --> 00:03:00,633
+I can actually slow things way down.
+
+57
+00:03:01,066 --> 00:03:05,433
+Maybe even too much where the consumers
+are out there saying, I can do ten now,
+
+58
+00:03:05,433 --> 00:03:08,700
+I can do 50 now, I can do 100 now,
+whatever the case may be.
+
+59
+00:03:09,000 --> 00:03:12,233
+So the combination of both of those
+is that hybrid combination.
+
+60
+00:03:13,266 --> 00:03:15,933
+And that's
+what reactive streams are set up to do.
+
+61
+00:03:15,933 --> 00:03:20,600
+So the back pressure on
+hey how much can you give me is actually
+
+62
+00:03:21,033 --> 00:03:24,500
+formalized through a contract via
+something called a request.
+
+63
+00:03:24,500 --> 00:03:27,766
+So I can say, hey, the front end,
+
+64
+00:03:27,833 --> 00:03:31,233
+that's asking for some saying
+I need to do a million things.
+
+65
+00:03:31,833 --> 00:03:35,333
+And the backend worker
+consumer microservice
+
+66
+00:03:35,666 --> 00:03:38,666
+saying, hey, I can take 100 of those.
+
+67
+00:03:38,666 --> 00:03:43,300
+So naturally the producer of the request
+
+68
+00:03:43,766 --> 00:03:48,133
+is only going to send that number in.
+
+69
+00:03:48,466 --> 00:03:51,700
+And, I'm going to be able to get those,
+those things back.
+
+70
+00:03:51,900 --> 00:03:55,433
+Now, what's really cool about
+this is I can compose these,
+
+71
+00:03:55,833 --> 00:03:59,300
+blocks of work that need to be done
+
+72
+00:03:59,300 --> 00:04:02,633
+through microservices,
+through composable operator chains.
+
+73
+00:04:02,633 --> 00:04:07,133
+Now, this is actually really cool
+because I can pass that same data
+
+74
+00:04:07,600 --> 00:04:13,000
+from that client that's calling, 
+back in microservice a microservice B
+
+75
+00:04:13,100 --> 00:04:16,100
+microservice C, D, ad infinitum,
+
+76
+00:04:16,233 --> 00:04:18,700
+that,
+that is going to flow through all of them.
+
+77
+00:04:18,700 --> 00:04:21,000
+I can pass that composable operator
+
+78
+00:04:21,000 --> 00:04:24,800
+chain directly into the first one
+and then lay down all the rest.
+
+79
+00:04:24,800 --> 00:04:28,800
+It will, handle all the back pressure
+of all the other ones going through.
+
+80
+00:04:29,266 --> 00:04:29,700
+Right?
+
+81
+00:04:29,700 --> 00:04:30,933
+Which is really slick.
+
+82
+00:04:30,933 --> 00:04:33,900
+That's what
+Reactive Streams really handles. Right?
+
+83
+00:04:33,900 --> 00:04:37,100
+So the core concept here is the publisher.
+
+84
+00:04:37,100 --> 00:04:40,966
+Remember, they're the ones that are asking
+for all the request and the subscribers,
+
+85
+00:04:40,966 --> 00:04:43,333
+the one handling that request. Right.
+
+86
+00:04:43,333 --> 00:04:48,166
+A subscription
+is that contract between the request.
+
+87
+00:04:49,133 --> 00:04:49,533
+Right.
+
+88
+00:04:49,533 --> 00:04:52,833
+The subscription is hey,
+I need to do this many things.
+
+89
+00:04:53,033 --> 00:04:55,733
+And also I can cancel, right?
+
+90
+00:04:55,733 --> 00:04:58,066
+If I'm the one asking for work to be done.
+
+91
+00:04:58,066 --> 00:05:02,366
+And I say I need to do a thousand things
+and I get maybe halfway,
+
+92
+00:05:02,366 --> 00:05:05,933
+halfway through the workers
+halfway through and I go, you know what?
+
+93
+00:05:05,933 --> 00:05:08,133
+I've decided to change.
+So I need to cancel.
+
+94
+00:05:08,133 --> 00:05:11,000
+So that's part of that, that, contract.
+
+95
+00:05:11,000 --> 00:05:13,166
+That's a expose there, too.
+
+96
+00:05:13,166 --> 00:05:17,200
+And then here are some of the signals that
+can come back, some of the events like,
+
+97
+00:05:17,700 --> 00:05:20,633
+when I subscribe, right
+
+98
+00:05:20,633 --> 00:05:25,000
+when a consumer is, 
+sitting there saying, hey,
+
+99
+00:05:25,533 --> 00:05:29,033
+I'm, I can I can work on these things.
+
+100
+00:05:29,300 --> 00:05:34,100
+When someone subscribes to a,
+I want to tell you that I can do that.
+
+101
+00:05:34,700 --> 00:05:36,533
+I have that signal on subscribe.
+
+102
+00:05:36,533 --> 00:05:38,233
+So that's an event that comes in.
+
+103
+00:05:38,233 --> 00:05:40,433
+Another one there is called on next.
+
+104
+00:05:40,433 --> 00:05:43,300
+So that says all right
+I finish what you asked me to do.
+
+105
+00:05:43,300 --> 00:05:44,300
+What's next.
+
+106
+00:05:44,300 --> 00:05:45,600
+And then there's on air.
+
+107
+00:05:45,600 --> 00:05:48,500
+And then on complete
+these are events that get passed.
+
+108
+00:05:48,500 --> 00:05:48,900
+Right.
+
+109
+00:05:48,900 --> 00:05:53,500
+So I need to be able to notify the requester, hey what do I do if there's an error.
+
+110
+00:05:54,633 --> 00:05:56,233
+What do you want me to do?
+
+111
+00:05:56,233 --> 00:05:58,300
+Right? I'm going to send you
+I got an error.
+
+112
+00:05:58,300 --> 00:05:59,600
+I got something completed.
+
+113
+00:05:59,600 --> 00:06:01,766
+I finished
+all the requests that you asked me to.
+
+114
+00:06:01,766 --> 00:06:03,066
+I finished the one request.
+
+115
+00:06:03,066 --> 00:06:05,666
+That's the on next, type of thing.
+
+116
+00:06:05,666 --> 00:06:08,666
+Then I have this concept
+that this is actually pretty slick
+
+117
+00:06:08,833 --> 00:06:10,566
+concept of operators.
+
+118
+00:06:10,566 --> 00:06:12,200
+So an operator can say, I'm
+
+119
+00:06:12,200 --> 00:06:15,200
+going to take that data that you gave me,
+and I'm either going to map it,
+
+120
+00:06:15,400 --> 00:06:16,566
+I'm going to filter it, I'm
+
+121
+00:06:16,566 --> 00:06:19,566
+going to do a flatMap on it,
+I'm going to reduce on it.
+
+122
+00:06:19,566 --> 00:06:19,833
+Right.
+
+123
+00:06:19,833 --> 00:06:22,966
+These are different operators
+that can happen in these reactive systems.
+
+124
+00:06:23,900 --> 00:06:26,900
+And then I've got some terminal signals
+here that are
+
+125
+00:06:27,066 --> 00:06:31,433
+hey I'm done completed or on error
+I got an error.
+
+126
+00:06:31,433 --> 00:06:32,266
+Don't know what to do.
+
+127
+00:06:32,266 --> 00:06:36,000
+So those are the ones that kind of shut
+down that stream that you've established
+
+128
+00:06:36,433 --> 00:06:38,433
+in these reactive streams.
+
+129
+00:06:38,433 --> 00:06:42,000
+So we've already talked about back
+pressure, but I want to go over it
+
+130
+00:06:42,000 --> 00:06:45,766
+one more time,
+make sure everyone understands consumer is
+
+131
+00:06:45,766 --> 00:06:49,633
+the one that is saying, I can do the work.
+
+132
+00:06:50,400 --> 00:06:51,566
+That's the worker.
+
+133
+00:06:51,566 --> 00:06:54,733
+The publisher is the one that's saying,
+I got work for you to do. So
+
+134
+00:06:55,700 --> 00:06:57,200
+in this case here,
+
+135
+00:06:57,200 --> 00:07:00,200
+the subscription has already happened.
+
+136
+00:07:00,633 --> 00:07:01,166
+Right?
+
+137
+00:07:01,166 --> 00:07:04,466
+And the consumer says, I can take two.
+
+138
+00:07:04,700 --> 00:07:05,533
+Give me two.
+
+139
+00:07:05,533 --> 00:07:06,600
+All right.
+
+140
+00:07:06,600 --> 00:07:07,133
+Perfect.
+
+141
+00:07:07,133 --> 00:07:11,300
+So what happens is I get two events
+and on next event from the publisher
+
+142
+00:07:11,600 --> 00:07:12,533
+here's one.
+
+143
+00:07:12,533 --> 00:07:14,300
+And here's two.
+
+144
+00:07:14,300 --> 00:07:16,433
+Right. I handled the two.
+
+145
+00:07:16,433 --> 00:07:18,500
+And the publishers pausing.
+
+146
+00:07:18,500 --> 00:07:20,633
+It's not going to send me
+any more information
+
+147
+00:07:20,633 --> 00:07:23,633
+until I'm done with those
+and say I can take another one.
+
+148
+00:07:24,033 --> 00:07:28,366
+And then I'm going to get an on next event
+from the publisher, the one asking
+
+149
+00:07:28,366 --> 00:07:31,866
+for the request to the worker,
+the consumer on the back end.
+
+150
+00:07:33,266 --> 00:07:34,133
+Okay.
+
+151
+00:07:34,133 --> 00:07:37,300
+So let's look at stream, you know,
+connecting these streams together.
+
+152
+00:07:37,333 --> 00:07:38,066
+Right.
+
+153
+00:07:38,066 --> 00:07:41,366
+The subscriber says to the publisher,
+remember this subscriber
+
+154
+00:07:42,000 --> 00:07:45,000
+is the one asking for work
+to be done right.
+
+155
+00:07:45,066 --> 00:07:46,566
+The publisher is
+
+156
+00:07:47,533 --> 00:07:51,100
+is the one that is actually doing.
+
+157
+00:07:51,233 --> 00:07:54,000
+Oh no, I got that backwards. The
+
+158
+00:07:54,000 --> 00:07:57,000
+the publisher cost.
+
+159
+00:07:57,033 --> 00:08:00,366
+The publisher is saying,
+hey, I need you to do this work for me.
+
+160
+00:08:00,366 --> 00:08:03,366
+The subscriber is the same thing
+as a consumer, right?
+
+161
+00:08:04,233 --> 00:08:06,200
+Publish and subscribe consumer.
+
+162
+00:08:06,200 --> 00:08:08,766
+We need one term.
+There's too many terms on this.
+
+163
+00:08:08,766 --> 00:08:12,500
+So the the publisher is saying, hey,
+
+164
+00:08:14,000 --> 00:08:16,533
+the subscriber
+saying I can do work for you.
+
+165
+00:08:16,533 --> 00:08:18,266
+And it says, all right, I gotcha.
+
+166
+00:08:18,266 --> 00:08:21,233
+And, I can do three things for you.
+
+167
+00:08:21,233 --> 00:08:23,200
+Comes up next requests.
+
+168
+00:08:23,200 --> 00:08:25,300
+Then I say, here
+are the three things that you want to do.
+
+169
+00:08:25,300 --> 00:08:26,566
+And now I'm done.
+
+170
+00:08:26,566 --> 00:08:28,033
+I'm done asking for more things.
+
+171
+00:08:28,033 --> 00:08:30,700
+And that's how that works.
+
+172
+00:08:30,700 --> 00:08:31,266
+All right.
+
+173
+00:08:31,266 --> 00:08:35,500
+Here's a simple example of
+let me make this a little bit bigger
+
+174
+00:08:35,500 --> 00:08:40,266
+for us here of, in a Java Java Flow API,
+
+175
+00:08:40,466 --> 00:08:44,466
+they have the concept of a publisher where
+I'm publishing and a subscriber.
+
+176
+00:08:44,466 --> 00:08:47,133
+That's why we use this right here.
+
+177
+00:08:47,133 --> 00:08:51,733
+The publisher is subscribing to the
+the worker basically.
+
+178
+00:08:51,733 --> 00:08:52,800
+Right.
+
+179
+00:08:52,800 --> 00:08:55,000
+He's saying, hey, one, once you do
+
+180
+00:08:55,000 --> 00:08:58,000
+things once I'm connected,
+
+181
+00:08:58,066 --> 00:09:02,033
+I'm going to send out two requests,
+that I can get done.
+
+182
+00:09:02,033 --> 00:09:07,433
+So the publisher here is subscribing
+to work that, could be requested.
+
+183
+00:09:07,433 --> 00:09:09,366
+Remember, the publisher is the consumer.
+
+184
+00:09:09,366 --> 00:09:13,000
+It's the one that is actually
+doing the work right?
+
+185
+00:09:13,166 --> 00:09:16,466
+So he's asking, hey, give me work to do.
+
+186
+00:09:16,500 --> 00:09:18,266
+When on next is called.
+
+187
+00:09:18,266 --> 00:09:20,900
+Go ahead and do that work. Right.
+
+188
+00:09:20,900 --> 00:09:26,000
+So here the publisher is submitting things
+to be done.
+
+189
+00:09:26,866 --> 00:09:29,466
+Okay. Let's take a look at the Node.js.
+
+190
+00:09:29,466 --> 00:09:34,100
+Now this is Node.js doing the same thing
+with a library called RxJS.
+
+191
+00:09:34,666 --> 00:09:40,133
+So in this case here I have different, 
+operators that can happen.
+
+192
+00:09:40,500 --> 00:09:43,633
+And I can set up a pipeline
+where I'm setting up this pipe
+
+193
+00:09:43,933 --> 00:09:46,400
+and it's doing the same sort of thing.
+
+194
+00:09:46,400 --> 00:09:50,600
+I can I can limit how much is being
+pumped through at a time.
+
+195
+00:09:51,066 --> 00:09:53,600
+So take a look at our XJS.
+
+196
+00:09:53,600 --> 00:09:56,633
+We'll go in more depth
+on these, in later lectures.
+
+197
+00:09:59,000 --> 00:09:59,800
+Okay.
+
+198
+00:09:59,800 --> 00:10:03,200
+So practical uses of these streaming APIs
+where I can tie
+
+199
+00:10:03,200 --> 00:10:07,400
+these together, event processing,
+where I've got pipelines
+
+200
+00:10:07,400 --> 00:10:11,100
+with multiple transformation stages
+that have high,
+
+201
+00:10:11,533 --> 00:10:15,366
+IO and heavy integrations
+where blocking is very expensive.
+
+202
+00:10:16,300 --> 00:10:20,933
+Look at real time analytics and telemetry
+processing, fan out and fan in
+
+203
+00:10:20,933 --> 00:10:25,066
+work, flows that are controlled on demand
+where I can control those.
+
+204
+00:10:25,400 --> 00:10:27,133
+I need x number of these things
+
+205
+00:10:27,133 --> 00:10:30,133
+because I've got a big low coming in
+or decrease them.
+
+206
+00:10:30,200 --> 00:10:32,200
+Okay.
+
+207
+00:10:32,200 --> 00:10:35,366
+Let's look at some examples here.
+
+208
+00:10:35,366 --> 00:10:38,466
+So you want to use streaming endpoints.
+
+209
+00:10:39,200 --> 00:10:43,033
+When I've got clients
+I can consume partial results over time.
+
+210
+00:10:43,900 --> 00:10:46,100
+They're great for notification, progress
+
+211
+00:10:46,100 --> 00:10:49,300
+speeds, large incremental payload
+type of things.
+
+212
+00:10:49,300 --> 00:10:54,200
+They're strong fit for really long
+running workloads with intermittent status
+
+213
+00:10:54,200 --> 00:10:57,200
+that I want to hey,
+I want to say how far I've gotten so far.
+
+214
+00:10:57,600 --> 00:11:00,900
+Avoid them for simple Crud endpoints
+because,
+
+215
+00:11:01,500 --> 00:11:06,200
+they are complex,
+to manage and debug as well.
+
+216
+00:11:06,200 --> 00:11:09,333
+So if I have something that's simple and
+
+217
+00:11:09,333 --> 00:11:13,166
+easy, like a Crud endpoint
+with a quick database call on the back end
+
+218
+00:11:13,166 --> 00:11:16,733
+and then go with a simple arrest, 
+interface here.
+
+219
+00:11:17,366 --> 00:11:19,900
+And look at some,
+
+220
+00:11:19,900 --> 00:11:24,366
+you know, more simple synchronous style
+when latency and load are low.
+
+221
+00:11:24,633 --> 00:11:24,900
+Right.
+
+222
+00:11:24,900 --> 00:11:28,800
+Because you are adding some complexity
+to, to reactive streams.
+
+223
+00:11:28,866 --> 00:11:29,200
+Right.
+
+224
+00:11:30,600 --> 00:11:31,733
+When do you use them?
+
+225
+00:11:31,733 --> 00:11:36,200
+I already talked when workload is
+IO bound with unpredictable latency,
+
+226
+00:11:36,533 --> 00:11:40,733
+when throughput and concurrency matter
+more than, simplicity.
+
+227
+00:11:41,300 --> 00:11:45,800
+This is a big trade off and you need
+bounded resources under burstable,
+
+228
+00:11:45,933 --> 00:11:46,433
+traffic.
+
+229
+00:11:46,433 --> 00:11:49,433
+Right, so that you're not blowing out
+all your resources.
+
+230
+00:11:49,433 --> 00:11:52,866
+And make sure that you can support
+non-blocking stack
+
+231
+00:11:52,866 --> 00:11:57,266
+and reactive, observability,
+so that I can debug these things
+
+232
+00:11:57,566 --> 00:12:02,000
+and then make sure also
+that I've got event and stream semantics,
+
+233
+00:12:02,366 --> 00:12:05,533
+that follow what the business flow are.
+
+234
+00:12:05,900 --> 00:12:06,600
+Right.
+
+235
+00:12:06,600 --> 00:12:09,300
+Because if you do that mismatch, then
+
+236
+00:12:09,300 --> 00:12:12,300
+what you've developed
+is not going to be used
+
+237
+00:12:12,500 --> 00:12:16,066
+when you don't use them,
+when simple crud can be used.
+
+238
+00:12:16,333 --> 00:12:19,633
+If I have CPU, CPU bound logic,
+
+239
+00:12:21,800 --> 00:12:24,800
+then I'm not getting a lot of benefit
+here, right?
+
+240
+00:12:24,900 --> 00:12:26,766
+I could use different technique.
+
+241
+00:12:26,766 --> 00:12:29,433
+I when teams lack reactive tooling
+
+242
+00:12:29,433 --> 00:12:32,433
+and debugging, experience is hard to do.
+
+243
+00:12:32,600 --> 00:12:34,500
+But that's why you're taking this course
+so you can learn it.
+
+244
+00:12:34,500 --> 00:12:36,700
+And remember this is just an introduction.
+
+245
+00:12:36,700 --> 00:12:39,700
+We're going to have several lectures
+on specifically,
+
+246
+00:12:39,733 --> 00:12:43,300
+reactive frameworks
+and the concepts behind them.
+
+247
+00:12:45,800 --> 00:12:46,766
+Okay.
+
+248
+00:12:46,766 --> 00:12:49,766
+Here's,
+here's like a back of the envelope.
+
+249
+00:12:49,966 --> 00:12:51,900
+You can choose reactive streams.
+
+250
+00:12:51,900 --> 00:12:54,900
+If at least three of these are true,
+traffic is bursty
+
+251
+00:12:55,000 --> 00:12:58,033
+or concurrency are high,
+the downstream latency is variable.
+
+252
+00:12:58,500 --> 00:13:02,733
+Overload protection needs to be,
+demand aware flow.
+
+253
+00:13:02,733 --> 00:13:05,733
+So control it's very dynamic right.
+
+254
+00:13:05,800 --> 00:13:09,233
+In the end,
+non-blocking infrastructure is available
+
+255
+00:13:10,133 --> 00:13:14,433
+and output is event driven
+and incremental over time.
+
+256
+00:13:14,433 --> 00:13:17,333
+So you need at least three of those
+to happen.
+
+257
+00:13:17,333 --> 00:13:20,333
+There aren't a lot of use cases
+where this would be true,
+
+258
+00:13:21,500 --> 00:13:24,133
+but it's important
+to understand these things.
+
+259
+00:13:24,133 --> 00:13:24,566
+All right.
+
+260
+00:13:24,566 --> 00:13:26,866
+Let's let's take a look at trade offs
+throughput.
+
+261
+00:13:26,866 --> 00:13:29,433
+Obviously strong concurrent.
+
+262
+00:13:29,433 --> 00:13:33,566
+So this is good for strong concurrent
+IO heavy workloads.
+
+263
+00:13:33,933 --> 00:13:36,400
+Resource safety.
+
+264
+00:13:36,400 --> 00:13:38,866
+It reduces overhead risk
+
+265
+00:13:39,900 --> 00:13:41,000
+complexity.
+
+266
+00:13:41,000 --> 00:13:43,466
+Huge, right.
+
+267
+00:13:43,466 --> 00:13:44,666
+It can be hard to debug,
+
+268
+00:13:44,666 --> 00:13:48,700
+especially if you don't have your operator
+chain set up appropriately.
+
+269
+00:13:49,366 --> 00:13:52,366
+Make sure that you understand
+what shared reactive
+
+270
+00:13:53,100 --> 00:13:54,633
+programing is like.
+
+271
+00:13:54,633 --> 00:13:56,233
+It's not, trivial.
+
+272
+00:13:56,233 --> 00:13:58,300
+So you have to wrap your head around that
+
+273
+00:13:58,300 --> 00:14:01,300
+and then make sure
+that you have observability in there
+
+274
+00:14:01,300 --> 00:14:04,300
+and that can be hard, hard to do.
+
+275
+00:14:04,500 --> 00:14:05,466
+Okay.
+
+276
+00:14:05,466 --> 00:14:10,066
+Also be careful that you're not mixing
+blocking calls inside reactive pipelines.
+
+277
+00:14:10,066 --> 00:14:14,766
+This could be really, detrimental
+and cause some, some, issues.
+
+278
+00:14:15,100 --> 00:14:20,133
+Also, having unlimited buffers between
+operators can cause a lot of problems.
+
+279
+00:14:20,133 --> 00:14:21,300
+So you want some push back?
+
+280
+00:14:21,300 --> 00:14:25,300
+There because operators
+may operate at different speeds.
+
+281
+00:14:25,300 --> 00:14:28,300
+So make sure that you have some, limits
+there.
+
+282
+00:14:28,866 --> 00:14:32,000
+Also make sure that you're not ignoring
+any of the cancellations,
+
+283
+00:14:32,433 --> 00:14:34,700
+errors, timeouts and things like that.
+
+284
+00:14:34,700 --> 00:14:38,900
+And then don't overuse reactive styles
+where simple crud
+
+285
+00:14:38,900 --> 00:14:40,000
+would be the best way to go.

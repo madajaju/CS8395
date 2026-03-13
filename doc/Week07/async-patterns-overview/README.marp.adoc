@@ -7,6 +7,8 @@
 :revealjs_width: "100%"
 :revealjs_height: "100%"
 
+Video: https://youtu.be/yTbAFsfLgyQ
+
 == Goals
 - Compare common asynchronous communication patterns
 - Choose async styles by business need

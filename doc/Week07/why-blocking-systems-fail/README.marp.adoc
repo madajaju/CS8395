@@ -7,6 +7,9 @@
 :revealjs_width: "100%"
 :revealjs_height: "100%"
 
+Video: https://youtu.be/BRAjt_5jRSE
+
+
 == Goals
 - Explain why blocking I/O limits scalability
 - Show how latency spikes cause thread starvation

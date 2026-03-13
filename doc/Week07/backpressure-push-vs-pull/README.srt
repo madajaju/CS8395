@@ -1,0 +1,1624 @@
+﻿1
+00:00:00,033 --> 00:00:00,433
+Okay.
+
+2
+00:00:00,433 --> 00:00:01,133
+In this lecture we're
+
+3
+00:00:01,133 --> 00:00:04,133
+going to talk about back pressure
+and two different techniques.
+
+4
+00:00:04,533 --> 00:00:09,100
+I guess they would be called techniques
+of back pressure push versus pull.
+
+5
+00:00:10,033 --> 00:00:13,433
+So the goal of this lecture is to define
+what back pressure is
+
+6
+00:00:13,433 --> 00:00:14,900
+and why it's required.
+
+7
+00:00:14,900 --> 00:00:17,766
+It's primarily for asynchronous of course.
+
+8
+00:00:17,766 --> 00:00:21,333
+And then distinguish the difference
+between push and pull flow control models
+
+9
+00:00:21,966 --> 00:00:25,433
+and then select overhead policies
+or overload policies
+
+10
+00:00:25,733 --> 00:00:27,333
+based off of business activity.
+
+11
+00:00:27,333 --> 00:00:29,300
+And business criticality.
+
+12
+00:00:29,300 --> 00:00:30,266
+This is important thing
+
+13
+00:00:30,266 --> 00:00:33,266
+to understand the business
+in order to choose what you need to do.
+
+14
+00:00:33,333 --> 00:00:36,533
+And then look at, the different
+trade offs between each of them.
+
+15
+00:00:36,733 --> 00:00:39,733
+So first off, that pressure prevents
+
+16
+00:00:39,933 --> 00:00:44,166
+really fast producers of, requests to.
+
+17
+00:00:44,166 --> 00:00:46,066
+Oh, that from overwhelming
+
+18
+00:00:46,066 --> 00:00:50,100
+slow back end consumers or workers
+that need to work on something.
+
+19
+00:00:50,366 --> 00:00:54,100
+So the producers are saying,
+I need you to do something for me.
+
+20
+00:00:54,100 --> 00:00:56,166
+And the consumers are saying,
+I'll do that work for you.
+
+21
+00:00:56,166 --> 00:00:57,300
+That's the idea here.
+
+22
+00:00:57,300 --> 00:01:00,300
+So producer in this case is my requester
+
+23
+00:01:00,433 --> 00:01:04,000
+and the consumer is my worker
+B he's doing the work for me.
+
+24
+00:01:04,066 --> 00:01:05,600
+Right? So
+
+25
+00:01:06,566 --> 00:01:09,766
+this typically
+happens if I've got a lot of,
+
+26
+00:01:10,133 --> 00:01:14,400
+requests coming in from someone
+requesting work to be done on a back
+
+27
+00:01:14,400 --> 00:01:18,933
+end, microservice
+that just can't handle, the amount
+
+28
+00:01:19,233 --> 00:01:22,833
+maybe my, my back in microservice
+
+29
+00:01:22,833 --> 00:01:25,833
+can only handle a 100 requests per second,
+
+30
+00:01:26,133 --> 00:01:29,933
+and the front end can produce,
+at 10,000 requests per second.
+
+31
+00:01:29,933 --> 00:01:32,133
+There's a major mismatch there.
+
+32
+00:01:32,133 --> 00:01:33,200
+It's going to slow down.
+
+33
+00:01:33,200 --> 00:01:36,066
+Everything
+all right, including a microservice?
+
+34
+00:01:36,066 --> 00:01:40,466
+A the one producing all of the,
+requests that they're coming out.
+
+35
+00:01:41,033 --> 00:01:41,533
+Okay.
+
+36
+00:01:41,533 --> 00:01:44,933
+So I need to figure out the best way
+to put some back pressure
+
+37
+00:01:45,100 --> 00:01:49,533
+on the producer, the one that's saying,
+hey, I need you to do more.
+
+38
+00:01:49,533 --> 00:01:52,333
+And the one on the back
+ends just can't handle. So I need to.
+
+39
+00:01:52,333 --> 00:01:54,066
+I need to throttle that guy somehow.
+
+40
+00:01:54,066 --> 00:01:55,866
+But I have to do it dynamically.
+
+41
+00:01:55,866 --> 00:01:59,500
+I can do it statically where I'm saying,
+hey, I'm going to have a certain fan
+
+42
+00:01:59,500 --> 00:02:02,833
+out of this number,
+but the loads are different
+
+43
+00:02:02,833 --> 00:02:06,300
+in different time, so
+there's a better way to do it dynamically.
+
+44
+00:02:06,300 --> 00:02:08,333
+And that's
+what back pressure kind of gives me.
+
+45
+00:02:08,333 --> 00:02:10,533
+That's the idea, right?
+
+46
+00:02:10,533 --> 00:02:14,933
+If I don't have any bounds on demand,
+then I can easily overwhelm things.
+
+47
+00:02:14,933 --> 00:02:19,266
+And then latency goes through the roof
+and memory becomes highly in predictable
+
+48
+00:02:19,533 --> 00:02:24,633
+and now I you can have major issues
+with that single, microservice.
+
+49
+00:02:24,833 --> 00:02:27,833
+You can spin up more instances
+of the same microservice,
+
+50
+00:02:28,366 --> 00:02:31,266
+but you need some time to do that
+without cascading delays.
+
+51
+00:02:31,266 --> 00:02:36,400
+So, you got to look at some,
+some different, strategies to do this
+
+52
+00:02:37,666 --> 00:02:39,200
+where you can handle it gracefully.
+
+53
+00:02:39,200 --> 00:02:41,366
+Right? That's the key. Right.
+
+54
+00:02:41,366 --> 00:02:46,600
+So why this matters with no back pressure,
+it increases my latency dramatically.
+
+55
+00:02:46,600 --> 00:02:47,666
+And my queue depth,
+
+56
+00:02:47,666 --> 00:02:52,400
+which increases memory,
+which then increases number of resources.
+
+57
+00:02:52,400 --> 00:02:55,066
+And people go, look,
+I can't run this microservice
+
+58
+00:02:55,066 --> 00:02:57,533
+on a tiny instance in the cloud.
+
+59
+00:02:57,533 --> 00:02:59,133
+I need this bigger one.
+
+60
+00:02:59,133 --> 00:03:01,500
+And you're wondering,
+you're scratching your head. Why?
+
+61
+00:03:01,500 --> 00:03:04,233
+Because the amount of memory it's
+using up in these buffer
+
+62
+00:03:04,233 --> 00:03:07,233
+queues, things like that
+could, could cause that sort of things.
+
+63
+00:03:07,466 --> 00:03:08,133
+Right.
+
+64
+00:03:08,133 --> 00:03:13,700
+Also timeouts and retries kind of amplify
+the load during these types of incidents.
+
+65
+00:03:13,933 --> 00:03:16,033
+And we're running these asynchronously.
+
+66
+00:03:16,033 --> 00:03:16,300
+Right.
+
+67
+00:03:16,300 --> 00:03:19,666
+So one of the reasons we went to
+asynchronous is to get away
+
+68
+00:03:19,666 --> 00:03:22,666
+from the problems
+that come with timeouts and retries.
+
+69
+00:03:22,733 --> 00:03:23,433
+Right.
+
+70
+00:03:23,433 --> 00:03:26,866
+And I can have cascading failures
+if I don't put some bounds
+
+71
+00:03:26,866 --> 00:03:30,633
+or some back pressure
+on the calling, client on things.
+
+72
+00:03:30,633 --> 00:03:34,033
+Right. The producer of of the request.
+
+73
+00:03:35,466 --> 00:03:35,733
+All right.
+
+74
+00:03:35,733 --> 00:03:37,166
+So here's the two techniques.
+
+75
+00:03:37,166 --> 00:03:40,333
+One is called push
+and the other one is called pull.
+
+76
+00:03:41,266 --> 00:03:44,366
+Now on the push
+this is where the producer,
+
+77
+00:03:44,366 --> 00:03:48,200
+the one asking for the request of work
+to be done on the backend
+
+78
+00:03:48,200 --> 00:03:52,866
+microservice, emits
+when it's ready, it just emits.
+
+79
+00:03:52,866 --> 00:03:55,333
+Hey, I need you to do this work for me.
+
+80
+00:03:55,333 --> 00:03:56,700
+This works out really well, right?
+
+81
+00:03:56,700 --> 00:04:01,433
+This is pretty typical,
+low delivery latency under healthy load.
+
+82
+00:04:01,433 --> 00:04:03,733
+This works very, very well, right.
+
+83
+00:04:03,733 --> 00:04:08,300
+But if I'm producing more
+of those requests than what the backend
+
+84
+00:04:08,300 --> 00:04:11,466
+can handle, then I can really
+
+85
+00:04:11,466 --> 00:04:14,533
+easily run into, some issues there.
+
+86
+00:04:14,533 --> 00:04:18,600
+So I need some back pressure
+or I need some bounded cues
+
+87
+00:04:18,933 --> 00:04:23,233
+that can I reject or drop,
+those requests as they go in.
+
+88
+00:04:23,233 --> 00:04:23,466
+Right.
+
+89
+00:04:23,466 --> 00:04:27,133
+Because if I send it off,
+I'm doing a fire and forget
+
+90
+00:04:28,500 --> 00:04:30,766
+and, the backend can't handle it.
+
+91
+00:04:30,766 --> 00:04:36,200
+It may drop or reject some of those,
+those, requests that are coming in.
+
+92
+00:04:36,933 --> 00:04:41,866
+So this is where policy, and business, 
+criticality, have a big play.
+
+93
+00:04:42,466 --> 00:04:46,433
+Another option is this
+instead of the producer saying, hey,
+
+94
+00:04:47,166 --> 00:04:51,033
+I need you to go
+do this work for me instead, the worker,
+
+95
+00:04:51,033 --> 00:04:56,100
+a consumer of that request, says, hey,
+I can do some work.
+
+96
+00:04:56,100 --> 00:04:58,200
+Anyone got work for me to do?
+
+97
+00:04:58,200 --> 00:05:03,000
+And it typically and in this case
+it says I can do five things right now.
+
+98
+00:05:03,166 --> 00:05:04,633
+So can you give me five things.
+
+99
+00:05:04,633 --> 00:05:08,600
+So it's going to pull those off
+of the message bus and handle those.
+
+100
+00:05:08,900 --> 00:05:13,133
+And then it will naturally,
+keep up that concurrency control.
+
+101
+00:05:13,133 --> 00:05:15,766
+And you can easily throttle
+the back in this way.
+
+102
+00:05:15,766 --> 00:05:16,333
+Right.
+
+103
+00:05:16,333 --> 00:05:21,333
+This pull method is hey, I'm
+going to go pull those request processing.
+
+104
+00:05:21,333 --> 00:05:25,733
+It gives you better stability,
+but you have some higher latency.
+
+105
+00:05:26,433 --> 00:05:27,900
+From the, from the pooling.
+
+106
+00:05:27,900 --> 00:05:28,400
+Right.
+
+107
+00:05:28,400 --> 00:05:31,400
+Because I've got to go out and ask,
+hey, I, can I do some?
+
+108
+00:05:31,633 --> 00:05:35,800
+So there's some, there's some issues there
+and there's some leases
+
+109
+00:05:35,800 --> 00:05:38,900
+on, on those socket connections
+and things that you have to worry about.
+
+110
+00:05:39,133 --> 00:05:41,933
+So those are the sorts of things
+that you have to deal.
+
+111
+00:05:41,933 --> 00:05:44,833
+Pooling is a little more complex
+than just a straight up push.
+
+112
+00:05:44,833 --> 00:05:47,333
+So let's let's take a look at it.
+
+113
+00:05:47,333 --> 00:05:50,000
+Now if I marry the two together,
+
+114
+00:05:50,000 --> 00:05:53,200
+then I can have a hybrid demand
+signal flow.
+
+115
+00:05:53,200 --> 00:05:56,933
+So in this case,
+what happens is the consumer,
+
+116
+00:05:57,900 --> 00:06:00,333
+the worker be here, right.
+
+117
+00:06:00,333 --> 00:06:03,333
+He's saying I can handle this
+many things right now.
+
+118
+00:06:04,500 --> 00:06:05,766
+Okay, great.
+
+119
+00:06:05,766 --> 00:06:07,300
+You can handle those many things.
+
+120
+00:06:07,300 --> 00:06:10,300
+The producer will then only emit
+
+121
+00:06:10,400 --> 00:06:14,333
+and only ask for up
+to that number of requests of the amount.
+
+122
+00:06:15,066 --> 00:06:17,633
+So if the consumer on the back
+end, the worker
+
+123
+00:06:17,633 --> 00:06:21,733
+B says, I can take 100 things right now
+and the producer doesn't have 100 things,
+
+124
+00:06:22,000 --> 00:06:26,966
+is still going to admit up to maybe 80
+or 10 or one, whatever the case may be on
+
+125
+00:06:27,266 --> 00:06:31,666
+a minute, because he's he's got plenty of,
+spare time to do this for me.
+
+126
+00:06:32,100 --> 00:06:34,033
+So that's the idea behind it, right?
+
+127
+00:06:34,033 --> 00:06:35,433
+There's no new demand.
+
+128
+00:06:35,433 --> 00:06:39,133
+Means on the, for the producer to pause,
+he can just,
+
+129
+00:06:39,800 --> 00:06:43,866
+you know,
+he can just do whatever he wants.
+
+130
+00:06:43,866 --> 00:06:47,733
+But if, let's say I have 150 items
+I need to do
+
+131
+00:06:48,100 --> 00:06:51,400
+and, 
+this one worker said I can handle 100.
+
+132
+00:06:51,666 --> 00:06:54,200
+I'm going to give it 100,
+and then I'm going to wait.
+
+133
+00:06:54,200 --> 00:06:58,233
+And, for those other 50, I'm going to wait
+until I get another demand signal
+
+134
+00:06:58,233 --> 00:07:02,266
+that says, hey, I can take another
+hundred, or I can take, one at a time.
+
+135
+00:07:02,433 --> 00:07:04,933
+And then I would start pushing it through.
+
+136
+00:07:04,933 --> 00:07:05,400
+Right.
+
+137
+00:07:05,400 --> 00:07:07,800
+That's the that's the idea of for this.
+
+138
+00:07:07,800 --> 00:07:11,366
+This works really, really well for strong
+for high concurrency.
+
+139
+00:07:11,366 --> 00:07:16,266
+IOB paths where maybe I have a chain
+of several microservices that I'm pumping
+
+140
+00:07:16,266 --> 00:07:19,433
+lots of information through
+and they're flowing through.
+
+141
+00:07:19,466 --> 00:07:22,433
+This works really
+well for those sorts of things.
+
+142
+00:07:22,433 --> 00:07:27,133
+And traditionally you see this sort of, 
+concept in ETL flows,
+
+143
+00:07:27,133 --> 00:07:30,166
+right where I'm doing a lot of data
+transformation now through things.
+
+144
+00:07:30,166 --> 00:07:31,633
+So it's the same kind of concept.
+
+145
+00:07:32,933 --> 00:07:33,200
+All right.
+
+146
+00:07:33,200 --> 00:07:36,633
+So let's take a look at pool
+with some back pressure.
+
+147
+00:07:37,000 --> 00:07:37,266
+Right.
+
+148
+00:07:37,266 --> 00:07:40,933
+Remember pooling is where the worker be
+the consumer
+
+149
+00:07:41,066 --> 00:07:44,066
+is saying hey give me ten things to do.
+
+150
+00:07:44,266 --> 00:07:46,466
+I said, okay
+I can give you ten things to do. Right.
+
+151
+00:07:46,466 --> 00:07:50,166
+So in this case the producer writes
+a bunch of stuff out to the queue.
+
+152
+00:07:50,166 --> 00:07:54,533
+Hey, I need, I need,
+I need you do requests, a bunch of stuff.
+
+153
+00:07:54,533 --> 00:07:56,400
+I need you to do all this stuff for me.
+
+154
+00:07:56,400 --> 00:08:00,033
+And the worker says, okay,
+I'm going to take ten right now.
+
+155
+00:08:00,033 --> 00:08:05,533
+So I take my ten, I do my work, and then, 
+you know, I'm done with my work.
+
+156
+00:08:05,533 --> 00:08:07,533
+And I say, all right, I'm. I'm done.
+
+157
+00:08:07,533 --> 00:08:10,533
+And, 
+send those requests back out to the queue.
+
+158
+00:08:10,800 --> 00:08:15,566
+And then, you know, the producer,
+the worker, the not the producer.
+
+159
+00:08:15,566 --> 00:08:19,666
+The requester is actually, 
+going to get those responses back
+
+160
+00:08:20,466 --> 00:08:23,633
+and potentially can get another signal
+saying, hey,
+
+161
+00:08:23,633 --> 00:08:27,033
+I can take another five if you got five
+for me to do type of thing.
+
+162
+00:08:27,500 --> 00:08:27,766
+Right.
+
+163
+00:08:29,200 --> 00:08:31,233
+I okay,
+
+164
+00:08:31,233 --> 00:08:34,533
+so here are some issues
+that arise in this one.
+
+165
+00:08:34,533 --> 00:08:35,133
+Right.
+
+166
+00:08:35,133 --> 00:08:39,366
+Let's say the producer, says, hey, I need
+
+167
+00:08:41,400 --> 00:08:44,400
+I need to do a thousand things.
+
+168
+00:08:44,400 --> 00:08:46,533
+And the consumer,
+that worker be on the back end.
+
+169
+00:08:46,533 --> 00:08:49,966
+He's like, I really can't handle
+a thousand things, right?
+
+170
+00:08:50,000 --> 00:08:53,200
+And that queue starts growing really
+
+171
+00:08:53,200 --> 00:08:56,466
+large,
+especially if it's a repeat type of thing.
+
+172
+00:08:56,466 --> 00:09:02,133
+If, like I mentioned before, the producer,
+the requester here, can can run
+
+173
+00:09:02,133 --> 00:09:06,200
+10,000 requests per second,
+but the worker be on the back end,
+
+174
+00:09:06,333 --> 00:09:10,533
+the worker microservice, our consumer,
+another name for it
+
+175
+00:09:11,033 --> 00:09:13,533
+can only handle a thousand
+that I'm going to
+
+176
+00:09:13,533 --> 00:09:18,333
+just have that queue
+grow super huge and possibly crash.
+
+177
+00:09:18,333 --> 00:09:18,633
+Right.
+
+178
+00:09:18,633 --> 00:09:21,933
+And then I don't know the state of
+anything, the things that are in there.
+
+179
+00:09:22,400 --> 00:09:27,333
+So, so if I look at demand signaled,
+then what it says is, hey,
+
+180
+00:09:27,333 --> 00:09:32,433
+the producer is only going to produce,
+those requests, how many requests?
+
+181
+00:09:32,433 --> 00:09:37,333
+It has based off of of the number of slots
+that the worker says
+
+182
+00:09:37,333 --> 00:09:41,633
+I can handle what this does is
+it pushes the queue into the producers.
+
+183
+00:09:42,200 --> 00:09:42,433
+All right.
+
+184
+00:09:42,433 --> 00:09:46,033
+So if I have a whole bunch of producers,
+maybe a thousand producers,
+
+185
+00:09:46,166 --> 00:09:49,733
+they're all keeping their own track
+of the requests that they need to make.
+
+186
+00:09:50,200 --> 00:09:50,633
+Right?
+
+187
+00:09:50,633 --> 00:09:54,333
+Which that's a natural back pressure
+that goes back to those, producers.
+
+188
+00:09:55,733 --> 00:09:56,166
+Okay.
+
+189
+00:09:56,166 --> 00:09:57,800
+There's
+lots of different techniques to use.
+
+190
+00:09:57,800 --> 00:10:00,066
+This one is through an API gateway.
+
+191
+00:10:00,066 --> 00:10:05,733
+So in an API gateway, we can, handle
+like these inbound requests.
+
+192
+00:10:06,033 --> 00:10:09,233
+I can put a limit and say, look,
+you can only handle 1500
+
+193
+00:10:09,500 --> 00:10:13,000
+requests per second,
+and I'll give you, up to, like,
+
+194
+00:10:13,000 --> 00:10:18,633
+a 300 burst on that, like 300
+all at once type of thing.
+
+195
+00:10:18,933 --> 00:10:21,700
+And if you go beyond that,
+
+196
+00:10:21,700 --> 00:10:25,866
+then I'm going to send back
+to whoever made that call a 429.
+
+197
+00:10:26,433 --> 00:10:28,033
+Too many requests were made.
+
+198
+00:10:28,033 --> 00:10:30,733
+So you need to slow things down. Right.
+
+199
+00:10:30,733 --> 00:10:32,666
+So this is at the API gateway.
+
+200
+00:10:32,666 --> 00:10:37,666
+So this way kind of that back pressure
+logic is sitting in the API gateway.
+
+201
+00:10:38,400 --> 00:10:43,366
+Another option
+here is where the worker is pushing back.
+
+202
+00:10:43,366 --> 00:10:43,633
+Right.
+
+203
+00:10:43,633 --> 00:10:48,766
+It's saying, hey, I am only going to take 
+ten things at a time.
+
+204
+00:10:48,766 --> 00:10:51,766
+So in this example
+here in this Python code,
+
+205
+00:10:52,033 --> 00:10:55,066
+I'm going to say
+I'm only taking ten things at a time.
+
+206
+00:10:56,033 --> 00:10:57,333
+You can give me ten things.
+
+207
+00:10:57,333 --> 00:10:58,600
+That's it.
+
+208
+00:10:58,600 --> 00:11:01,200
+So the concurrency is built
+into the microservice,
+
+209
+00:11:01,200 --> 00:11:04,366
+or that concurrency limit is built
+into the microservice itself,
+
+210
+00:11:04,666 --> 00:11:08,000
+and it tells that, hey, this is the max
+number of things I can take out of time.
+
+211
+00:11:08,600 --> 00:11:10,166
+This is a you see this?
+
+212
+00:11:10,166 --> 00:11:14,533
+You see this even in some, 
+synchronous calls where there's a limit on
+
+213
+00:11:14,533 --> 00:11:18,900
+how many things you can, request off
+a big list and pagination happens.
+
+214
+00:11:19,700 --> 00:11:22,333
+These are pretty easy,
+straightforward things.
+
+215
+00:11:22,333 --> 00:11:26,733
+Another thing is where the subscriber
+sets the initial demand.
+
+216
+00:11:26,733 --> 00:11:28,333
+So this is the guy
+
+217
+00:11:28,333 --> 00:11:31,866
+I remember the subscribers
+one requesting all of the work to be done.
+
+218
+00:11:32,266 --> 00:11:35,366
+He goes, yeah, you know,
+I got 1500 things to do.
+
+219
+00:11:36,233 --> 00:11:38,533
+And then what happens?
+
+220
+00:11:38,533 --> 00:11:43,000
+Next is the worker bee says,
+well guess what, I can only take 100.
+
+221
+00:11:44,100 --> 00:11:45,633
+My can give me the 100.
+
+222
+00:11:45,633 --> 00:11:47,300
+I'll. I'll give you 100.
+
+223
+00:11:47,300 --> 00:11:48,633
+And then, you know,
+
+224
+00:11:48,633 --> 00:11:52,633
+I'll wait till, I hear back from you
+whether I can take anymore.
+
+225
+00:11:53,233 --> 00:11:56,133
+And then it can say, all right,
+I can take another ten,
+
+226
+00:11:56,133 --> 00:11:57,633
+and then you can go that route.
+
+227
+00:11:57,633 --> 00:12:00,733
+This could be really interesting, too,
+if I have multiple instances
+
+228
+00:12:00,733 --> 00:12:04,333
+of the same microservice running,
+and maybe I've got 100 of them
+
+229
+00:12:05,433 --> 00:12:08,700
+and the, the front end is smart enough.
+
+230
+00:12:08,700 --> 00:12:10,900
+The subscriber here, right
+
+231
+00:12:10,900 --> 00:12:14,666
+now, the requester of these, 
+work to be done is smart enough to,
+
+232
+00:12:14,666 --> 00:12:19,366
+to get all these requests back
+and send them back out in batches.
+
+233
+00:12:20,133 --> 00:12:23,133
+That could be very interesting as well.
+
+234
+00:12:24,133 --> 00:12:24,533
+Okay.
+
+235
+00:12:24,533 --> 00:12:28,366
+Next thing you need to look at,
+because there's drop offs are because
+
+236
+00:12:28,366 --> 00:12:32,866
+there's drop offs, there are drop offs
+with just a straight up, pool.
+
+237
+00:12:32,866 --> 00:12:36,500
+Our push method A but it's easier.
+
+238
+00:12:36,500 --> 00:12:37,866
+The logic is easier.
+
+239
+00:12:37,866 --> 00:12:41,333
+I need to look at all of the different, 
+business semantics.
+
+240
+00:12:41,333 --> 00:12:43,866
+Is it okay to maybe drop a message or two?
+
+241
+00:12:43,866 --> 00:12:44,500
+It might be.
+
+242
+00:12:44,500 --> 00:12:45,300
+It might not.
+
+243
+00:12:45,300 --> 00:12:47,500
+You have to make that determination.
+
+244
+00:12:47,500 --> 00:12:50,800
+So in this case, 
+I got to look and see things
+
+245
+00:12:50,800 --> 00:12:53,800
+like payments, orders,
+financial track transactions.
+
+246
+00:12:54,133 --> 00:12:55,300
+I want some guarantees.
+
+247
+00:12:55,300 --> 00:12:57,566
+I don't want those things
+dropping off. Right.
+
+248
+00:12:57,566 --> 00:13:01,000
+So. All right, so which technique
+would you use their mascots in here.
+
+249
+00:13:01,000 --> 00:13:04,000
+Think about you could say, they may drop.
+
+250
+00:13:04,533 --> 00:13:06,333
+I'm just sampling things anyway.
+
+251
+00:13:06,333 --> 00:13:10,833
+Like in debug logs, high cardinality
+telemetry type of thing.
+
+252
+00:13:10,833 --> 00:13:12,400
+Where there's me then.
+
+253
+00:13:12,400 --> 00:13:14,200
+All right, that might be okay.
+
+254
+00:13:14,200 --> 00:13:16,733
+Other wins where? Hey, it's.
+
+255
+00:13:16,733 --> 00:13:19,800
+I can expect, a delay in retry. Okay.
+
+256
+00:13:19,800 --> 00:13:22,800
+To do that, I want never drops, but,
+
+257
+00:13:22,800 --> 00:13:26,366
+but I'm going to I want some assurances.
+
+258
+00:13:26,366 --> 00:13:30,333
+So, I'm okay to take some delays
+and retries instead.
+
+259
+00:13:30,666 --> 00:13:32,266
+Dead letter.
+
+260
+00:13:32,266 --> 00:13:33,000
+This is.
+
+261
+00:13:33,000 --> 00:13:33,700
+I send it out.
+
+262
+00:13:33,700 --> 00:13:36,066
+I don't care if it gets processed or not.
+
+263
+00:13:37,133 --> 00:13:37,433
+And the.
+
+264
+00:13:37,433 --> 00:13:40,200
+Believe me, there are times
+when when you can do that.
+
+265
+00:13:40,200 --> 00:13:44,533
+Just make sure that you're keeping the
+policy explicit per topic or per endpoint.
+
+266
+00:13:45,400 --> 00:13:48,400
+And that's a decision
+that you have to make as well.
+
+267
+00:13:48,666 --> 00:13:52,966
+I suggest topics, but if you're over
+using topics for multiple things,
+
+268
+00:13:52,966 --> 00:13:55,966
+then that's when you may want to separate
+multiple topics
+
+269
+00:13:55,966 --> 00:13:58,966
+on your message boxes.
+
+270
+00:13:59,133 --> 00:14:00,033
+Okay.
+
+271
+00:14:00,033 --> 00:14:01,366
+When do you use what.
+
+272
+00:14:01,366 --> 00:14:04,800
+Oh, this is
+this makes you an architect, right?
+
+273
+00:14:05,033 --> 00:14:07,566
+You want to choose push for low latency.
+
+274
+00:14:07,566 --> 00:14:10,566
+Fan out where there's some drop
+that is acceptable.
+
+275
+00:14:11,333 --> 00:14:14,733
+You want to use pool
+for like highly durable jobs with strict
+
+276
+00:14:14,733 --> 00:14:16,366
+throughput controls.
+
+277
+00:14:16,366 --> 00:14:19,733
+You want it very strict,
+then you want to use that pool technique
+
+278
+00:14:19,733 --> 00:14:24,000
+and then you can use the hybrid, 
+which is a little more complex
+
+279
+00:14:24,000 --> 00:14:26,400
+for more stable high
+concurrency streaming.
+
+280
+00:14:26,400 --> 00:14:30,033
+This is great if you're, setting up
+pipelines to pipe data
+
+281
+00:14:30,033 --> 00:14:33,700
+through and do data transformations
+across multiple microservices.
+
+282
+00:14:34,133 --> 00:14:34,966
+Right.
+
+283
+00:14:34,966 --> 00:14:39,033
+And also look at per
+domain policies over one glob.
+
+284
+00:14:39,033 --> 00:14:42,333
+Global strategy, for the,
+
+285
+00:14:42,333 --> 00:14:45,800
+the, the different techniques
+that you're going to use.
+
+286
+00:14:45,800 --> 00:14:46,500
+Right.
+
+287
+00:14:46,500 --> 00:14:51,933
+And document to document the overflow
+behavior of your API endpoints.
+
+288
+00:14:52,200 --> 00:14:56,200
+And what happens if things go outside
+of the boundaries that you've established,
+
+289
+00:14:56,566 --> 00:14:59,700
+and make sure that you're validating
+those policies with load tests,
+
+290
+00:15:00,033 --> 00:15:02,133
+and get rid of any
+assumptions that you have.
+
+291
+00:15:03,533 --> 00:15:05,033
+All right.
+
+292
+00:15:05,033 --> 00:15:07,833
+Lots of things that you have to decide on
+as an architect.
+
+293
+00:15:07,833 --> 00:15:09,966
+Is data loss acceptable?
+
+294
+00:15:09,966 --> 00:15:12,933
+Do consumers have variable processing
+times?
+
+295
+00:15:12,933 --> 00:15:15,933
+Those consumers remember the consumers,
+
+296
+00:15:16,100 --> 00:15:16,466
+right.
+
+297
+00:15:16,466 --> 00:15:18,966
+They're the ones that are actually
+doing the work. Right.
+
+298
+00:15:18,966 --> 00:15:21,966
+I know it sounds counterintuitive,
+but in a published and subscribe,
+
+299
+00:15:21,966 --> 00:15:23,000
+they're consumers.
+
+300
+00:15:23,000 --> 00:15:25,566
+The workers do
+they have variable processing time?
+
+301
+00:15:25,566 --> 00:15:27,733
+If so, then there's some techniques.
+
+302
+00:15:27,733 --> 00:15:29,933
+Poor probably or hybrid.
+
+303
+00:15:29,933 --> 00:15:33,000
+Is low latency
+more important than strict durability?
+
+304
+00:15:34,133 --> 00:15:35,566
+Push or pull.
+
+305
+00:15:35,566 --> 00:15:35,933
+Right.
+
+306
+00:15:35,933 --> 00:15:40,800
+Our queue depths lag
+rejection rate and retrieves observable.
+
+307
+00:15:41,933 --> 00:15:42,200
+Right.
+
+308
+00:15:42,200 --> 00:15:44,733
+So and then, 
+what's your overflow behavior?
+
+309
+00:15:44,733 --> 00:15:47,500
+What are you going to do?
+You're going to just drop things quietly.
+
+310
+00:15:47,500 --> 00:15:51,300
+Are you going to do, 
+allow them to do retries
+
+311
+00:15:51,566 --> 00:15:54,566
+or are you going to do a 429 and say,
+stop bugging me?
+
+312
+00:15:54,666 --> 00:15:57,033
+That's what 429 basically says too much.
+
+313
+00:15:57,033 --> 00:15:58,866
+Stop bugging me. Give me a break.
+
+314
+00:15:59,900 --> 00:16:00,333
+Okay,
+
+315
+00:16:00,333 --> 00:16:03,333
+so all of these architectural trade offs
+you need to look at.
+
+316
+00:16:03,333 --> 00:16:05,066
+So here here they are.
+
+317
+00:16:05,066 --> 00:16:08,133
+Stability throughput.
+
+318
+00:16:08,466 --> 00:16:09,966
+We talked about those next.
+
+319
+00:16:09,966 --> 00:16:11,833
+The next one is interaction freshness.
+
+320
+00:16:11,833 --> 00:16:14,466
+It's like buying fruit right right.
+
+321
+00:16:14,466 --> 00:16:19,033
+If if I am concerned about
+how fresh the events are
+
+322
+00:16:19,033 --> 00:16:22,033
+and I've got big,
+huge buffers of queues of things,
+
+323
+00:16:22,666 --> 00:16:26,233
+and I normally process things first
+in, first out,
+
+324
+00:16:26,766 --> 00:16:32,066
+then am I getting the freshness
+if I do, last in, first out or, life.
+
+325
+00:16:32,066 --> 00:16:33,933
+So then I can have starvation.
+
+326
+00:16:33,933 --> 00:16:37,100
+So you have to understand freshness
+on, on those buffer things.
+
+327
+00:16:37,100 --> 00:16:40,000
+And so I handled that complexity.
+
+328
+00:16:40,000 --> 00:16:42,500
+We've talked a lot about complexity.
+
+329
+00:16:42,500 --> 00:16:44,100
+Operations.
+
+330
+00:16:44,100 --> 00:16:46,600
+You're going to need some dashboards
+
+331
+00:16:46,600 --> 00:16:49,333
+and alerts
+that are required for tuning these things.
+
+332
+00:16:49,333 --> 00:16:51,466
+And tuning them is very tricky. Right.
+
+333
+00:16:51,466 --> 00:16:53,133
+How much back pressure?
+
+334
+00:16:53,133 --> 00:16:55,566
+How many times do I retry.
+What am I timeouts?
+
+335
+00:16:55,566 --> 00:17:00,066
+What am I intervals between time, 
+retries, all those sorts of things
+
+336
+00:17:00,366 --> 00:17:04,533
+and most importantly, cost as we moving
+things more and more into the cloud.
+
+337
+00:17:04,833 --> 00:17:08,500
+Every time I spin up a new
+instance, it cost me money.
+
+338
+00:17:11,200 --> 00:17:14,200
+Okay, big pitfalls
+
+339
+00:17:14,733 --> 00:17:16,033
+don't look at unbounded.
+
+340
+00:17:16,033 --> 00:17:19,100
+Cuz they're there. Uses hidden buffers.
+
+341
+00:17:19,233 --> 00:17:23,366
+You can blow those puppies out once you
+start scaling for very simple things, man.
+
+342
+00:17:23,433 --> 00:17:24,566
+No big deal, right?
+
+343
+00:17:24,566 --> 00:17:27,533
+Make sure that I'm not applying, one
+
+344
+00:17:27,533 --> 00:17:30,533
+policy globally and that policies
+are applied appropriately.
+
+345
+00:17:30,866 --> 00:17:34,300
+I don't want a policy
+applied to every single message,
+
+346
+00:17:35,133 --> 00:17:38,033
+but every single message type. Absolutely.
+
+347
+00:17:38,033 --> 00:17:38,766
+Okay.
+
+348
+00:17:38,766 --> 00:17:43,033
+Critical events make sure they're not
+dropped without some kind of audit trail.
+
+349
+00:17:43,566 --> 00:17:47,033
+Aggressive
+retries can really slow things down,
+
+350
+00:17:47,466 --> 00:17:50,533
+especially during active, overload.
+
+351
+00:17:51,100 --> 00:17:53,733
+And then make sure that you're
+capturing those metrics
+
+352
+00:17:53,733 --> 00:17:57,700
+for lag and saturation, things like that,
+and then look back.
+
+353
+00:17:57,700 --> 00:18:00,700
+Pressure is there as control contract,
+
+354
+00:18:00,733 --> 00:18:03,266
+not as optional optimization.
+
+355
+00:18:03,266 --> 00:18:06,266
+So it's a control contract between the
+
+356
+00:18:06,333 --> 00:18:09,366
+the producer of
+the request and the worker.

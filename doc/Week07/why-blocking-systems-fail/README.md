@@ -1,5 +1,8 @@
 # Why Blocking Systems Fail
 
+Video: https://youtu.be/BRAjt_5jRSE
+
+
 **Outcomes**
 - Explain why blocking I/O creates scalability limits
 - Predict failure behavior under latency spikes

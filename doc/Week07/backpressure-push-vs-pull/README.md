@@ -1,5 +1,7 @@
 # Backpressure Push vs Pull
 
+Video: https://youtu.be/FpIvK3Mm-MU
+
 **Outcomes**
 - Define backpressure and why it is required
 - Distinguish push and pull flow-control models
