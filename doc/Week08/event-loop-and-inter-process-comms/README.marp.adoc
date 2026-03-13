@@ -7,6 +7,8 @@
 :revealjs_width: "100%"
 :revealjs_height: "100%"
 
+Video: https://youtu.be/_68lb9BznDY
+
 == Goals
 - Explain the microservice event loop execution model
 - Show how blocking I/O reduces throughput

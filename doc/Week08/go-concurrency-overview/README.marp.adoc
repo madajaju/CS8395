@@ -7,6 +7,8 @@
 :revealjs_width: "100%"
 :revealjs_height: "100%"
 
+Video: https://youtu.be/HoI7LGD7kaM
+
 == Goals
 - Explain goroutines, channels, and worker pools
 - Recognize when Go concurrency improves throughput
@@ -20,6 +22,18 @@
 - `context` carries cancellation and deadlines
 - Worker pools bound resource usage
 - Concurrency is most useful for I/O-heavy paths
+
+== Why Go Concurrency Works Well for Services
+- A goroutine is much cheaper than an OS thread
+- Waiting on network or disk I/O does not block the whole process
+- The Go runtime schedules many blocked and runnable goroutines efficiently
+- This is why Go is a strong fit for gateways, aggregators, and event consumers
+
+== Mental Model
+- Concurrency is not "make everything parallel"
+- It is "split independent waiting work into separate flows"
+- Use channels to hand results back safely
+- Use `context` and `select` so work can stop when it no longer matters
 
 [.columns]
 == Fan-Out/Fan-In Pattern
@@ -59,6 +73,8 @@ H --> Client: response
 - Two downstream calls in parallel
 - Buffered channel avoids first-send blocking
 - Handler waits for both values then merges
+- Useful when downstream calls are independent
+- Latency approaches the slower call, not the sum
 --
 [.column]
 --
@@ -76,12 +92,38 @@ response := combine(inv, price)
 --
 
 [.columns]
+== Better Result-Shaping
+[.column]
+--
+- Real services usually need to know which result arrived
+- Wrap values with source + error fields
+- Avoids guessing based on receive order
+--
+[.column]
+--
+[source,go]
+----
+type result struct {
+  source string
+  value  string
+  err    error
+}
+
+results := make(chan result, 2)
+
+go func() { results <- result{"inventory", callInventory(), nil} }()
+go func() { results <- result{"pricing", callPricing(), nil} }()
+----
+--
+
+[.columns]
 == Example: Bounded Worker Pool
 [.column]
 --
 - Fixed workers cap active processing
 - Queue absorbs moderate bursts
 - Stable behavior under sustained load
+- Protects memory and downstream dependencies
 --
 [.column]
 --
@@ -99,6 +141,55 @@ close(jobs)
 ----
 --
 
+[.columns]
+== `select` for Timeouts and Cancellation
+[.column]
+--
+- Wait on multiple events at once
+- First event wins: result, timeout, or cancellation
+- This is how handlers avoid hanging forever
+--
+
+
+[.column]
+--
+[source,go]
+----
+select {
+case msg := <-results:
+  return msg, nil
+case <-time.After(200 * time.Millisecond):
+  return "", errors.New("timeout")
+case <-ctx.Done():
+  return "", ctx.Err()
+}
+----
+--
+
+[.columns]
+== Context-Aware Worker
+[.column]
+--
+- Workers should stop on shutdown or request cancellation
+- Otherwise goroutines can leak and keep doing useless work
+--
+[.column]
+--
+[source,go]
+----
+func worker(ctx context.Context, jobs <-chan Job) {
+  for {
+    select {
+    case <-ctx.Done():
+      return
+    case job := <-jobs:
+      process(job)
+    }
+  }
+}
+----
+--
+
 == When to Use
 - Independent I/O calls per request
 - Background processing with controlled concurrency
@@ -109,6 +200,8 @@ close(jobs)
 - Race conditions and deadlocks add complexity
 - Unbounded goroutines can cause memory pressure
 - Always propagate `context` to downstream calls
+- Not every flow needs concurrency; sequential logic is often simpler
+- Channels without timeout or shutdown paths can block forever
 
 == Recap
 - Go concurrency is a practical scaling tool for I/O paths

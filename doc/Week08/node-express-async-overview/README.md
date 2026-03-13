@@ -1,6 +1,7 @@
 # Node Express Async Overview
 
-**Length:** 10-15 minutes
+
+Video: https://youtu.be/CDmmdEFNtmk
 
 **Purpose:** Explain non-blocking I/O in Node.js and how async patterns improve API throughput.
 

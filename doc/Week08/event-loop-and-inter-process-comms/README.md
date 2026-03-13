@@ -1,6 +1,7 @@
 # Event Loop and Inter-Process Communication in Microservices
 
-**Length:** 15-20 minutes
+Video: https://youtu.be/_68lb9BznDY
+
 
 **Purpose:** Explain how the microservice event loop works, why blocking I/O hurts throughput, and how services communicate using event-driven architecture with 2-service and 3-service scenarios.
 

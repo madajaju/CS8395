@@ -1,0 +1,651 @@
+﻿1
+00:00:00,333 --> 00:00:00,733
+Okay.
+
+2
+00:00:00,733 --> 00:00:04,433
+In this lecture we're
+going to talk about Node Express and Async
+
+3
+00:00:04,866 --> 00:00:07,600
+as a microservice event
+
+4
+00:00:07,600 --> 00:00:10,600
+loop and asynchronous
+and programing technique.
+
+5
+00:00:10,600 --> 00:00:14,966
+So we're going to use the express server
+as our Http
+
+6
+00:00:14,966 --> 00:00:18,666
+server here,
+which is key to handling these events.
+
+7
+00:00:18,666 --> 00:00:18,966
+Right.
+
+8
+00:00:18,966 --> 00:00:22,900
+So we're gonna explain the event loop
+behavior in express services.
+
+9
+00:00:23,100 --> 00:00:24,933
+We're going to use async handlers.
+
+10
+00:00:24,933 --> 00:00:29,866
+And we're also going to talk about
+streams just to touch on streams okay.
+
+11
+00:00:30,300 --> 00:00:36,533
+So real quick node executes JavaScript
+in a single threaded event loop.
+
+12
+00:00:36,533 --> 00:00:39,900
+And this is important to understand
+this, that it's single threaded.
+
+13
+00:00:41,000 --> 00:00:41,233
+Right.
+
+14
+00:00:41,233 --> 00:00:45,166
+And a lot of people go
+that's one of the limitations of node.
+
+15
+00:00:45,466 --> 00:00:48,833
+It's also one of its strengths
+because it handles
+
+16
+00:00:48,833 --> 00:00:51,833
+IO operations completely asynchronously.
+
+17
+00:00:52,066 --> 00:00:54,466
+Even though I'm in an event loop,
+I don't have to fire up
+
+18
+00:00:54,466 --> 00:00:55,566
+another thread to do it.
+
+19
+00:00:55,566 --> 00:01:00,066
+So it's it's they're pretty good for
+lightweight small microservices, right.
+
+20
+00:01:01,633 --> 00:01:02,600
+I can use this
+
+21
+00:01:02,600 --> 00:01:05,600
+concept of async and async await
+
+22
+00:01:05,600 --> 00:01:09,500
+that keeps non-blocking, logic
+
+23
+00:01:09,500 --> 00:01:13,266
+readable instead of through its callback
+mechanism that it normally uses.
+
+24
+00:01:13,566 --> 00:01:17,866
+In fact, it hides the back end, 
+processing that it's doing,
+
+25
+00:01:18,066 --> 00:01:21,533
+through callbacks
+by putting in these logical,
+
+26
+00:01:21,600 --> 00:01:24,900
+syntactic sugar in the,
+
+27
+00:01:26,100 --> 00:01:27,800
+in the language. Right.
+
+28
+00:01:27,800 --> 00:01:31,366
+And then another thing that it does really
+well as the concept of streaming.
+
+29
+00:01:31,733 --> 00:01:34,733
+So I can stream information
+from the back end,
+
+30
+00:01:35,433 --> 00:01:39,366
+whether it's from a big file system
+or even a database
+
+31
+00:01:39,733 --> 00:01:44,300
+or even a video service, I can stream
+that information through this microservice
+
+32
+00:01:44,300 --> 00:01:48,866
+without, blowing up my memory
+and buffering all that memory.
+
+33
+00:01:48,866 --> 00:01:51,866
+It just it's a pass through,
+which is really slick.
+
+34
+00:01:51,900 --> 00:01:52,766
+Right?
+
+35
+00:01:52,766 --> 00:01:56,766
+And, you know,
+I need to also make sure that I am dealing
+
+36
+00:01:56,766 --> 00:02:00,366
+and remember that
+I am dealing with an event loop and that,
+
+37
+00:02:00,566 --> 00:02:04,200
+you know, if the event loop is lagging,
+then that could be a key,
+
+38
+00:02:04,700 --> 00:02:08,166
+signal that I've got, 
+health issues in the process.
+
+39
+00:02:08,566 --> 00:02:09,133
+Right.
+
+40
+00:02:09,133 --> 00:02:13,366
+And concurrency limits are protect
+any downstream dependencies.
+
+41
+00:02:14,200 --> 00:02:15,666
+And we'll, we'll go over those things.
+
+42
+00:02:15,666 --> 00:02:18,300
+So I request flow. Very simple. Right.
+
+43
+00:02:18,300 --> 00:02:20,166
+I got my express server up there.
+
+44
+00:02:20,166 --> 00:02:22,166
+It's my handler. Right.
+
+45
+00:02:22,166 --> 00:02:26,633
+When a request comes in on the Http,
+socket that I've opened up,
+
+46
+00:02:27,566 --> 00:02:31,733
+I get as an async
+IO on the event loop, right?
+
+47
+00:02:31,900 --> 00:02:34,900
+And it's going to go
+do something on the back end
+
+48
+00:02:35,233 --> 00:02:38,233
+and it's non-blocking
+so other events can come in
+
+49
+00:02:38,400 --> 00:02:41,400
+during this time when it gets resolved
+and I pass that information
+
+50
+00:02:41,400 --> 00:02:44,400
+back out to the Http response.
+
+51
+00:02:45,400 --> 00:02:46,066
+And this is built
+
+52
+00:02:46,066 --> 00:02:49,866
+in into express, right out of the gun.
+
+53
+00:02:49,866 --> 00:02:54,166
+Now, if I want to do other things
+inside my event loop
+
+54
+00:02:54,433 --> 00:02:57,333
+that are non-blocking calls,
+
+55
+00:02:57,333 --> 00:03:00,333
+even though they look like blocked code,
+
+56
+00:03:00,466 --> 00:03:04,266
+I use this concept of async and await.
+
+57
+00:03:04,300 --> 00:03:07,300
+So await means async await,
+
+58
+00:03:08,033 --> 00:03:11,833
+which in so the concept,
+the promises are introduced.
+
+59
+00:03:12,100 --> 00:03:14,866
+And if you don't understand
+promises, there's a lecture on promises
+
+60
+00:03:14,866 --> 00:03:16,000
+that you can take a look at.
+
+61
+00:03:16,000 --> 00:03:19,300
+But basically a promise says
+I'm going to go do something
+
+62
+00:03:19,300 --> 00:03:22,133
+and I promise to get back to you
+when I'm done.
+
+63
+00:03:22,133 --> 00:03:24,200
+That's the easiest way to think about it.
+
+64
+00:03:24,200 --> 00:03:28,033
+So in this case here, the promises
+all says,
+
+65
+00:03:28,566 --> 00:03:32,200
+only return back
+when all the promises are done.
+
+66
+00:03:32,866 --> 00:03:37,200
+So, user client get is going
+
+67
+00:03:37,233 --> 00:03:39,333
+is an asynchronous call,
+and there's a promise
+
+68
+00:03:39,333 --> 00:03:41,066
+there that I'm going to return something.
+
+69
+00:03:41,066 --> 00:03:43,566
+And when that's done, it will return.
+
+70
+00:03:43,566 --> 00:03:46,700
+And then when order client list
+by user is called.
+
+71
+00:03:46,966 --> 00:03:51,833
+And this could this is an async call
+to another back end process or somewhere.
+
+72
+00:03:52,366 --> 00:03:55,900
+When both of those get resolved then
+
+73
+00:03:55,900 --> 00:03:59,500
+and only then will this await get resolved
+
+74
+00:03:59,966 --> 00:04:03,833
+and I will get user and orders
+passed back into these variables.
+
+75
+00:04:04,033 --> 00:04:06,466
+So if I were to write this code out,
+
+76
+00:04:07,766 --> 00:04:08,700
+with the callback
+
+77
+00:04:08,700 --> 00:04:12,133
+mechanism that, Node.js has,
+this would be
+
+78
+00:04:12,566 --> 00:04:17,600
+probably three times larger than this
+and it would be very hard to follow.
+
+79
+00:04:17,600 --> 00:04:21,733
+So this is syntactic sugar
+really, beneficial here.
+
+80
+00:04:22,100 --> 00:04:25,400
+And they've done a great job
+at making this easy to understand.
+
+81
+00:04:25,666 --> 00:04:28,666
+So only
+when those both promises are resolved
+
+82
+00:04:28,900 --> 00:04:33,133
+do I go on to there, respond
+with Jason back
+
+83
+00:04:33,133 --> 00:04:37,700
+to whoever called me in this,
+handler of the express, server.
+
+84
+00:04:39,200 --> 00:04:42,700
+Okay, here
+is an example of handling streams.
+
+85
+00:04:43,100 --> 00:04:45,600
+So this is actually pretty cool as well.
+
+86
+00:04:45,600 --> 00:04:47,300
+It's an async call.
+
+87
+00:04:47,300 --> 00:04:50,533
+I create a stream here
+called an export stream.
+
+88
+00:04:51,066 --> 00:04:56,333
+And then I can just pipe
+whatever is coming in into that stream.
+
+89
+00:04:56,333 --> 00:04:57,966
+And I'm just a pass through.
+
+90
+00:04:57,966 --> 00:05:03,233
+In this case this works really well
+for exports of large responses.
+
+91
+00:05:03,233 --> 00:05:08,533
+Maybe, maybe I'm downloading,
+from my microservice here.
+
+92
+00:05:08,533 --> 00:05:12,300
+Maybe I'm downloading a audio file
+or a video file.
+
+93
+00:05:12,600 --> 00:05:15,633
+So instead of it
+bringing it all into memory
+
+94
+00:05:15,633 --> 00:05:20,766
+and then sending it, it just pipes this
+through to whoever made the call.
+
+95
+00:05:20,900 --> 00:05:24,200
+So this makes it a very fast
+and efficient.
+
+96
+00:05:24,633 --> 00:05:25,266
+It's not,
+
+97
+00:05:25,266 --> 00:05:29,233
+pulling everything into memory,
+which means I'm not using extra resources.
+
+98
+00:05:29,233 --> 00:05:30,000
+I don't need to.
+
+99
+00:05:31,000 --> 00:05:31,566
+Okay.
+
+100
+00:05:31,566 --> 00:05:35,266
+When to use the,
+when to use Node.js express and async,
+
+101
+00:05:35,533 --> 00:05:38,533
+when I have heavy
+IO bound, types of things.
+
+102
+00:05:38,600 --> 00:05:41,600
+Aggregating APIs. This is great for that.
+
+103
+00:05:41,733 --> 00:05:45,200
+When I have high concurrency
+or connection counts,
+
+104
+00:05:45,400 --> 00:05:47,466
+these all work really well.
+
+105
+00:05:47,466 --> 00:05:49,566
+Especially the streaming. Concept.
+
+106
+00:05:49,566 --> 00:05:52,033
+It's a straight pass through, concept.
+
+107
+00:05:52,033 --> 00:05:55,033
+And it works really, really well.
+
+108
+00:05:55,100 --> 00:05:55,400
+All right.
+
+109
+00:05:55,400 --> 00:05:57,566
+Here's some trade offs
+that we need to talk about.
+
+110
+00:05:57,566 --> 00:06:01,066
+If I have blocking CPU type things,
+
+111
+00:06:01,066 --> 00:06:04,566
+remember, I'm
+single threaded right in in this stuff.
+
+112
+00:06:04,966 --> 00:06:09,500
+So you can
+and if I'm, if I'm heavy CPU bound,
+
+113
+00:06:10,033 --> 00:06:13,033
+then I could actually block
+on that event loop.
+
+114
+00:06:13,133 --> 00:06:16,300
+Remember, the event loop
+only relinquishes control
+
+115
+00:06:16,300 --> 00:06:19,333
+when there's IO
+that it's waiting on, right?
+
+116
+00:06:19,466 --> 00:06:22,700
+But if I'm heavy CPU bound,
+then I'm single threaded.
+
+117
+00:06:23,166 --> 00:06:26,766
+So most of the time
+most of the Node.js stuff
+
+118
+00:06:26,766 --> 00:06:29,933
+that I've worked on are heavily IO bound.
+
+119
+00:06:30,266 --> 00:06:33,700
+So this ends up
+not being that big of a problem, right?
+
+120
+00:06:35,100 --> 00:06:38,100
+Also make
+sure that you bound your fan out,
+
+121
+00:06:38,233 --> 00:06:41,133
+because you could overload
+a lot of dependencies.
+
+122
+00:06:41,133 --> 00:06:44,766
+If I have a lot of stuff
+going on in the back, back, processes
+
+123
+00:06:44,766 --> 00:06:47,766
+or back microservices that are out there
+
+124
+00:06:47,800 --> 00:06:50,566
+and make sure that you don't
+miss any time out or cancels
+
+125
+00:06:50,566 --> 00:06:54,166
+cancellations
+because you could increase, latency
+
+126
+00:06:54,166 --> 00:06:56,500
+because you are running
+in a single thread.
+
+127
+00:06:56,500 --> 00:06:57,833
+Don't forget that.
+
+128
+00:06:57,833 --> 00:07:01,466
+And then you want to monitor
+the event loop for lag and heap growth.
+
+129
+00:07:01,966 --> 00:07:07,066
+Because you can find, people that are
+not freeing up memory appropriately.
+
+130
+00:07:07,066 --> 00:07:10,066
+That way you can blow out
+a lot of memory as well.
+
+131
+00:07:11,133 --> 00:07:14,666
+Okay,
+so to recap, Node.js with async and await
+
+132
+00:07:15,000 --> 00:07:18,000
+are great for high concurrency IO paths.
+
+133
+00:07:18,466 --> 00:07:21,666
+It keeps handlers on non-blocking
+
+134
+00:07:21,666 --> 00:07:24,800
+concurrency and concurrency bounded right.
+
+135
+00:07:25,133 --> 00:07:28,100
+I don't have to set up worker workers
+to do this.
+
+136
+00:07:28,100 --> 00:07:29,733
+Like in some other languages.
+
+137
+00:07:29,733 --> 00:07:31,566
+I just use that async and wait.
+
+138
+00:07:31,566 --> 00:07:34,566
+And if I combine, if I combine
+
+139
+00:07:34,566 --> 00:07:37,566
+these patterns,
+I get some really good resilient controls.
+
+140
+00:07:37,733 --> 00:07:43,233
+However, it can be complex if I don't
+handle those promises correctly.
+
+141
+00:07:43,433 --> 00:07:43,700
+Right.
+
+142
+00:07:43,700 --> 00:07:47,166
+So handling those is is important.
