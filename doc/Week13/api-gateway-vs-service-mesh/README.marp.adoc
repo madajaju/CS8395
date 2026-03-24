@@ -1,35 +1,34 @@
-# API Gateway vs. Service Mesh
+= API Gateway vs. Service Mesh
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
 
-**Purpose:** Differentiates between "North-South" (edge) and "East-West" (internal) traffic management and explains the role of each in a distributed system.
+== Purpose
+Differentiates between "North-South" (edge) and "East-West" (internal) traffic management.
 
-**Outcomes**
+== Outcomes
 - Contrast API Gateway and Service Mesh responsibilities.
 - Identify common features (Rate Limiting, mTLS, Load Balancing).
 - Evaluate when a service mesh adds too much complexity.
 
----
-
-## Overview
-In a distributed system, managing traffic is a first-class concern.
+== Overview
+Managing traffic is a first-class concern in distributed systems.
 - **North-South Traffic:** External traffic from users to your system (Edge).
 - **East-West Traffic:** Internal traffic between your services (Internal).
 
-## Core Concepts
-
-### 1. API Gateway (The Edge)
+== API Gateway (The Edge)
 Acts as a single entry point for all clients.
-- **Primary Roles:** Authentication, rate limiting, request routing, protocol translation (e.g., REST to gRPC), and request aggregation.
+- **Primary Roles:** Auth, rate limiting, request routing, protocol translation, request aggregation.
 - **Focus:** User experience and security at the perimeter.
 
-### 2. Service Mesh (The Mesh)
-A dedicated infrastructure layer for service-to-service communication.
-- **Primary Roles:** mTLS (Service-to-Service Auth), retry logic, circuit breaking, observability, and fine-grained traffic control.
-- **Implementation:** Usually via a "Sidecar Proxy" (e.g., Envoy) running alongside each service instance.
+== Service Mesh (The Mesh)
+Dedicated infrastructure layer for service-to-service communication.
+- **Primary Roles:** mTLS, retry logic, circuit breaking, observability.
+- **Implementation:** Usually via "Sidecar Proxies" (e.g., Envoy).
 
----
-
-## Comparison Table
-
+== Comparison Table
 | Feature | API Gateway | Service Mesh |
 | :--- | :--- | :--- |
 | **Location** | Perimeter (Edge) | Internal (Sidecar) |
@@ -38,12 +37,9 @@ A dedicated infrastructure layer for service-to-service communication.
 | **Granularity** | Coarse (Global) | Fine (Instance-level) |
 | **Complexity** | Medium | High |
 
----
-
-## Code Examples
-
-### Java: Spring Cloud Gateway (North-South)
-```java
+== Code Example: Java (Spring Cloud Gateway)
+[source,java]
+----
 // Coarse-grained routing at the edge
 @Bean
 public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
@@ -52,31 +48,31 @@ public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
             .uri("http://httpbin.org"))
         .build();
 }
-```
+----
 
-### Go: Envoy Filter (Service Mesh / East-West)
-```yaml
+== Code Example: YAML (Envoy Retry Filter)
+[source,yaml]
+----
 # Simplified Envoy filter for internal retries
 retries:
   retry_on: "connect-failure,5xx"
   num_retries: 3
   per_try_timeout: 2s
-```
+----
 
-### Node.js: Service-to-Service call (Simplified)
-```javascript
-// Without a mesh, the service must handle retries/timeouts
+== Code Example: Node.js (Manual Retry)
+[source,javascript]
+----
+// Without a mesh, service must handle its own retries
 const response = await axios.get('http://inventory-service/items', {
     timeout: 5000,
     retries: 3 // Manual logic
 });
-```
+----
 
----
-
-## Design Diagram
-
-```plantuml
+== Design Diagram
+[plantuml, gateway-vs-mesh-diagram, png]
+----
 @startuml
 skinparam componentStyle uml2
 
@@ -97,9 +93,9 @@ SA -[#red]> SB : East-West (mTLS)
 note top of SB : Managed by Mesh
 SB -> B : Deliver
 @enduml
-```
+----
 
-## Risks and Tradeoffs
-- **Latency:** Each proxy hop (Gateway and Sidecars) adds milliseconds to the request.
-- **Complexity:** A service mesh requires a control plane (e.g., Istio) which is complex to manage and upgrade.
-- **Single Point of Failure:** While the mesh is distributed, the Control Plane can be a bottleneck. The API Gateway is often a central point of failure if not highly available.
+== Risks and Tradeoffs
+- **Latency:** Each proxy hop adds milliseconds.
+- **Complexity:** Service meshes require complex control planes (e.g., Istio).
+- **Reliability:** Gateway is a central point of failure if not HA.

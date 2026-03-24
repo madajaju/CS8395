@@ -1,0 +1,91 @@
+= Event Carried State Transfer
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains how to reduce service coupling by including required data within events, allowing services to operate autonomously.
+
+== Outcomes
+- Contrast Event Notifications with Event Carried State Transfer (ECST).
+- Identify impact on service autonomy and data consistency.
+- Explain tradeoffs between event size and coupling.
+
+== Overview
+- **Event Notification:** "User 123 updated." -> Consumer must call `GET /users/123`.
+- **Event Carried State Transfer (ECST):** "User 123 updated. Name: Jane, Email: jane@...". -> Consumer has everything.
+
+== Reducing Coupling
+- **Autonomy:** Consumers don't depend on producer availability for basic info.
+- **Resilience:** System continues to function even if the producer service is down.
+
+== Comparison Table
+| Feature | Event Notification | Event Carried State |
+| :--- | :--- | :--- |
+| **Coupling** | High (Needs API) | Low (Data in event) |
+| **Event Size** | Small | Large |
+| **Staleness** | Low (Real-time) | High (Eventual) |
+| **Autonomy** | Low | High |
+
+== Code Example: Java (Producing ECST)
+[source,java]
+----
+public void onUserUpdate(User user) {
+    // Include full user state, not just ID
+    UserUpdatedEvent event = new UserUpdatedEvent(
+        user.getId(), 
+        user.getName(), 
+        user.getEmail()
+    );
+    bus.publish("user.updated", event);
+}
+----
+
+== Code Example: Python (Consuming ECST)
+[source,python]
+----
+# Analytics Service handler
+def on_user_updated(event):
+    # Store local copy for autonomous queries
+    db.local_user_cache.upsert({
+        "id": event.user_id,
+        "email_domain": event.email.split('@')[1]
+    })
+----
+
+== Code Example: Go (Event Structure)
+[source,go]
+----
+type OrderPlacedEvent struct {
+    OrderID string // ID only
+    Items   []Item // Carried state
+    Total   float64
+}
+----
+
+== Design Diagram
+[plantuml, ecst-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+participant "User Service" as User
+queue "Message Bus" as Bus
+participant "Email Service" as Email
+
+User -> Bus : UserCreatedEvent\n{id: 1, email: 'a@b.com'}
+note right of Bus : Carries state!
+
+Email -> Email : On Event
+Email -> Email : Send welcome email
+note left of Email : No API call to User Service needed!
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Data Duplication:** Stored in many places.
+- **Stale Data:** Eventual consistency risks.
+- **Event Size:** Bloat can increase network/broker costs.
+- **Contract Versioning:** Breaking schema changes affect all consumers.

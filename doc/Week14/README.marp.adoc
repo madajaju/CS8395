@@ -1,0 +1,26 @@
+= Week 14: Synthesis and Final Defense
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+This final week brings together all the patterns, tradeoffs, and principles learned to prepare for real-world architecture defense.
+
+== Lectures
+1. **Failure Postmortems**
+   * "Blameless Postmortems" and identifying root causes.
+2. **Tradeoff Narratives**
+   * Explaining *why* a specific architecture was chosen.
+3. **Architecture Defense Prep**
+   * Techniques for presenting and defending a system design.
+4. **Industry Patterns**
+   * Review of how Netflix, Uber, and Amazon scale.
+
+== Learning Objectives
+By the end of this week, students will be able to:
+- Conduct a blameless postmortem for a multi-service outage.
+- Construct a compelling tradeoff narrative justifying decisions.
+- Defend a complex system design against common critiques.
+- Recognize common "anti-patterns" in distributed design.

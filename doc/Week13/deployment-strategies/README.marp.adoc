@@ -1,0 +1,85 @@
+= Deployment Strategies
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains different methods for rolling out new code to a distributed system while minimizing risk and downtime.
+
+== Outcomes
+- Contrast Blue/Green, Canary, and Rolling updates.
+- Identify the role of "Feature Flags" in decoupled deployments.
+- Apply a "Rollback Strategy" based on the chosen deployment method.
+
+== Overview
+How do you update a system that must never go down?
+- Distributed systems rarely update everything at once.
+- Strategies allow testing new code in production with minimal impact.
+
+== Core Strategies
+1. **Rolling Update:** Gradually replace old instances. Low overhead, but version overlap.
+2. **Blue/Green:** Identical environments (Stable/New). Instant cutover, easy rollback, high cost.
+3. **Canary Deployment:** Route small % of users (e.g. 5%) to new version. Minimal "Blast Radius."
+
+== Deployment vs. Release
+- **Deployment:** Moving the bits to production (the new code is running).
+- **Release:** Turning on the new feature for users (e.g., via a feature flag).
+
+== Code Example: Python (Feature Flag)
+[source,python]
+----
+def process_payment(amount):
+    # Deployment is done, but Release is controlled by a flag
+    if flags.is_enabled("use-new-stripe-v2"):
+        return stripe_v2.charge(amount)
+    else:
+        return stripe_v1.charge(amount)
+----
+
+== Code Example: YAML (K8s Rolling Update)
+[source,yaml]
+----
+# deployment.yaml
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 1
+----
+
+== Code Example: Java (Canary Health Check)
+[source,java]
+----
+// Logic to automatically rollback if error rate spikes in canary
+if (canaryMetrics.errorRate() > 0.05) {
+    deploymentService.rollback();
+    log.error("Canary error rate too high! Rolling back.");
+}
+----
+
+== Design Diagram (Canary)
+[plantuml, deployment-strategies-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+actor Users
+component "Load Balancer" as LB
+component "V1 (Stable)" as V1
+component "V2 (Canary)" as V2
+
+Users -> LB : Request
+LB -> V1 : 95% Traffic
+LB -> V2 : 5% Traffic (Canary)
+
+note right of V2 : If errors > 1%,\nStop traffic to V2!
+@enduml
+----
+
+== Risks and Tradeoffs
+- **State/Database Compatibility:** DB schema must support both versions simultaneously.
+- **Configuration Drift:** Blue/Green environments must stay perfectly in sync.
+- **Observability:** Monitoring must distinguish between V1 and V2 errors.

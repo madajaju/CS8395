@@ -1,0 +1,100 @@
+= Pub/Sub vs. Message Queues
+:revdate: 2024-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains the fundamental differences between point-to-point queuing and one-to-many publish/subscribe models.
+
+== Outcomes
+- Contrast the semantics of Message Queues and Pub/Sub
+- Identify appropriate use cases for each pattern
+- Analyze the impact on system scalability
+
+== Overview
+Asynchronous communication typically falls into two categories: **Message Queues** (Point-to-Point) and **Publish/Subscribe** (One-to-Many).
+
+== 1. Message Queues (Point-to-Point)
+A queue acts as a buffer between a producer and one or more consumers.
+- **Delivery Model:** Each message is delivered to exactly **one** consumer.
+- **Consumer Competition:** Multiple consumers "compete" for messages (load balancing).
+- **Use Case:** Work distribution, background tasks.
+
+== 2. Publish/Subscribe (Pub/Sub)
+A publisher sends a message to a "topic," and the system fans it out to all interested subscribers.
+- **Delivery Model:** Each message is delivered to **all** active subscribers.
+- **Coupling:** The publisher has no knowledge of the subscribers.
+- **Use Case:** System-wide notifications, broadcasting state changes.
+
+== Architectural Comparison
+[cols="1,1,1", options="header"]
+|===
+| Feature | Message Queue | Pub/Sub 
+| **Recipients** | One (Point-to-Point) | Many (Broadcast) 
+| **Logic** | "Do this task" | "This happened" 
+| **Consumer Scaling** | Horizontal scaling of workers | Independent services 
+|===
+
+== Code Example: Node.js (Queue)
+[source,javascript]
+----
+const queue = messaging.connect('work_queue');
+
+queue.consume((msg) => {
+  console.log(`Worker ${process.pid} processing: ${msg.id}`);
+  processTask(msg.data);
+  msg.ack();
+});
+----
+
+== Code Example: Python (Pub/Sub)
+[source,python]
+----
+import pubsub_lib as pub
+
+def on_order_created(event):
+    print(f"Inventory: Reserving stock for {event.id}")
+
+pub.subscribe("orders.v1.created", on_order_created)
+----
+
+== Code Example: Go (Hybrid)
+[source,go]
+----
+// Kafka example: Consumer Groups
+reader := kafka.NewReader(kafka.ReaderConfig{
+    Brokers: []string{"localhost:9092"},
+    Topic:   "user-logs",
+    GroupID: "analytics-engine",
+})
+----
+
+== Design Diagram
+[plantuml, pubsub-queue-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Message Queue (Point-to-Point)" {
+    [Producer] --> [Queue]
+    [Queue] --> [Worker A] : Message 1
+    [Queue] --> [Worker B] : Message 2
+    note right of [Queue] : Load Balanced
+}
+
+package "Pub/Sub (One-to-Many)" {
+    [Publisher] --> [Topic]
+    [Topic] --> [Service A] : Message 1
+    [Topic] --> [Service B] : Message 1
+    [Topic] --> [Service C] : Message 1
+    note right of [Topic] : Fan-out
+}
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Queue Backlogs:** Slow consumers cause queue growth.
+- **Pub/Sub Reliability:** Transient subscribers might miss messages.
+- **Message Ordering:** Harder in competing consumer models.

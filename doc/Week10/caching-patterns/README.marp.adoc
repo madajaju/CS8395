@@ -1,0 +1,101 @@
+= Caching Patterns
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains how to use distributed caching to improve the performance and scalability of distributed systems.
+
+== Outcomes
+- Identify the core caching strategies (Cache-Aside, Write-Through, Read-Through).
+- Analyze the impact of cache eviction and invalidation on system reliability.
+- Design strategies to handle common caching failures.
+
+== Overview
+Caching is the act of storing a copy of data in a high-speed storage layer (usually RAM) to serve future requests faster.
+
+== Core Caching Strategies
+1. **Cache-Aside (Lazy Loading):** App checks cache; on miss, loads from DB and updates cache.
+2. **Read-Through:** App only calls cache; cache fetches from DB on miss.
+3. **Write-Through:** Data is written to cache and DB simultaneously.
+4. **Write-Behind:** Data is written to cache first, DB updated asynchronously.
+
+== The Invalidation Problem
+"There are only two hard things in Computer Science: cache invalidation and naming things." - Phil Karlton.
+- **TTL (Time to Live):** Data expires after a fixed time.
+- **Event-Based Invalidation:** Change events trigger cache purges.
+
+== Code Example: Python (Cache-Aside)
+[source,python]
+----
+def get_user_profile(user_id):
+    # 1. Try Cache
+    profile = cache.get(f"user:{user_id}")
+    if profile: return profile
+
+    # 2. On Miss, Try DB
+    profile = db.users.find_one({"id": user_id})
+    
+    # 3. Update Cache for next time
+    if profile:
+        cache.set(f"user:{user_id}", profile, ttl=3600)
+    
+    return profile
+----
+
+== Code Example: Go (Thundering Herd Prevention)
+[source,go]
+----
+func getData(key string) (Data, error) {
+    // Singleflight ensures only one concurrent call to the slow source
+    v, err, _ := group.Do(key, func() (interface{}, error) {
+        return fetchFromDB(key)
+    })
+    return v.(Data), err
+}
+----
+
+== Code Example: Node.js (Event-Driven Invalidation)
+[source,javascript]
+----
+// Subscribe to "user.updated" to clear cache
+messaging.on('user.updated', (event) => {
+    cache.del(`user:${event.userId}`);
+    console.log(`Cache cleared for ${event.userId}`);
+});
+----
+
+== Design Diagram
+[plantuml, caching-patterns-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+actor Client
+component App
+database Cache
+database DB
+
+== Cache Hit ==
+Client -> App : GET /profile/1
+App -> Cache : GET user:1
+Cache --> App : { profile }
+App --> Client : 200 OK
+
+== Cache Miss (Cache-Aside) ==
+Client -> App : GET /profile/2
+App -> Cache : GET user:2
+Cache --> App : null
+App -> DB : SELECT * FROM users...
+DB --> App : { profile }
+App -> Cache : SET user:2
+App --> Client : 200 OK
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Stale Data:** Inconsistency between the cache and the source of truth.
+- **Memory Pressure:** Caches are expensive; use eviction policies (LRU, LFU).
+- **Availability:** Cache failure can lead to a "Cascade Failure" on the database.

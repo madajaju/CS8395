@@ -1,0 +1,26 @@
+= Week 13: Infrastructure and Security
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+This week explores the connective tissue: how systems are secured, deployed, and managed for cost and performance.
+
+== Lectures
+1. **API Gateway vs. Service Mesh**
+   * "North-South" vs "East-West" traffic management.
+2. **Deployment Strategies**
+   * Blue/Green, Canary, and Rolling updates.
+3. **Zero Trust Basics**
+   * "Never Trust, Always Verify" in microservices.
+4. **Designing for Cost**
+   * Managing cloud costs without sacrificing performance.
+
+== Learning Objectives
+By the end of this week, students will be able to:
+- Distinguish between API Gateway (edge) and Service Mesh (internal).
+- Evaluate a deployment strategy based on the risk profile of a release.
+- Apply Zero Trust principles (mTLS, JWT) to service-to-service communication.
+- Identify "cost-aware" architectural choices.

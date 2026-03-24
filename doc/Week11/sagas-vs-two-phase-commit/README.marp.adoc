@@ -1,0 +1,100 @@
+= Sagas vs. Two-Phase Commit
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Contrast strict consistency (2PC) with the eventual consistency and resilient nature of the Saga pattern.
+
+== Outcomes
+- Define the Saga pattern and "Compensating Transactions."
+- Contrast Orchestration vs. Choreography in Sagas.
+- Identify tradeoffs between Strong and Eventual Consistency.
+
+== Overview
+As distributed systems scale, the rigid locks and blocking nature of Two-Phase Commit (2PC) become a liability.
+- **Saga Pattern:** A sequence of local transactions where each step triggers the next.
+- **Failures:** Handled via "Compensating Transactions" to undo previous steps.
+
+== 2PC vs. Sagas
+- **Two-Phase Commit (2PC):** Strong consistency (Atomic), blocking, high latency.
+- **Sagas:** Eventual consistency, resilient, non-blocking, scalable.
+
+== Saga Styles: Choreography
+Participants exchange events without a centralized coordinator.
+- **Pros:** Decentralized, simple for small processes.
+- **Cons:** Hard to track the state of a complex business process ("Spaghetti").
+
+== Saga Styles: Orchestration
+A central "Saga Orchestrator" tells participants what local transactions to execute.
+- **Pros:** Centralized state, easier to debug and manage complex flows.
+- **Cons:** Central point of logic and failure.
+
+== Code Example: Java (Saga Orchestrator)
+[source,java]
+----
+// Simplified Orchestrator Step
+public void nextStep(OrderSaga saga) {
+    switch (saga.getState()) {
+        case CREATED:
+            paymentService.charge(saga.getOrderId());
+            break;
+        case PAYMENT_FAILED:
+            orderService.cancel(saga.getOrderId()); // Compensate
+            break;
+    }
+}
+----
+
+== Code Example: Python (Choreography)
+[source,python]
+----
+# Payment Service handler
+def on_order_created(event):
+    if process_payment(event.amount):
+        bus.emit("payment.succeeded", event.order_id)
+    else:
+        bus.emit("payment.failed", event.order_id)
+
+# Order Service handler
+def on_payment_failed(event):
+    mark_order_cancelled(event.order_id) # Compensating action
+----
+
+== Code Example: Node.js (Compensating Action)
+[source,javascript]
+----
+// Reverting a state change is a "compensating transaction"
+async function compensate(orderId) {
+    await db.orders.update({ id: orderId }, { status: 'CANCELLED_AND_REFUNDED' });
+    console.log(`Order ${orderId} has been compensated.`);
+}
+----
+
+== Design Diagram (Orchestration)
+[plantuml, saga-orchestration-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+participant Orchestrator
+participant "Order Service" as Order
+participant "Payment Service" as Pay
+
+Orchestrator -> Order : Create Order
+Order --> Orchestrator : OK
+Orchestrator -> Pay : Charge Card
+Pay --> Orchestrator : Failed!
+
+== Compensation ==
+Orchestrator -> Order : Mark Order Failed
+Order --> Orchestrator : OK
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Complexity:** Designing compensating transactions for every step.
+- **Anomalies:** "Partial" states are visible to other users (Dirty Reads).
+- **Debugging:** Tracking a business process across many services and events.

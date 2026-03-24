@@ -1,0 +1,21 @@
+= Week 9: Asynchronous Messaging Patterns
+:revdate: 2024-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+This week explores the fundamental patterns and guarantees required to build reliable, decoupled distributed systems using asynchronous messaging.
+
+== Lectures
+1. Events, Commands, and Queries
+2. Pub/Sub vs. Message Queues
+3. Delivery Semantics
+4. Designing Idempotent Consumers
+
+== Learning Objectives
+By the end of this week, students will be able to:
+- Choose the correct messaging pattern for a given business requirement.
+- Design resilient consumers that can handle the realities of distributed systems.
+- Explain the trade-offs between delivery guarantees and system performance.

@@ -1,0 +1,26 @@
+= Week 11: Distributed Consistency and Coordination
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+This week addresses the challenges of maintaining data consistency across independent services without the luxury of global ACID transactions.
+
+== Lectures
+1. **Distributed Transactions**
+   * Fundamental limitations of consistency and the "Fallacy of the Network."
+2. **Sagas vs. Two-Phase Commit**
+   * Comparing strict coordination (2PC) with eventual consistency (Saga).
+3. **Event Carried State Transfer**
+   * Reducing service coupling by including required state within events.
+4. **Read Models and CQRS Lite**
+   * Optimizing read performance by separating write and read models.
+
+== Learning Objectives
+By the end of this week, students will be able to:
+- Explain why global transactions are often avoided in high-scale microservices.
+- Design an orchestration or choreography-based Saga.
+- Implement Event Carried State Transfer to improve service autonomy.
+- Identify when to introduce a dedicated read model.

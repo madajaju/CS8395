@@ -1,0 +1,95 @@
+= Failure Postmortems
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Provides a framework for analyzing system outages to maximize learning and avoid blame.
+
+== Outcomes
+- Define the "Blameless Postmortem" philosophy.
+- Identify the difference between Proximate and Root causes.
+- Implement a structured postmortem document.
+
+== Overview
+Failures in a distributed system are inevitable.
+- High-performing teams handle failure as a clinical analysis.
+- **Goal:** Prevent recurrence, not find a scapegoat.
+
+== The Blameless Philosophy
+Focus on the **system** and **processes**, not the individual.
+- "If one person can take down the system, it's a system failure."
+- Encourages honesty and transparency.
+
+== Proximate vs. Root Cause
+- **Proximate Cause:** The immediate event (e.g., "The disk was full").
+- **Root Cause:** The fundamental issue (e.g., "Monitoring failed to alert at 90% and no automated cleanup existed").
+- **Technique:** Use the "Five Whys."
+
+== Postmortem Structure
+| Section | Content |
+| :--- | :--- |
+| **Summary** | Overview and impact. |
+| **Timeline** | Detection, response, resolution. |
+| **Root Cause** | Deep architectural/process failure. |
+| **Action Items** | Concrete tasks to prevent recurrence. |
+| **Lessons** | What went well vs. wrong? |
+
+== Code Example: Python (Data Collection)
+[source,python]
+----
+# Script to capture system state after a failure
+def capture_diagnostics():
+    logs = cloudwatch.get_logs(last_30_mins=True)
+    metrics = prometheus.query("rate(http_errors[30m])")
+    with open("failure_context.json", "w") as f:
+        json.dump({"logs": logs, "metrics": metrics}, f)
+----
+
+== Code Example: Go (Error Wrapping)
+[source,go]
+----
+// Wrapping errors makes root cause analysis much easier
+if err != nil {
+    return fmt.Errorf("failed to process payment for order %s: %w", 
+        orderID, err)
+}
+----
+
+== Code Example: Java (Structured Logging)
+[source,java]
+----
+// Correlation IDs make timeline construction easy
+log.info("Starting saga step", 
+    StructuredArguments.kv("traceId", traceId),
+    StructuredArguments.kv("step", "PAYMENT_RESERVATION")
+);
+----
+
+== Design Diagram
+[plantuml, failure-postmortem-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+actor User
+component "App" as App
+database "DB" as DB
+component "Monitoring" as Mon
+
+User -> App : Request
+App -> DB : Query
+DB --> App : Connection Error!
+App -> Mon : Log Error (TraceID: 123)
+
+note right of Mon : Timeline construction\nstarts here!
+Mon -> Mon : Postmortem Analysis\n"Why did the DB fail?"
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Time Sink:** Writing good postmortems is time-consuming.
+- **Fear:** If not truly blameless, people hide mistakes.
+- **Action Item Drift:** "New feature work" often overrides fixes.

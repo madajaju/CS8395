@@ -1,0 +1,97 @@
+= Distributed Transactions
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains the theoretical and practical limitations of maintaining ACID properties across multiple networked services.
+
+== Outcomes
+- Contrast Local Transactions with Distributed Transactions.
+- Identify the impact of network latency and partial failures.
+- Explain the role of a Transaction Coordinator.
+
+== Overview
+In a distributed system, a single business operation might span multiple databases and services.
+- **Monolith:** ACID is simple (single DB).
+- **Distributed:** ACID is complex (networked resources).
+
+== The Fallacy of Distributed Transactions
+Attempting strong ACID across services often leads to:
+- **Availability Issues:** Any participant failure can fail the whole transaction.
+- **Performance Issues:** Distributed locks across the network cause high latency.
+
+== Atomic Commit Protocols
+Ensuring all participants agree on the outcome:
+- **Coordinator:** Central node managing state.
+- **Participants:** Services/DBs performing the work.
+- **Mechanism:** Usually Two-Phase Commit (2PC).
+
+== Code Example: Java (JTA - Traditional 2PC)
+[source,java]
+----
+@Transactional
+public void processDistributedOrder(Order order) {
+    // Both resources must support XA transactions
+    inventoryService.reserve(order.sku);
+    paymentService.charge(order.amount);
+}
+----
+
+== Code Example: Python (Manual Coordination)
+[source,python]
+----
+def create_order(order_data):
+    # This is NOT a real distributed transaction
+    # Failure in step 2 leaves step 1 committed (Data Inconsistency!)
+    db.orders.insert(order_data)
+    response = requests.post("http://inventory/reserve", json=order_data)
+    if response.status_code != 200:
+        # We must manually roll back step 1
+        db.orders.delete(order_data['id'])
+----
+
+== Code Example: Go (Transactional Outbox)
+[source,go]
+----
+func saveOrderAndEvent(order Order) error {
+    return db.Transaction(func(tx *sql.Tx) error {
+        // 1. Save the order
+        tx.Exec("INSERT INTO orders...", order)
+        // 2. Save the event in the SAME transaction
+        tx.Exec("INSERT INTO outbox...", order.ToEvent())
+        return nil
+    })
+}
+----
+
+== Design Diagram (2PC)
+[plantuml, distributed-transactions-2pc, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+participant Coordinator
+participant "Inventory DB" as Inv
+participant "Payment DB" as Pay
+
+== Phase 1: Prepare ==
+Coordinator -> Inv : Prepare?
+Coordinator -> Pay : Prepare?
+Inv --> Coordinator : OK (Locked)
+Pay --> Coordinator : OK (Locked)
+
+== Phase 2: Commit ==
+Coordinator -> Inv : Commit!
+Coordinator -> Pay : Commit!
+Inv --> Coordinator : ACK
+Pay --> Coordinator : ACK
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Blocking:** 2PC is a blocking protocol; failure during commit can leave resources locked.
+- **Throughput:** Coordination overhead and network round-trips limit TPS.
+- **Service Autonomy:** Tightly couples uptime and performance of multiple services.

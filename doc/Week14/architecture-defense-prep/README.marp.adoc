@@ -1,0 +1,88 @@
+= Architecture Defense Prep
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Prepares students to present and justify complex distributed system designs to diverse stakeholders.
+
+== Outcomes
+- Construct a visual representation that "tells a story."
+- Anticipate and address common architectural critiques.
+- Apply "Steel-manning" to strengthen the final defense.
+
+== Overview
+Defending an architecture is about showing you considered all relevant variables.
+- Explain how design meets business goals.
+- Manage technical debt.
+
+== Core Elements of a Defense
+1. **The Story:** The narrative of why the architecture evolved.
+2. **"Happy Path" vs "Chaos":** Show how it fails, not just how it works.
+3. **Addressing "Sacred Cows":** Defend decisions that go against the company "norm."
+
+== Common Critique Themes
+| Theme | Critique | Best Defense |
+| :--- | :--- | :--- |
+| **Reliability** | "What if A is down?" | "Circuit breaker + Fallback." |
+| **Consistency** | "Stale data!" | "<1s delay + Optimistic UI." |
+| **Security** | "Is JWT secure?" | "Verify at every hop + mTLS." |
+| **Cost** | "Expensive!" | "Auto-scaling + Tiered storage." |
+
+== Code Example: Java (Circuit Breaker)
+[source,java]
+----
+// Handling failure is key to a solid defense
+@CircuitBreaker(name = "backend", fallbackMethod = "fallback")
+public String callBackend() {
+    return restTemplate.getForObject("/api", String.class);
+}
+
+public String fallback(Throwable t) {
+    return "Cached response (System is in degraded mode)";
+}
+----
+
+== Code Example: Go (Context Timeout)
+[source,go]
+----
+// Defending against latent dependencies
+ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+defer cancel()
+
+req, _ := http.NewRequestWithContext(ctx, "GET", "http://slow-api", nil)
+----
+
+== Code Example: Node.js (Input Validation)
+[source,javascript]
+----
+// Proving that the edge is secure
+const schema = Joi.object({
+    userId: Joi.string().guid().required(),
+    amount: Joi.number().min(0).max(10000).required()
+});
+const { error } = schema.validate(req.body);
+----
+
+== Design Diagram
+[plantuml, architecture-defense-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+actor Critic
+component "Your Architecture" as Arc
+note right of Arc : "How does it scale?"\n"What about security?"
+
+Critic -> Arc : The Attack
+Arc -> Arc : Self-Defense\n(Circuit Breakers,\nRetries, mTLS)
+Arc --> Critic : Justification\n(Tradeoff Narrative)
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Over-engineering:** Defending against "every failure" can lead to excessive complexity.
+- **Cognitive Bias:** Architects often fall in love with their own designs.
+- **Communication Gap:** Failing to translate technical benefits into business value.

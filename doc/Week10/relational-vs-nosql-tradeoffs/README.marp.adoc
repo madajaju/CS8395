@@ -1,0 +1,93 @@
+= Relational vs. NoSQL Tradeoffs
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explores the architectural decision-making process when choosing between relational (SQL) and non-relational (NoSQL) data stores.
+
+== Outcomes
+- Contrast ACID and BASE consistency models.
+- Apply the CAP Theorem to database selection.
+- Identify common NoSQL categories and their primary use cases.
+
+== Overview
+Modern distributed systems often use multiple types of databases (**Polyglot Persistence**) to meet different requirements.
+
+== The CAP Theorem
+In a distributed system, you can only provide two of the three:
+- **Consistency:** Every read receives the most recent write.
+- **Availability:** Every request receives a (non-error) response.
+- **Partition Tolerance:** System operates despite network failure.
+
+*Note: Network partitions are inevitable, so the choice is usually between CP and AP.*
+
+== ACID vs. BASE
+- **ACID (Relational):** Atomicity, Consistency, Isolation, Durability. Focuses on strong consistency.
+- **BASE (NoSQL):** Basically Available, Soft state, Eventual consistency. Focuses on high availability and scalability.
+
+== Data Models Comparison
+| Model | Type | Best For |
+| :--- | :--- | :--- |
+| **Relational** | SQL | Complex joins, strong consistency. |
+| **Key-Value** | NoSQL | Caching, session management. |
+| **Document** | NoSQL | Product catalogs, flexible schemas. |
+| **Column-Family** | NoSQL | Time-series, massive write throughput. |
+| **Graph** | NoSQL | Social networks, complex relationships. |
+
+== Code Example: Java (ACID Transaction)
+[source,java]
+----
+@Transactional
+public void transferFunds(String from, String to, BigDecimal amount) {
+    accountRepo.withdraw(from, amount);
+    accountRepo.deposit(to, amount);
+    // Success is guaranteed for both or neither
+}
+----
+
+== Code Example: Node.js (Document Storage)
+[source,javascript]
+----
+// MongoDB: No pre-defined schema required
+const product = {
+    name: "Laptop",
+    price: 1200,
+    specs: { cpu: "i7", ram: "16GB" }
+};
+await db.collection('products').insertOne(product);
+----
+
+== Code Example: Go (Key-Value Store)
+[source,go]
+----
+// Redis: Fast, simple access
+err := rdb.Set(ctx, "session:123", userData, 30*time.Minute).Err()
+val, err := rdb.Get(ctx, "session:123").Result()
+----
+
+== Design Diagram
+[plantuml, relational-vs-nosql-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+node "Relational DB (CP/CA)" {
+    database "Strong Consistency" as SQL
+}
+
+node "NoSQL DB (AP)" {
+    database "Eventual Consistency" as NoSQL
+}
+
+[App] -> SQL : Financial Transactions\n(ACID)
+[App] -> NoSQL : User Profile / Sessions\n(BASE)
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Complexity:** Managing multiple database types.
+- **Data Integrity:** Application layer must often handle validation.
+- **Lock-in:** NoSQL databases often have proprietary APIs.

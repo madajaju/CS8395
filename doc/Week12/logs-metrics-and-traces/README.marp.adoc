@@ -1,0 +1,104 @@
+= Logs, Metrics, and Traces
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains the "Three Pillars of Observability" and how they provide different views into a distributed system's health.
+
+== Outcomes
+- Contrast Logs, Metrics, and Traces (data volume vs. resolution).
+- Identify which pillar to use for a given scenario.
+- Implement structured logging and counter/gauge metrics.
+
+== Overview
+**Observability** is the ability to understand internal state based on external outputs.
+- In distributed systems, failure is the norm.
+- Right data is critical for "unknown unknowns."
+
+== 1. Logs (The "What")
+Immutable, time-stamped records of discrete events.
+- **Best For:** Detailed "forensics" on a specific request/error.
+- **Format:** Prefer **Structured Logging** (JSON).
+
+== 2. Metrics (The "How Many")
+Aggregated, numeric values over time.
+- **Best For:** High-level health, alerting, and trends.
+- **Types:** Counter (increments), Gauge (+/-), Histogram (distribution).
+
+== 3. Traces (The "Where")
+A record of a single request's path across services.
+- **Best For:** Identifying bottlenecks and latencies.
+- **Key Concept:** Spans and Trace IDs.
+
+== Comparison Table
+| Feature | Logs | Metrics | Traces |
+| :--- | :--- | :--- | :--- |
+| **Data Type** | Text/JSON | Numeric | Graph |
+| **Resolution** | High | Low | High |
+| **Storage Cost** | High | Low | Medium |
+| **Alerting** | Poor | Excellent | Good |
+
+== Code Example: Node.js (Structured Logging)
+[source,javascript]
+----
+const logger = pino();
+// JSON format for machine parsing
+logger.info({ 
+    event: 'order_processed', 
+    orderId: '550', 
+    duration_ms: 120 
+});
+----
+
+== Code Example: Go (Prometheus Metrics)
+[source,go]
+----
+var requestCounter = prometheus.NewCounter(prometheus.CounterOpts{
+    Name: "http_requests_total",
+    Help: "Total number of HTTP requests.",
+})
+
+func handler(w http.ResponseWriter, r *http.Request) {
+    requestCounter.Inc()
+    // handle request...
+}
+----
+
+== Code Example: Java (OpenTelemetry Span)
+[source,java]
+----
+Span span = tracer.nextSpan().name("db-query").start();
+try (var scope = tracer.withSpan(span)) {
+    return repository.findById(id);
+} finally {
+    span.end();
+}
+----
+
+== Design Diagram
+[plantuml, logs-metrics-traces-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Observability Platform" {
+    [Log Aggregator] as Logs
+    [Metrics Store] as Metrics
+    [Tracing UI] as Traces
+}
+
+component "App Service" as App
+
+App -> Logs : 1. "Processing Order #123" (JSON)
+App -> Metrics : 2. increment order_total
+App -> Traces : 3. start_span("process_payment")
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Cost:** Logs are expensive to store and index.
+- **Cardinality:** Too many metric labels (e.g. `user_id`) can crash metrics DBs.
+- **Overhead:** Tracing every request adds latency; use **Sampling**.

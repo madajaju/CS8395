@@ -1,0 +1,95 @@
+= Database per Service
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains the fundamental pattern of isolating data at the service level to ensure loose coupling and independent scalability.
+
+== Outcomes
+- Define the "Database per Service" pattern and its benefits.
+- Recognize the challenges of cross-service data consistency and querying.
+- Evaluate strategies for sharing data between isolated services.
+
+== Overview
+In a microservices architecture, each service must own its data to achieve independent deployability.
+- **Goal:** Avoid the "Distributed Monolith" caused by shared databases.
+- **Challenge:** Cross-service data consistency and queries.
+
+== Data Isolation
+Each service has its own private database.
+- **Pros:** Encapsulation, independent scaling, polyglot persistence.
+- **Cons:** Complex cross-service queries, eventual consistency.
+
+== Polyglot Persistence
+- **Order Service:** PostgreSQL (ACID)
+- **Recommendation Service:** Neo4j (Graph)
+- **Search Service:** Elasticsearch (Search)
+
+== Data Retrieval Strategies
+1. **API Composition (Join in Memory):** Call multiple services and join results in code.
+2. **CQRS / Materialized Views:** Subscribe to events and build a local read-only copy of data.
+
+== Code Example: Go (Repository Isolation)
+[source,go]
+----
+// OrderRepository encapsulates access to the Orders database
+type OrderRepository struct {
+    db *sql.DB
+}
+
+func (r *OrderRepository) GetOrderByID(id string) (*Order, error) {
+    // Only this service touches the orders table
+    return r.queryDatabase(id)
+}
+----
+
+== Code Example: Python (API Composition)
+[source,python]
+----
+def get_order_details(order_id):
+    # Call Order Service
+    order = requests.get(f"http://order-service/orders/{order_id}").json()
+    
+    # Call User Service for customer info
+    user = requests.get(f"http://user-service/users/{order['user_id']}").json()
+    
+    return {**order, "customer": user}
+----
+
+== Code Example: Java (Materialized View)
+[source,java]
+----
+@KafkaListener(topics = "user-events")
+public void onUserUpdate(UserUpdatedEvent event) {
+    // Update local read-only cache of user data
+    userCache.save(new UserReadModel(event.getUserId(), event.getName()));
+}
+----
+
+== Design Diagram
+[plantuml, database-per-service-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Ordering Domain" {
+    [Order Service] --> [Order DB] : owns
+}
+
+package "Inventory Domain" {
+    [Inventory Service] --> [Inventory DB] : owns
+}
+
+[Order Service] ..> [Inventory Service] : API call (Sync)
+[Order Service] -> [Message Bus] : OrderPlaced Event
+[Message Bus] -> [Inventory Service] : Notify
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Complexity:** Managing many small databases.
+- **Distributed Joins:** Queries across services are harder.
+- **Data Integrity:** Ensuring consistency without 2PC.

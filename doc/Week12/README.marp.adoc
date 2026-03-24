@@ -1,0 +1,26 @@
+= Week 12: Observability and Reliability
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+This week focuses on the operational excellence of distributed systems: how to see what is happening across services and ensure health under load.
+
+== Lectures
+1. **Logs, Metrics, and Traces**
+   * The "Three Pillars of Observability" and their use cases.
+2. **Distributed Tracing Basics**
+   * Following a single request using correlation IDs and context propagation.
+3. **Health and Readiness**
+   * The crucial difference between "alive" and "ready" to accept traffic.
+4. **Capacity and Load Testing**
+   * Identifying bottlenecks before production outages.
+
+== Learning Objectives
+By the end of this week, students will be able to:
+- Distinguish between structured logging, metrics, and distributed tracing.
+- Implement context propagation for request visibility.
+- Design effective health check endpoints (e.g., Kubernetes).
+- Define SLIs and SLOs based on load test results.

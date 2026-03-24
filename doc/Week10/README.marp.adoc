@@ -1,0 +1,26 @@
+= Week 10: Data Management in Distributed Systems
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+This week focuses on the fundamental patterns and tradeoffs of managing data across multiple services, ensuring consistency, scalability, and maintainability.
+
+== Lectures
+1. **Database per Service**
+   * Service-level data isolation and its challenges.
+2. **Relational vs. NoSQL Tradeoffs**
+   * CAP theorem, consistency models (ACID vs. BASE), and storage choice.
+3. **Caching Patterns**
+   * Distributed caching strategies and invalidation complexities.
+4. **Schema Evolution and Migrations**
+   * Evolving schemas in live systems without downtime.
+
+== Learning Objectives
+By the end of this week, students will be able to:
+- Evaluate the impact of database isolation on service coupling and system performance.
+- Justify the choice of a specific database technology based on workload characteristics.
+- Design resilient caching strategies that balance performance with data freshness.
+- Implement zero-downtime schema migrations using the expand-and-contract pattern.

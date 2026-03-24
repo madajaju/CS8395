@@ -1,0 +1,88 @@
+= Tradeoff Narratives
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Master the skill of articulating architectural decisions by focusing on the "Why" and the "Instead Of."
+
+== Outcomes
+- Construct a Decision Matrix for architectural choices.
+- Articulate the "Cost" of the chosen architecture (losing options).
+- Identify the long-term maintenance impact of a design.
+
+== Overview
+Senior architecture isn't about the "perfect" solution; it's about the "least bad" solution for the constraints.
+- A Tradeoff Narrative explains Path A vs. Path B.
+- What was sacrificed to get there?
+
+== The Core Elements
+1. **The Context:** Problem, Constraints (Time, Cost, Performance, Skillset).
+2. **The Options:** Alternatives considered and why.
+3. **The Decision:** Chosen path and deciding factor (e.g., "Availability > Accuracy").
+
+== The Decision Matrix
+| Option | Scalability | Complexity | Cost | Decision |
+| :--- | :--- | :--- | :--- | :--- |
+| **Monolith** | Low | Low | Low | No (Needs scale) |
+| **Microservices** | High | High | High | **Yes (Chosen)** |
+| **Serverless** | High | Medium | Medium | Maybe (Cold Starts) |
+
+== Code Example: ADR (Markdown)
+[source,markdown]
+----
+# ADR 001: Choosing Sagas over 2PC
+## Context: 
+Order processing spans 3 services.
+## Decision: 
+Use an Orchestrated Saga.
+## Consequences:
+- We must handle eventual consistency in the UI.
+- No more database-level JOINS.
+----
+
+== Code Example: Go (Strategic TODO)
+[source,go]
+----
+// TODO (Tradeoff): Using in-memory cache for v1 
+// because low latency is prioritized over persistence.
+// If data loss during restart becomes an issue, switch to Redis.
+var cache = make(map[string]Data)
+----
+
+== Code Example: Python (Documenting Hacks)
+[source,python]
+----
+def process_data_slowly():
+    # Tradeoff: Synchronous call to simplify first release.
+    # Sacrificing throughput (max 10 rps) to reduce complexity.
+    # Will migrate to message queue in Phase 2.
+    call_blocking_api()
+----
+
+== Design Diagram
+[plantuml, tradeoff-narratives-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Option A (Sync)" {
+    [App] -> [DB] : Direct SQL Join
+}
+
+package "Option B (Async/Chosen)" {
+    [App] -> [Event Bus] : Emit Event
+    [Event Bus] -> [Read Model] : Sync
+    [App] -> [Read Model] : Query
+}
+
+note right of "Option B" : TRADE-OFF:\nComplexity increases,\nbut Scalability\nimproves!
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Analysis Paralysis:** Documenting instead of building.
+- **Decision Fatigue:** Focus on "One-Way Door" decisions.
+- **Stale ADRs:** Outdated documentation becomes a liability.

@@ -1,0 +1,107 @@
+= Distributed Tracing Basics
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains how to follow a single request's journey across multiple microservices to identify performance bottlenecks.
+
+== Outcomes
+- Contrast Correlation IDs with Trace/Span IDs.
+- Identify components of a Trace (Spans, Root Span, Parent/Child).
+- Implement context propagation across service boundaries.
+
+== Overview
+In a distributed system, a single user request might trigger dozens of service-to-service calls.
+- **Problem:** Impossible to know where time is being spent without tracing.
+- **Solution:** Link all related units of work together.
+
+== Spans and Traces
+- **Span:** A single unit of work (e.g., an HTTP request or DB query).
+- **Trace:** A collection of spans sharing a single **Trace ID**.
+- **Root Span:** The first span in a trace (e.g., at the API Gateway).
+
+== Context Propagation
+To link spans together, services must pass identifiers to the next service.
+- **Mechanism:** HTTP headers (e.g., `traceparent` from W3C Trace Context).
+- **Standard:** OpenTelemetry (OTel).
+
+== Components of a Trace
+| Component | Description |
+| :--- | :--- |
+| **Trace ID** | Unique ID for the entire request journey. |
+| **Span ID** | Unique ID for a single unit of work. |
+| **Parent ID** | ID of the span that triggered this one. |
+| **Tags** | Metadata (e.g., `http.method=GET`). |
+
+== Code Example: Python (Flask)
+[source,python]
+----
+# Service A: Outgoing call
+def call_service_b():
+    trace_id = get_current_trace_id()
+    # Pass trace context in headers
+    headers = {'X-Trace-Id': trace_id}
+    requests.get("http://service-b/api", headers=headers)
+
+# Service B: Incoming call
+@app.before_request
+def start_trace():
+    trace_id = request.headers.get('X-Trace-Id')
+    set_current_trace_id(trace_id)
+----
+
+== Code Example: Go (Middleware)
+[source,go]
+----
+func tracingMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Extracts traceparent header automatically
+        ctx := otel.GetTextMapPropagator().Extract(r.Context(), 
+            propagation.HeaderCarrier(r.Header))
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+----
+
+== Code Example: Java (OpenTelemetry Attributes)
+[source,java]
+----
+// Adding metadata to an existing trace
+Span span = Span.current();
+span.setAttribute("user.id", "99");
+span.addEvent("Processing started");
+----
+
+== Design Diagram
+[plantuml, distributed-tracing-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+actor Client
+participant "Gateway" as GW
+participant "Order Service" as Order
+participant "Payment Service" as Pay
+
+Client -> GW : GET /order/1
+note right of GW : New Trace: ID=abc, SpanID=1
+
+GW -> Order : GET /orders/1\n[Header: TraceID=abc, ParentID=1]
+note right of Order : New Span: ID=2, Parent=1
+
+Order -> Pay : POST /pay\n[Header: TraceID=abc, ParentID=2]
+note right of Pay : New Span: ID=3, Parent=2
+
+Pay --> Order : 200 OK
+Order --> GW : 200 OK
+GW --> Client : 200 OK
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Complexity:** Every service must correctly propagate headers.
+- **Overhead:** Generating and sending trace data adds latency.
+- **Data Volume:** Full traces are expensive; use **Sampling**.

@@ -1,0 +1,96 @@
+= Schema Evolution and Migrations
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Provides a framework for evolving database schemas in a distributed system without downtime.
+
+== Outcomes
+- Apply the "Expand and Contract" pattern to database changes.
+- Identify "Breaking" vs "Non-breaking" schema changes.
+- Implement automated migration pipelines that support safe rollbacks.
+
+== Overview
+In a distributed system, you cannot assume all instances of a service will upgrade at once.
+- Schema changes must be decoupled from code changes.
+- Backward compatibility is essential.
+
+== Breaking vs. Non-breaking Changes
+- **Non-breaking:** Adding a new optional column or table. Safe to apply while old code is running.
+- **Breaking:** Renaming a column, changing a data type, deleting a column. Requires orchestration.
+
+== The "Expand and Contract" Pattern
+To perform a breaking change without downtime:
+1. **Expand:** Add the *new* column to the database (nullable/optional).
+2. **Migrate (Sync):** Update application to write to *both* but read from *old*.
+3. **Migrate (Data):** Run background job to copy existing data.
+4. **Switch:** Update application to read from the *new* column.
+5. **Contract:** Remove the *old* column from the database.
+
+== Code Example: SQL (Expanding a Table)
+[source,sql]
+----
+-- V1__Add_New_Column.sql
+ALTER TABLE orders ADD COLUMN status_v2 VARCHAR(50);
+-- Safe to apply while V1 code is running
+----
+
+== Code Example: Python (Multi-Step Write Logic)
+[source,python]
+----
+# Transition state: Writing to both old and new
+def update_order_status(order_id, new_status):
+    # Write to old column for backward compatibility
+    # Write to new column for the future
+    db.execute("UPDATE orders SET status = %s, status_v2 = %s WHERE id = %s", 
+               (new_status, new_status, order_id))
+----
+
+== Code Example: Go (Checking Migration Version)
+[source,go]
+----
+// Ensure the application only starts if the schema is compatible
+func ensureSchemaVersion(db *sql.DB) error {
+    version, _ := getCurrentSchemaVersion(db)
+    if version < RequiredVersion {
+        return fmt.Errorf("incompatible schema version: %d", version)
+    }
+    return nil
+}
+----
+
+== Design Diagram
+[plantuml, schema-evolution-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+participant "DB Schema" as DB
+participant "App V1" as V1
+participant "App V2" as V2
+
+== Step 1: Expand ==
+DB -> DB : Add new_col
+note right : DB has old_col and new_col
+
+== Step 2: Transition (V2 Rollout) ==
+V2 -> DB : Write to old_col & new_col
+V2 -> DB : Read from old_col
+note left : V1 and V2 can coexist
+
+== Step 3: Switch ==
+V2 -> DB : Read from new_col
+note right : Old_col is no longer used
+
+== Step 4: Contract ==
+DB -> DB : Drop old_col
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Duration:** This pattern is slow and requires multiple deployments.
+- **Data Consistency:** Syncing data can cause lock contention or race conditions.
+- **Testing:** You must test all transitional states.

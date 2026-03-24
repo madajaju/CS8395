@@ -1,0 +1,86 @@
+= Zero Trust Basics
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains the shift from "Perimeter Security" to the "Zero Trust" model for securing distributed services.
+
+== Outcomes
+- Define the core pillars of Zero Trust.
+- Contrast "Never Trust, Always Verify" with traditional security.
+- Implement basic mTLS and JWT validation.
+
+== Overview
+Traditional security relied on the "Perimeter" model (Hard Shell, Soft Center).
+- **Zero Trust:** Assumes the network is compromised.
+- **Principle:** Verify every single request.
+
+== The Core Pillars
+1. **Identity-Based Security:** Trust is based on service/user identity, not IP address.
+2. **Micro-Segmentation:** Limit "Lateral Movement" by isolating segments.
+3. **Mutual TLS (mTLS):** Both client and server present and verify certificates.
+
+== JWT and Authentication
+**JSON Web Tokens (JWT)** allow services to pass verifiable identity and permissions without re-authenticating at every step.
+
+== Code Example: Java (JWT Verification)
+[source,java]
+----
+// Simplified JWT validation at a service boundary
+public void filter(Request req) {
+    String token = req.header("Authorization");
+    if (!jwtParser.verify(token, publicKey)) {
+        throw new UnauthorizedException();
+    }
+}
+----
+
+== Code Example: Go (mTLS Server)
+[source,go]
+----
+// Basic server forcing mutual authentication
+tlsConfig := &tls.Config{
+    ClientAuth: tls.RequireAndVerifyClientCert,
+    ClientCAs:  trustedCA,
+}
+server := &http.Server{ TLSConfig: tlsConfig }
+----
+
+== Code Example: Python (mTLS Identity)
+[source,python]
+----
+def get_caller_identity(request):
+    # mTLS puts identity in the certificate
+    cert = request.get_peer_certificate()
+    return cert.get_subject().commonName
+----
+
+== Design Diagram
+[plantuml, zero-trust-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Untrusted Network" {
+    component "Service A" as A
+    component "Service B" as B
+}
+
+A -[#red]> B : Request (mTLS)
+note top of A : Certificate: "OrderService"
+note top of B : Certificate: "PaymentService"
+
+B -> B : Verify Cert A
+B -> B : Verify JWT A
+B --> A : Encrypted Response
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Complexity:** Managing a Private Key Infrastructure (PKI) for many services.
+- **Latency:** mTLS handshakes and token verification add overhead.
+- **Centralization:** The Certificate Authority is a critical point of failure.
+- **Token Leakage:** Stolen JWTs can be used until expiration.

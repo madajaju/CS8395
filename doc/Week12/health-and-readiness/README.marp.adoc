@@ -1,0 +1,106 @@
+= Health and Readiness
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Explains how to implement effective health checks for container orchestrators.
+
+== Outcomes
+- Contrast Liveness vs. Readiness vs. Startup probes.
+- Identify what to include in a health check.
+- Implement multi-component health endpoints.
+
+== Overview
+Health probes allow infrastructure (e.g. Kubernetes) to react correctly to instance states.
+- Starting up vs. Running.
+- Disconnected from DB vs. Dead.
+
+== Core Concepts
+1. **Liveness (Is it alive?):** Fails restart instance. Fails on deadlock/crash.
+2. **Readiness (Is it ready?):** Fails stop traffic to instance. Fails on DB/Cache connection issues.
+3. **Startup (Has it booted?):** Disables other checks until passed. For slow-boot apps.
+
+== What to Check?
+| Component | Liveness | Readiness |
+| :--- | :--- | :--- |
+| **Internal CPU/RAM** | Yes | Yes |
+| **Database Connection** | No | **Yes** |
+| **Message Broker** | No | **Yes** |
+| **Downstream APIs** | No | Maybe (Breakers) |
+
+== Code Example: Node.js (Express)
+[source,javascript]
+----
+app.get('/health/ready', async (req, res) => {
+    const dbStatus = await checkDb();
+    const redisStatus = await checkRedis();
+    
+    if (dbStatus && redisStatus) {
+        res.status(200).send({ status: 'UP' });
+    } else {
+        res.status(503).send({ status: 'DOWN' });
+    }
+});
+----
+
+== Code Example: Go (Standard Library)
+[source,go]
+----
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+    // Simple liveness check
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("OK"))
+}
+----
+
+== Code Example: Java (Spring Boot Actuator)
+[source,yaml]
+----
+# application.yml
+management:
+  endpoint:
+    health:
+      show-details: always
+      group:
+        readiness:
+          include: db, redis
+----
+
+== Design Diagram
+[plantuml, health-readiness-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+participant "Load Balancer" as LB
+participant "Service Instance" as App
+database DB
+
+== Booting ==
+LB -> App : GET /ready
+App --> LB : 503 Service Unavailable
+note right of LB : Instance is hidden from users
+
+== Ready ==
+App -> DB : Ping
+DB --> App : OK
+LB -> App : GET /ready
+App --> LB : 200 OK
+note right of LB : Instance is added to rotation
+
+== DB Outage ==
+App -> DB : Ping
+DB --> App : Timeout!
+LB -> App : GET /ready
+App --> LB : 503 Service Unavailable
+note right of LB : Instance is removed from rotation
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Shallow vs Deep Checks:** Deep checks can be brittle; shallow can lead to errors.
+- **Cascading Failures:** Shared DB down can cause all instances to fail.
+- **Security:** Secure health endpoints to avoid leaking sensitive info.
