@@ -1,0 +1,85 @@
+# Database per Service
+
+## Slide 1: Purpose
+Today we are covering the database-per-service pattern, which is one of the core structural patterns behind microservices. The basic idea sounds simple: every service owns its own data store. But the consequences are deep. This pattern is not just a deployment trick or a database administration preference. It is a boundary decision about ownership, coupling, and change management.
+
+When teams first move from a monolith to microservices, they often split code before they split data. That creates a system that looks distributed but still behaves like one tightly bound application because all services depend on the same shared schema. At that point, a column change in one service can break another, data ownership becomes vague, and teams start coordinating every release. That is what people mean when they warn about a distributed monolith.
+
+By the end of this lecture, you should be able to explain what database per service protects, why it makes service boundaries more real, and what new problems it introduces around queries, data duplication, and cross-service consistency.
+
+## Slide 2: Outcomes
+There are three main learning goals here. First, you should be able to define the pattern and explain its benefits in terms of encapsulation and independent deployability. Second, you should recognize why cross-service queries and cross-service transactions become harder after you isolate data. Third, you should be able to evaluate the two most common ways services still share information: synchronous APIs and asynchronous event-driven read models.
+
+The deeper outcome is architectural judgment. Database per service is often described as the correct microservices pattern, but strong engineers know that adopting it means trading one set of problems for another. You reduce schema coupling and gain team autonomy, but you also give up convenient SQL joins across domains. Good design depends on knowing whether that trade is worth it for the system you are building.
+
+## Slide 3: Overview
+In a microservices architecture, service boundaries are supposed to represent ownership boundaries. If the order service owns orders, it should also own the database tables or documents that represent orders. Other services should not reach into that storage directly. They should go through the owning service's API or react to its published events.
+
+A useful real-world analogy is medical records. Each department may own certain records and expose approved ways for others to request information, but random departments do not directly edit each other's storage systems. The boundary is part of the safety model. In software, the service boundary is part of the change and reliability model.
+
+This pattern is especially important for independent deployment. If services share a database, then changing one schema may require simultaneous rollout or careful coordination across several services. Once every service owns its own database, one team can often evolve its schema and deploy independently as long as its external contracts remain stable.
+
+## Slide 4: Data Isolation
+Data isolation means each service has a private persistence layer. Other services are not allowed to bypass the owning service and run direct queries against its tables. That rule may feel inconvenient at first, but it protects the design from accidental coupling. Without that rule, another service can start depending on internal tables, undocumented columns, or assumptions that the owner never intended to expose.
+
+The biggest advantage is encapsulation. A service can change its internal schema, indexing strategy, or storage engine without forcing all other teams to change with it. The service boundary becomes meaningful because both behavior and data are owned together.
+
+The downside is that the easy path disappears for cross-domain access. In a monolith, a developer may simply write a SQL join across orders, users, and shipments. In a database-per-service architecture, that join becomes a design question. Should the caller ask multiple services? Should a read model be built? Should an event-driven projection exist? The pattern gives autonomy, but it also forces explicit choices.
+
+## Slide 5: Polyglot Persistence
+Once every service owns its data, it becomes possible to choose different database technologies for different workloads. This is called polyglot persistence. An order service might use PostgreSQL because transactions and relational integrity matter. A recommendation engine might use a graph database because relationships are central to the problem. A search service might use Elasticsearch because full-text indexing and ranking matter more than transactional normalization.
+
+This flexibility is powerful because not every data problem looks the same. Trying to force every workload into one storage model often leads to awkward schemas or poor performance. Polyglot persistence lets each service optimize locally for its domain.
+
+But the cost is operational and cognitive complexity. The team must now understand backups, scaling, monitoring, security, and failure behavior across several database products instead of one. A mature organization may handle that well. A small team may find that the flexibility costs more than it returns. So polyglot persistence is not an excuse to choose a new database just because it looks interesting. It is a tool for genuine workload fit.
+
+## Slide 6: API Composition
+One strategy for cross-service data retrieval is API composition. The calling service or gateway asks several services for their portion of the data and combines the results in memory. This is often the simplest way to build a user-facing response when the data lives in several domains.
+
+The Python example of fetching order details and then user details is exactly this pattern. It is straightforward and works well for relatively small aggregations. For example, an order details page may ask the order service for the order and the user service for the customer summary, then merge the data into one response.
+
+The tradeoff is latency and availability coupling. Each additional service call adds network cost and another potential point of failure. If the user service is slow or down, the composed response may degrade or fail. This is why API composition is fine for simple aggregation, but teams should be careful when it becomes the default answer for every complex query.
+
+## Slide 7: CQRS and Materialized Views
+The second common strategy is to build local read models using events. When one service changes data, it emits an event. Another service subscribes to that event and updates a local, read-only copy containing just the fields it needs. This is often described as CQRS-lite or materialized-view design.
+
+This approach is very useful when the same query is needed often and must be fast. Instead of calling three services every time a dashboard loads, a service can maintain a pre-joined local read model using events from the relevant owners. That reduces read latency and removes some runtime coupling.
+
+The price is eventual consistency and duplication. The copied data may be briefly behind the source of truth, and now multiple services store similar information for different purposes. That is acceptable when the team understands the consistency model. It becomes dangerous when developers assume the replicated view is always instantly current.
+
+A strong rule here is that the replicated view is for reading, not for ownership. The owning service still controls the truth. The read model exists to support a query pattern efficiently.
+
+## Slide 8: Go Repository Isolation Example
+The Go example shows repository isolation inside a service. The repository struct encapsulates access to the orders database, and the service uses that abstraction instead of exposing raw table access to outsiders. This is a small code example, but it reflects the broader architectural rule: only the owning service should touch its storage directly.
+
+In practice, this kind of isolation makes refactoring safer. The order service can split tables, add indexes, or change queries internally without external services reaching around the API boundary. Good service ownership often shows up in code as disciplined repository layers and in architecture as disciplined network boundaries.
+
+The limitation is that repository isolation inside one service does not automatically protect the organization if teams still share credentials or direct database access informally. The architectural rule must be backed by operational controls and team discipline.
+
+## Slide 9: Python API Composition Example
+The Python example asks the order service for order data and then asks the user service for customer information. This is a clear illustration of join-in-memory behavior. It is easy to understand and easy to prototype.
+
+The engineering question is when it scales poorly. If one request fans out to five services, and each of those calls can be slow or fail independently, then the response path becomes fragile. This is especially noticeable in mobile applications and dashboards where a single screen may need data from many places. The more composition you do synchronously, the more latency piles up.
+
+This is why API composition is best viewed as a practical tool, not a universal answer. It is appropriate for light aggregation and early systems. As usage grows, frequently requested composite views often deserve their own read model.
+
+## Slide 10: Java Materialized View Example
+The Java example listens to user update events and writes data into a local read-only cache or projection. This is a concrete version of event-driven materialized views. Instead of asking the user service every time, the consumer maintains a local representation of the user data it needs for its own read workload.
+
+This is especially useful for high-traffic read paths. For example, a reporting or dashboard service may maintain local projections of account, customer, and order data from several domains so it can answer queries quickly without synchronous fan-out.
+
+The operational risk is lag and correctness assumptions. If the event stream is delayed or the consumer falls behind, the read model can be stale. Teams must make that consistency model explicit. They also need monitoring around consumer lag and replay capability so projections can be rebuilt when needed.
+
+## Slide 11: Design Diagram
+The design diagram shows two domains, ordering and inventory, each owning its own database. The order service can call the inventory service synchronously through an API, and it can also publish an `OrderPlaced` event on a message bus. The inventory service may react to that event asynchronously.
+
+This is a good picture of the pattern because it shows that ownership and communication are separate concerns. The databases are isolated, but services still collaborate through explicit interfaces. Some collaboration is synchronous, some asynchronous, but none of it happens through direct shared-table access.
+
+That distinction is what keeps the architecture service-oriented instead of database-oriented. Once teams fall back to shared tables for convenience, the boundaries start to erode.
+
+## Slide 12: Risks and Tradeoffs
+The first tradeoff is operational complexity. Many small databases are harder to manage than one large one. Backups, schema migrations, monitoring, credentials, and disaster recovery all become more distributed. The second tradeoff is distributed joins. Queries that were once trivial in SQL now require orchestration, projections, or compromise.
+
+The third tradeoff is consistency. Without shared transactions across services, teams often need eventual consistency patterns such as sagas or compensating actions. That means some workflows become more complex to reason about, especially when business stakeholders expect immediate global consistency.
+
+The practical takeaway is that database per service is valuable when you genuinely need strong service ownership and independent evolution. It is less valuable when the system is small, the domains are not really separate, or the organization is not ready for the operational discipline it requires. The pattern is powerful, but only when the team is prepared to live with the consequences of data isolation.

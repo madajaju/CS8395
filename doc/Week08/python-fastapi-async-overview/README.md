@@ -1,6 +1,6 @@
 # Python FastAPI Async Overview
 
-**Length:** 10-15 minutes
+Video: https://youtu.be/3wA9rvkYftc
 
 **Purpose:** Introduce async request handling in FastAPI and when it improves service scalability.
 

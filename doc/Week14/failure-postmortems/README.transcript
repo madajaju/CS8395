@@ -1,0 +1,67 @@
+# Failure Postmortems Transcript
+
+This transcript follows the slide flow from `README.md` and `README.marp.adoc`. It is written as speaker notes for college students who need a practical understanding of how strong teams learn from outages.
+
+## Slide 1: Failure Postmortems
+
+"Today we are covering failure postmortems. In distributed systems, outages are inevitable. What separates weak teams from strong teams is not whether failure happens, but how the team studies failure and improves afterward.
+
+A postmortem is not a trial. It is a structured learning process designed to reduce the chance of recurrence."
+
+## Slide 2: Purpose
+
+"The purpose of this lecture is to provide a framework for analyzing outages in a way that maximizes learning and avoids individual blame."
+
+## Slide 3: Outcomes
+
+"By the end of this lecture, you should be able to define the blameless postmortem philosophy, distinguish proximate from root causes, and structure a useful postmortem document."
+
+## Slide 4: Overview
+
+"Failures in distributed systems are inevitable because the systems themselves are complex and full of dependencies. High-performing teams treat outages as clinical system analysis, not as blame events.
+
+The goal is not to find a scapegoat. The goal is to understand how the system and the process allowed the outage to happen."
+
+## Slide 5: The Blameless Philosophy
+
+"Blameless postmortems focus on the system and the process, not on the individual who triggered the event. If one person can take down the system, that is usually evidence of a system weakness, not just a human weakness.
+
+This philosophy matters because fear destroys honesty, and honesty is essential for learning."
+
+## Slide 6: Proximate vs. Root Cause
+
+"The proximate cause is the immediate visible failure, like a full disk. The root cause is the deeper reason the proximate cause was allowed to become an outage, such as missing alerts or missing cleanup automation.
+
+The Five Whys technique is useful here because it pushes the discussion past symptoms into system-level explanation."
+
+## Slide 7: Postmortem Structure
+
+"A good postmortem usually includes a summary, a detailed timeline, the identified root cause, action items, and lessons learned.
+
+The timeline is especially important because it reconstructs how the outage unfolded minute by minute, which often reveals gaps in detection and response."
+
+## Slide 8: Code Example: Python (Data Collection)
+
+"This Python example captures logs and metrics immediately after a failure and stores them in a file. That kind of automated evidence collection is valuable because key forensic data is often lost if teams wait too long."
+
+## Slide 9: Code Example: Go (Error Wrapping)
+
+"This Go example wraps an error with context, making it easier to understand where and why it happened. Good root cause analysis depends heavily on having useful diagnostic context in the first place."
+
+## Slide 10: Code Example: Java (Structured Logging)
+
+"This Java logging example includes structured fields like trace ID and saga step. That makes it much easier to reconstruct timelines across distributed services during an incident review."
+
+## Slide 11: Design Diagram
+
+"The diagram shows a request hitting the app, the database returning an error, the app logging the failure with a trace ID, and monitoring beginning the timeline reconstruction from there.
+
+That is an important lesson: postmortems are built from the quality of the observability data you already have."
+
+## Slide 12: Risks and Tradeoffs
+
+"The main tradeoffs are time cost, cultural risk, and action-item drift.
+
+Writing a good postmortem takes time. If the culture is not genuinely blameless, people will hide information. And even when the postmortem is good, its action items may be ignored once feature work becomes urgent.
+
+The takeaway is that postmortems only improve systems when the organization is willing to turn lessons into completed changes."

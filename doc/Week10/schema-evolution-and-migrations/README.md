@@ -1,5 +1,7 @@
 # Schema Evolution and Migrations
 
+Video: https://youtu.be/q_sf2IZGpGk
+
 **Purpose:** Provides a framework for evolving database schemas in a distributed system without downtime, focusing on backward compatibility and safety.
 
 **Outcomes**

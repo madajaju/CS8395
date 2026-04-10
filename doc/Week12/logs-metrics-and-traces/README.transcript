@@ -1,0 +1,83 @@
+# Logs, Metrics, and Traces
+
+## Slide 1: Purpose
+Today we are covering logs, metrics, and traces, often called the three pillars of observability. The core idea is that no single kind of telemetry tells the whole story of a distributed system. Logs tell you what happened in detail. Metrics tell you how much of something is happening over time. Traces tell you where one request spent its time across many services and dependencies.
+
+This matters because distributed systems fail in ways that are difficult to understand from one signal alone. A metrics dashboard may tell you the error rate spiked, but not why. Logs may tell you many detailed events occurred, but not which service boundary caused the latency in one user journey. Traces may show a slow payment call, but not whether the overall error rate is becoming systemic or whether only one tenant is affected. Strong operations depend on combining these views.
+
+By the end of this lecture, you should be able to contrast logs, metrics, and traces, decide which signal is best for a given debugging question, and explain why strong observability practices use all three together rather than treating one as the universal answer. The deeper lesson is that observability is not just data collection. It is designing telemetry so engineers can ask production questions and answer them quickly.
+
+## Slide 2: Outcomes
+There are three main outcomes. First, you should be able to distinguish logs, metrics, and traces by structure, resolution, cost, and use case. Second, you should know which signal is best for different operational questions such as alerting, deep forensics, or request-path analysis. Third, you should understand practical implementation patterns such as structured logging, counters and histograms, and basic tracing instrumentation.
+
+The deeper goal is operational fluency. A strong engineer should know not just how to emit telemetry, but which signal to reach for first during an incident. That judgment matters because incidents are time-sensitive. If you start with the wrong tool, you may waste precious minutes staring at data that is technically correct but operationally unhelpful.
+
+## Slide 3: Overview
+Observability is the ability to understand the internal state of a system by examining its outputs. In distributed systems, this becomes especially important because failure is normal, timing is unpredictable, and no single process holds the whole story. Requests cross service boundaries, retries happen in different layers, and work may continue asynchronously long after the original HTTP response ends.
+
+A useful analogy is medicine. Metrics are like vital signs, showing broad trends such as heart rate and temperature. Logs are like detailed chart notes, recording specific observations and events. Traces are like following one patient through triage, imaging, lab work, and discharge. Each view helps, but none is sufficient alone.
+
+This is why observability design is not just installing three tools. It is making sure the signals complement one another. Metrics should reveal patterns. Logs should explain events. Traces should connect distributed work. When these are designed well, investigation becomes faster and less dependent on guesswork.
+
+## Slide 4: Logs
+Logs are immutable, time-stamped records of discrete events. They are best for detailed forensics on a specific request, a specific failure, or an unusual branch of code that needs narrative context. If a payment request was rejected because a signature check failed or an inventory reservation returned a strange status, logs are often the best place to see that exact detail.
+
+In modern systems, structured logging is usually better than plain text because machines can search and parse fields such as `order_id`, `region`, `error_code`, or `provider` reliably. This is a major operational improvement over unstructured strings that humans can read but tooling struggles to analyze. Structured logs also pair better with dashboards and query systems because the fields are stable and explicit.
+
+The downside is cost and volume. Logs are often the most expensive observability signal to store and index, especially if teams log too much at high detail in production. Bad logging habits, like dumping full payloads or repeating noisy debug lines on hot paths, can create huge bills and still fail to answer the useful questions.
+
+## Slide 5: Metrics
+Metrics are aggregated numeric values over time. They are best for trend detection, dashboards, SLO monitoring, and alerting. Common examples include request rate, error rate, CPU usage, queue depth, active sessions, and latency distributions.
+
+Metrics are powerful because they are compact and continuous. A dashboard can show whether p95 latency climbed after a deployment, whether one region has higher error rate, or whether a queue is steadily backing up. Alerts can trigger quickly because metrics are designed for aggregation and thresholding. That makes them the operational front line for noticing change.
+
+The main limitation is lack of detail. Metrics can tell you that something is wrong, but often not why. A counter that says errors doubled is useful, but it does not explain whether the cause is a database timeout, one bad downstream provider, a single noisy tenant, or a new release. Metrics summarize behavior; they do not narrate it.
+
+## Slide 6: Traces
+Traces represent one request path through a distributed system. They are made of spans, where each span is one unit of work such as an HTTP request, a database query, or a service-to-service call. Tracing is especially useful for finding where latency accumulates across boundaries.
+
+If a user experiences a slow checkout, a trace can show whether the delay came from the gateway, order service, payment provider, or database. That is a very different question from whether the whole service is slow in aggregate. Traces are strongest when the investigation is about one distributed path and the team needs causality, not just totals.
+
+The tradeoff is overhead and storage cost. Full request-level trace data at high traffic volume can become expensive, which is why sampling is common. Traces also depend on good propagation. If context is lost between services, the trace becomes fragmented and much less useful.
+
+## Slide 7: Comparison Table
+The table makes the tradeoffs clear. Logs provide high-detail event data but cost more to store and are poor for alerting. Metrics are low-cost, aggregated, and excellent for alerting and SLOs. Traces give request-level flow detail with medium cost, often managed through sampling. None dominates in every category.
+
+This is why strong teams rarely ask which one is best in general. They ask which signal best answers the current question. If the question is are errors rising after a deploy, metrics are probably first. If the question is why request 123 failed validation in this service, logs are useful. If the question is where this distributed request spent time across five services, traces are often the best tool.
+
+A practical incident workflow often starts with metrics, narrows with traces, and confirms with logs. Metrics tell you there is a problem, traces help localize the path of failure or slowness, and logs provide the exact event detail needed to verify the cause.
+
+## Slide 8: Node.js Structured Logging Example
+The Node.js example uses structured JSON logging. This is a production-friendly pattern because the log entry contains fields such as event name, order ID, and duration in a machine-parsable format. Instead of writing one long sentence for humans, the service emits data that both humans and tooling can use.
+
+That makes searching, filtering, and aggregation much easier. Teams can ask for all `order_processed` logs in one region, all errors for one provider, or all logs tied to a specific order ID. During incidents, this can reduce search time dramatically because you are not guessing string fragments and hoping they match.
+
+The main lesson is that logging format is not cosmetic. Good structure makes logs operationally useful. Bad structure turns a large log store into an expensive pile of text.
+
+## Slide 9: Go Prometheus Metrics Example
+The Go example increments a Prometheus counter for HTTP requests. This is one of the most common and useful metric patterns because counters reveal throughput and form the basis for rates, error-rate calculations, and many SLO dashboards. A simple counter becomes much more powerful once it is combined with labels like route or status code and then visualized over time.
+
+Metrics are especially effective when labels are chosen carefully. A route label may be safe and useful. A raw `user_id` label is often disastrous because it creates a cardinality explosion that makes the monitoring system slower, more expensive, and harder to query. High-cardinality design mistakes are one of the most common reasons a metrics system becomes painful to operate.
+
+So the lesson is not merely emit metrics. It is emit stable, aggregatable metrics that your monitoring system can handle economically. Good metric design is partly about what to count and partly about what not to label.
+
+## Slide 10: Java Span Example
+The Java example creates a span and adds metadata to it. This demonstrates how traces become more useful when spans contain context such as operation name, provider, region, or business event markers. A trace with no attributes may show where time was spent. A trace with useful attributes can also help explain why that request was unusual.
+
+This is especially valuable in real incidents. Suppose only one payment provider is slow, or only one tenant sees failures. Span attributes can expose that pattern immediately in the tracing backend. Without those fields, engineers may know which service was slow but still not know which variant of the request made it different.
+
+The warning is that teams must avoid sensitive values and excessive high-cardinality attributes. Tracing systems have cost and privacy boundaries too. Good span metadata is deliberate and restrained.
+
+## Slide 11: Design Diagram
+The diagram shows one application service sending three different kinds of telemetry: logs to a log aggregator, metrics to a metrics store, and trace spans to a tracing system. This is a clean picture of observability as a set of complementary outputs, not a single magic tool.
+
+The value of the diagram is that it emphasizes coexistence. The same service should often emit all three kinds of telemetry because they answer different operational questions. If a team only adopts metrics, it may see incidents quickly but struggle to explain them. If it only adopts logs, it may have lots of detail but poor alerting. If it only adopts tracing, it may understand individual request paths but miss broad trends.
+
+That is the deeper observability lesson: the signals reinforce each other. Metrics detect patterns, traces localize flow problems, and logs provide forensic detail. Mature operations design assumes those roles are complementary.
+
+## Slide 12: Risks and Tradeoffs
+Each signal has tradeoffs. Logs can become expensive and noisy. Metrics can break under bad label design and high cardinality. Traces can add overhead and require sampling to remain affordable. All three can become misleading if naming, metadata, and service boundaries are inconsistent.
+
+There are also human tradeoffs. Too much telemetry creates cognitive overload. Too little telemetry creates blind spots. If teams instrument ad hoc without common naming conventions, incident response becomes slower because each service describes the world differently. Observability is partly a tooling problem and partly a language-consistency problem across teams.
+
+The practical takeaway is that observability is not about collecting everything indiscriminately. It is about collecting the right signals in the right shape so engineers can ask and answer production questions quickly. Strong observability design is deliberate, cost-aware, and aligned with how incidents are actually investigated.

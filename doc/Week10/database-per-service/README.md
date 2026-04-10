@@ -2,6 +2,8 @@
 
 **Purpose:** Explains the fundamental pattern of isolating data at the service level to ensure loose coupling and independent scalability.
 
+Video: https://youtu.be/T9RIAXCk350
+
 **Outcomes**
 - Define the "Database per Service" pattern and its benefits.
 - Recognize the challenges of cross-service data consistency and querying.

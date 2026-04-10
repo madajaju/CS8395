@@ -1,0 +1,76 @@
+# Distributed Tracing Basics
+
+## Slide 1: Purpose
+Today we are covering distributed tracing, which is one of the core observability tools for understanding how a single request moves through a system made of many services. In a monolith, debugging one request often means following a call stack or reading logs from one process. In a distributed system, the same user action may cross gateways, application services, asynchronous workers, caches, message brokers, and databases. Without tracing, that journey becomes difficult to reconstruct and even harder to explain under pressure.
+
+This matters because many production problems are not total outages. They are slow requests, intermittent failures, inconsistent latency, or mysterious time spent somewhere in a larger workflow. The user experiences a checkout, a search, or a booking as one action. The system may perform dozens of internal steps. Tracing helps engineers connect those internal steps into one coherent story rather than treating each service as an isolated mystery.
+
+By the end of this lecture, you should be able to explain traces and spans, understand context propagation, and reason about why tracing is valuable for latency analysis, debugging, capacity work, and production forensics. The deeper lesson is that tracing is not about collecting fancy waterfall charts. It is about preserving causality across boundaries so teams can answer where time and failure actually occurred.
+
+## Slide 2: Outcomes
+There are three major goals here. First, you should be able to contrast simple correlation IDs with full trace-and-span structure. Second, you should be able to identify the main elements of a trace such as root spans, parent-child relationships, events, and attributes. Third, you should understand how context propagation keeps the trace connected across process and network boundaries.
+
+The deeper goal is operational judgment. A strong engineer should know what kind of production question tracing answers better than logs or metrics. Tracing is especially useful when the problem is not what happened in one service, but where time, retries, or failures accumulated across many services in one user journey.
+
+## Slide 3: Overview
+In a distributed system, one incoming request often fans out into many internal operations. A gateway receives the user request, one service loads profile data, another checks inventory, another charges payment, and another writes an audit record. If one of those calls is slow, the user only knows that the whole request felt slow.
+
+This is where tracing helps. Instead of looking at services in isolation, tracing links related work together so the team can inspect one request journey as a connected whole. That matters during incidents because the slowest or failing component is not always the one that first receives blame. Teams often look at the edge service because the error surfaced there, even when the real problem lives two hops downstream.
+
+A useful analogy is parcel tracking. A package moves through several facilities, and customers want to know where it is now and where it got delayed. Tracing does the same thing for requests inside software systems. It gives you a timeline and path, not just a pile of disconnected updates.
+
+## Slide 4: Spans and Traces
+A span is one unit of work, such as an HTTP request, a database query, publishing a message, or calling another service. A trace is the collection of spans that together represent one end-to-end request journey. The root span is the first span in that trace, usually created at the entry point like an API gateway or edge service.
+
+This structure matters because it gives hierarchy to work. Parent-child relationships show which span triggered which downstream action. That lets engineers see not just that a request was slow, but which branch of the call tree consumed time, retried excessively, or failed. If one branch fans out to three payment providers and only one is slow, a trace makes that visible in seconds.
+
+A helpful way to think about it is that logs tell you events happened, but traces tell you how one chain of work unfolded. Metrics say the hospital is busy; a trace shows one patient's route through triage, lab work, imaging, and discharge. That causal structure is why traces are so effective during latency analysis.
+
+## Slide 5: Context Propagation
+Context propagation is the mechanism that keeps the trace connected. When one service calls another, it must pass trace context so the downstream service can create child spans linked to the original request. Without that handoff, each service may emit its own isolated spans and the end-to-end journey disappears.
+
+That is one of the most common tracing failures. A team says it has tracing because every service exports spans, but when they open the tracing UI they see several unrelated fragments instead of one request tree. The instrumentation exists, but the causality is broken. In practice, that is almost as frustrating as having no tracing at all.
+
+This is why standards like W3C Trace Context matter. Common headers such as `traceparent` give services a shared format for passing trace identifiers cleanly across boundaries. Standardization matters operationally because distributed tracing becomes most valuable when many teams, frameworks, and languages can cooperate without inventing custom conventions every time.
+
+## Slide 6: Components of a Trace
+The main components are straightforward but important. The trace ID identifies the whole request journey. The span ID identifies one unit of work. The parent span ID links a child span to the span that caused it. Attributes add metadata such as HTTP method, route, tenant, region, or provider. Events capture notable moments inside the span, such as a retry, cache miss, or validation failure.
+
+These fields make traces useful beyond pure timing. They allow filtering, searching, and correlation. For example, a team might inspect only slow traces for the checkout route in one region or only traces where a payment provider timed out. Without useful attributes, traces become pretty pictures that are hard to query. With well-chosen attributes, they become investigation tools.
+
+The design lesson is that trace data becomes much more valuable when metadata is attached deliberately rather than left as minimal timing-only instrumentation. At the same time, teams need discipline. High-cardinality attributes such as raw user IDs on every span can make observability systems expensive and awkward to query. Good tracing design is both informative and economical.
+
+## Slide 7: Python Context Propagation Example
+The Python example shows a simple manual propagation pattern. One service reads the current trace ID, passes it in outgoing headers, and the downstream service extracts it on receipt. This is valuable for teaching because it makes the mechanics visible. Students should understand what automation is doing for them before they rely on frameworks to hide the details.
+
+In real systems, manual propagation is often where bugs appear. A developer adds one new HTTP client, one async worker, or one queue consumer and forgets to carry the trace context. Suddenly that branch of the request vanishes from the trace. During an incident, engineers see a trace stop at one service boundary and waste time wondering whether the downstream service was never called or was called without context.
+
+That is why standardized middleware and instrumentation libraries are preferred in production. Manual propagation is educational and sometimes necessary in edge cases, but consistent framework-level behavior is safer because it reduces the number of places where one missed header breaks the trace.
+
+## Slide 8: Go W3C Trace Context Example
+The Go middleware example uses OpenTelemetry propagation support to extract the `traceparent` header automatically. This is much closer to real production instrumentation. Middleware-based propagation centralizes the behavior instead of requiring every handler and every outbound call to remember tracing details by hand.
+
+That operational consistency matters more than it may appear. Observability is weakest at boundaries, especially when multiple teams own different services. If one team uses custom headers, another forgets propagation in background jobs, and a third samples differently, the resulting traces are fragmented and hard to trust. Standard middleware helps reduce that organizational entropy.
+
+A good real-life example is an order request that enters through a gateway, calls order service, then payment, then inventory. If all those services use the same propagation standard, the trace remains coherent even when they are written in different languages. That is one reason OpenTelemetry adoption has become so widespread: shared instrumentation conventions reduce coordination cost.
+
+## Slide 9: Java OpenTelemetry Metadata Example
+The Java example adds attributes and an event to the current span. This matters because traces become far more useful when they carry business and operational context instead of just start and end times. If a slow trace is tagged with region, order type, or payment provider, engineers can detect whether the slowness clusters around one dependency or one class of requests.
+
+This is also where teams can make tracing either powerful or dangerous. Useful metadata helps isolate problems quickly. Poor metadata strategy can leak sensitive information, create very high-cardinality dimensions, or bloat storage cost. For example, tagging every span with a unique customer email may help one investigation but create a privacy and cost problem across millions of traces.
+
+The practical lesson is to choose metadata that supports investigation without exposing secrets or exploding volume. Good candidates are stable categories like route, provider, environment, or region. Bad candidates are secrets, full payloads, or highly unique identifiers that add little operational value.
+
+## Slide 10: Design Diagram
+The design diagram shows a client request entering the gateway, then flowing to the order service and payment service with the same trace ID and linked parent-child spans. Each service contributes its own span to the same overall trace. This is the core picture students should keep in mind: a trace is a connected tree of work, not a pile of unrelated telemetry.
+
+That continuity is what lets engineers answer questions like was the request slow because the gateway spent too long authenticating, because the order service blocked on the database, or because the payment provider introduced most of the delay. Without a coherent trace, those become competing guesses made by different teams looking at separate dashboards.
+
+This is also why tracing pairs well with incident response. When a problem affects a user-facing path but does not fully crash the system, one good trace often gives the quickest explanation of where to look next. It does not replace logs or metrics, but it often gives the shortest route from symptom to suspect.
+
+## Slide 11: Risks and Tradeoffs
+Distributed tracing has real tradeoffs. Every service must propagate context correctly. Capturing and exporting spans adds overhead, though usually modest when instrumentation is sensible. Full trace storage at very high traffic volume can become expensive, which is why many systems sample traces rather than keeping every one.
+
+Sampling creates its own tradeoff. If the sample rate is too low, rare failures may never appear in the trace store. If the sample rate is too high, cost rises quickly. Teams also need to think about asynchronous boundaries. A trace may cross queues or background jobs, but only if the propagation strategy supports that flow explicitly.
+
+The practical takeaway is that tracing is not a replacement for logs or metrics. It is a complementary view specialized for request flow, causality, and latency analysis. Strong teams instrument entry points, preserve context across boundaries, add useful metadata, and sample intentionally so the resulting traces are both operationally useful and financially sustainable.

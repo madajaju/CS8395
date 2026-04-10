@@ -7,6 +7,8 @@
 :revealjs_width: "100%"
 :revealjs_height: "100%"
 
+Video: https://youtu.be/3wA9rvkYftc
+
 == Goals
 - Explain async endpoint execution in FastAPI
 - Identify workloads that benefit from `async def`

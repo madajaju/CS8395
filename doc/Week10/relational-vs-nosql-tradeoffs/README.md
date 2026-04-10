@@ -1,5 +1,7 @@
 # Relational vs. NoSQL Tradeoffs
 
+Video: https://youtu.be/PJ59YDABKD4
+
 **Purpose:** Explores the architectural decision-making process when choosing between relational (SQL) and non-relational (NoSQL) data stores in a distributed system.
 
 **Outcomes**

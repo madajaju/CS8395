@@ -1,0 +1,86 @@
+= Capacity and Load Testing
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Provides a framework for identifying the performance limits of a distributed system before production traffic reaches them.
+
+== Outcomes
+- Contrast Load Testing, Stress Testing, Soak Testing, and Spike Testing.
+- Identify common bottlenecks such as CPU, memory, network, and database connection limits.
+- Define SLIs and SLOs using test results instead of guesswork.
+
+== Overview
+How many users can your system handle, and where does it actually fail first?
+- In distributed systems, the bottleneck is often not where teams expect.
+- Capacity testing is about finding limits before production finds them for you.
+
+== Core Testing Types
+1. **Load Testing:** Expected traffic volume to verify normal performance targets.
+2. **Stress Testing:** Push beyond expected load until the system breaks.
+3. **Soak Testing:** Hold a steady load for a long period to expose leaks and exhaustion.
+4. **Spike Testing:** Rapidly increase traffic to observe burst handling and autoscaling behavior.
+
+== Golden Signals
+- **Latency:** How long requests take.
+- **Traffic:** How much demand hits the system.
+- **Errors:** How often requests fail.
+- **Saturation:** How close the service is to capacity.
+
+== Code Example: Go (Custom Hammer)
+[source,go]
+----
+func hammer(url string, workers int) {
+    for i := 0; i < workers; i++ {
+        go func() {
+            for {
+                http.Get(url)
+            }
+        }()
+    }
+}
+----
+
+== Code Example: Python (Locust)
+[source,python]
+----
+class UserBehavior(HttpUser):
+    @task
+    def purchase(self):
+        self.client.post("/api/buy", json={"item": "123"})
+----
+
+== Code Example: Node.js (Autocannon)
+[source,bash]
+----
+npx autocannon -c 100 -d 10 http://localhost:8080/health
+----
+
+== Design Diagram
+[plantuml, capacity-load-testing-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+actor "Load Generator" as LG
+component "System Under Test (SUT)" as SUT
+database DB
+component "Monitoring" as Mon
+
+LG -> SUT : Ramp up traffic (0 to 1k req/s)
+SUT -> DB : Query data
+SUT -> Mon : Emit Metrics (Latency, Error Rate)
+Mon -> Mon : Analyze Thresholds
+
+note right of SUT : At 500 req/s,\nDB connection pool saturates!\nLatency spikes.
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Cost:** Large-scale tests can consume significant compute and bandwidth.
+- **Environment Parity:** Staging results rarely match production exactly.
+- **Data Cleanup:** Tests can pollute storage with synthetic records.
+- **Blast Radius:** Poorly isolated tests can affect neighboring infrastructure.

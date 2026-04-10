@@ -1,0 +1,61 @@
+# Tradeoff Narratives Transcript
+
+This transcript follows the slide flow from `README.md` and `README.marp.adoc`. It is written as speaker notes for college students learning to explain architecture decisions in a disciplined and convincing way.
+
+## Slide 1: Tradeoff Narratives
+
+"Today we are covering tradeoff narratives. Senior architecture is rarely about finding a perfect solution. It is about choosing the least bad option under real constraints and being able to explain why.
+
+A tradeoff narrative is how you communicate not only what you chose, but what you rejected and what you knowingly sacrificed."
+
+## Slide 2: Purpose
+
+"The purpose of this lecture is to help you master the skill of articulating architectural decisions by focusing on the why and the instead of."
+
+## Slide 3: Outcomes
+
+"By the end of this lecture, you should be able to build a decision matrix, describe the cost of your chosen architecture, and explain the long-term maintenance impact of the design."
+
+## Slide 4: Overview
+
+"Senior architecture is not about perfect solutions. It is about the least bad solution for the available time, cost, performance, and team-skill constraints.
+
+A strong tradeoff narrative explains why path A was chosen over path B and what was given up in return."
+
+## Slide 5: The Core Elements
+
+"The three core elements are context, options, and decision. Context explains the problem and constraints. Options explain what alternatives were seriously considered. Decision explains what was chosen and what factor mattered most.
+
+This structure is powerful because it shows reasoning, not just preference."
+
+## Slide 6: The Decision Matrix
+
+"The decision matrix is a compact way to compare options across dimensions such as scalability, complexity, and cost. It helps make the tradeoff visible instead of leaving it implicit.
+
+For example, microservices may win on scalability but lose on complexity and cost. That does not make them right or wrong by themselves. It depends on the problem."
+
+## Slide 7: Code Example: ADR (Markdown)
+
+"This ADR example records a decision to use sagas over 2PC, along with the context and consequences. That is good architecture practice because it preserves reasoning for future teams, not just the final choice."
+
+## Slide 8: Code Example: Go (Strategic TODO)
+
+"This Go example uses a TODO comment to document that an in-memory cache is a deliberate v1 tradeoff, not an accident. That matters because future engineers need to know which shortcuts were intentional and under what conditions they should change."
+
+## Slide 9: Code Example: Python (Documenting Hacks)
+
+"This Python example documents a synchronous call as a temporary complexity-saving choice for the first release. That kind of explicit narrative prevents temporary hacks from silently becoming permanent architecture."
+
+## Slide 10: Design Diagram
+
+"The diagram compares a synchronous direct-join option with an asynchronous event-and-read-model option. The note explains that complexity rises in the chosen async design, but scalability improves.
+
+That is exactly what a tradeoff narrative should make visible: what got better and what got worse."
+
+## Slide 11: Risks and Tradeoffs
+
+"The main risks are analysis paralysis, decision fatigue, and stale architectural decision records.
+
+If every minor choice gets over-documented, progress slows. If teams never revisit old decisions, the documented narrative drifts away from reality. The most valuable narratives are for one-way-door decisions, where reversing course is expensive.
+
+The takeaway is that tradeoff narratives are not paperwork. They are a tool for making architecture reasoning visible, durable, and honest."

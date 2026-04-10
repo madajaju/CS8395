@@ -1,0 +1,76 @@
+# Schema Evolution and Migrations
+
+## Slide 1: Purpose
+Today we are covering schema evolution and migrations, which is one of the places where distributed systems punish simplistic thinking. Changing a database schema in a single-process local application can be straightforward because code and schema usually move together. In a distributed system, you cannot assume every service instance, job runner, background worker, or consumer upgrades at the same moment. That means schema change is not only a database task. It is a compatibility task.
+
+This topic matters because production systems rarely stop for ideal synchronized upgrades. Old and new versions of code often coexist during rolling deployments. Batch jobs may still run old binaries. Consumers may lag behind. If a schema change is breaking and you deploy it as if the whole world will update instantly, you can cause downtime, failed writes, broken reads, or corrupted assumptions across services.
+
+By the end of this lecture, you should be able to distinguish breaking from non-breaking schema changes, apply the expand-and-contract pattern, and reason about why safe schema evolution is really about compatibility across time, not just correctness at one instant.
+
+## Slide 2: Outcomes
+There are three practical outcomes here. First, you should be able to classify schema changes by risk. Second, you should be able to explain the expand-and-contract pattern as a stepwise migration strategy for zero-downtime systems. Third, you should understand why migration tooling, idempotency, and pre-deployment testing matter so much when databases are large and traffic is continuous.
+
+The broader outcome is design maturity. A strong engineer stops asking, can this migration run, and starts asking, can this migration run safely while different application versions coexist and while real production data is present? That is the right operational mindset.
+
+## Slide 3: Overview
+In a distributed system, code and schema have to be decoupled because deployment is gradual. If some application instances still expect an old column name while others expect a new one, the schema must remain compatible long enough for the transition to complete.
+
+A useful analogy is changing the signs and lane markings on a busy highway. You cannot assume every driver receives the memo at the same second. During the transition, the road design must still be understandable to people following the old map and the new map. Database evolution works the same way. The transition state is the risky part.
+
+This is why compatibility thinking is so important. A migration that is logically correct in the final state may still be operationally dangerous if the intermediate states are unsafe.
+
+## Slide 4: Breaking vs. Non-breaking Changes
+Non-breaking changes are additions that older code can usually ignore safely. Adding a nullable column, adding a new table, or introducing an optional field often fits this category. These changes are still worth testing, but they rarely invalidate assumptions made by currently running code.
+
+Breaking changes remove or alter assumptions that older code depends on. Renaming a column, deleting a field, changing a type in an incompatible way, or tightening a constraint can all break running services that still expect the old shape. These are the dangerous changes because they require orchestration rather than one-step rollout.
+
+A helpful rule is to ask, if old code keeps running after this migration, will it still read and write safely? If the answer is no, the change is breaking and should trigger a multi-step strategy rather than a single migration script.
+
+## Slide 5: Expand and Contract Pattern
+Expand and contract is the standard answer for many breaking schema changes. Suppose you want to rename a column. The safe approach is not to rename it immediately. First, expand the schema by adding the new column while keeping the old one. Second, update the application so new code writes to both columns but still reads from the old one. Third, backfill historical data. Fourth, switch reads to the new column. Finally, once the old path is no longer used, contract the schema by removing the old column.
+
+This pattern is powerful because it turns one dangerous breaking change into several compatible stages. Each stage keeps the system functional while old and new code coexist. It is slower, but it is much safer for production systems.
+
+A useful real-world example is splitting a `name` column into `first_name` and `last_name`. If you drop the old field immediately, old code breaks. If you expand first, dual-write during the transition, and backfill existing rows, the system can evolve without downtime.
+
+## Slide 6: Migration Tools and Best Practices
+Migration tools like Flyway and Alembic matter because schema changes must be versioned, reviewed, and replayable. A migration should be treated like code, not like an improvised SQL command copied into production. That means version control, repeatable pipelines, and clear audit history.
+
+Idempotency is another major best practice. If a deployment reruns a migration or if an environment is partially initialized, the migration should not fail just because the desired structure already exists. Constructs like `IF NOT EXISTS` and careful checks make migrations safer across environments.
+
+Pre-deployment testing is also critical. A migration that finishes in two seconds on a toy dataset may lock a hot production table for minutes on real data. That is why good teams test against production-like data volume and measure how the migration behaves before trusting it in a live rollout.
+
+## Slide 7: SQL Expand Example
+The SQL example adds a new `status_v2` column. On its own, this looks almost trivial, and that is the point. The expand step should usually be boring. Adding a new optional column is much safer than immediately renaming or removing a field that existing code depends on.
+
+The real lesson is that safe migrations often begin with additive steps. A strong engineer resists the temptation to jump directly to the final schema. The transition state is where system safety lives.
+
+This also shows why migration design is not about elegance alone. The cleanest final schema may require messy temporary overlap during rollout. Production safety matters more than aesthetic purity in the middle of a migration.
+
+## Slide 8: Python Dual-Write Example
+The Python example writes to both the old and new columns. This is the transition state in code. Old readers still work because the old column remains populated, while new code prepares the system for the future by writing the new column as well.
+
+Dual-write logic is often uncomfortable because it feels redundant, but redundancy is the point. You are preserving compatibility while the system crosses from one schema version to another.
+
+The operational risk is drift. If one write succeeds and the other fails, or if one path is forgotten in a codebase, the two columns can diverge. That is why teams should keep transition periods as short as practical and monitor carefully while dual-write code exists.
+
+## Slide 9: Go Schema Version Check Example
+The Go example checks the current schema version before allowing the application to start. This is a strong safety pattern because it fails fast when code and schema are incompatible. Instead of letting subtle runtime errors appear later, the service refuses to run against an unsupported schema state.
+
+This is especially helpful in large systems where deployment order matters. If a service starts too early against an unprepared database, the result may be partial failures that are hard to diagnose. Schema version checks make that incompatibility explicit.
+
+The limitation is that this only protects known version mismatches. Teams still need to design migrations carefully so compatible intermediate states exist when rolling deployments happen.
+
+## Slide 10: Design Diagram
+The design diagram walks through the expand-and-contract flow. First the schema is expanded with a new column. Then version two of the app writes to both columns while still reading the old one, allowing version one and version two to coexist. Later, reads switch to the new column. Finally, the old column is dropped after the system has fully moved over.
+
+This diagram matters because it makes the transition state visible. Many migration failures happen because teams only think about the start state and end state, not the coexistence period in the middle. The middle is where compatibility work actually happens.
+
+A strong operational lesson here is that migrations are workflows, not just scripts. They involve database changes, code rollout, data backfill, verification, and cleanup.
+
+## Slide 11: Risks and Tradeoffs
+The first tradeoff is duration. Safe migrations take longer because they often require multiple deployments and a backfill period. The second tradeoff is consistency during transition. Dual writes and background copies can create race conditions or lock contention if the dataset is large and traffic is heavy.
+
+The third tradeoff is testing complexity. You do not just need to test old code with old schema and new code with new schema. You also need to test transitional combinations such as old code against expanded schema and new code during the dual-write phase.
+
+The practical takeaway is that zero-downtime schema evolution is possible, but only when teams treat compatibility as a first-class design problem. The migration script matters, but the deployment choreography matters just as much. Strong teams optimize for safe transitions, not just correct final states.

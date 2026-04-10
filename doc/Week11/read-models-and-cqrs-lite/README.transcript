@@ -1,0 +1,81 @@
+# Read Models and CQRS Lite
+
+## Slide 1: Purpose
+Today we are covering read models and CQRS Lite. The central idea is that the way data is written is often not the way it is best queried. As systems grow, write models tend to optimize for correctness, business rules, and normalization, while read paths optimize for speed, denormalized views, and user-facing convenience.
+
+This matters because many systems become awkward when one model is forced to serve both purposes. Developers end up writing increasingly complex joins for dashboards or increasingly distorted write schemas just to support query performance. CQRS, or Command Query Responsibility Segregation, addresses this by separating the write side from the read side.
+
+This lecture focuses on CQRS Lite rather than full CQRS with event sourcing. The goal is not maximum architectural purity. The goal is to understand when a separate read model is useful and how to build one pragmatically.
+
+## Slide 2: Outcomes
+There are three main outcomes. First, you should be able to explain the difference between command models and read models. Second, you should recognize when CQRS Lite is sufficient and when full CQRS would be unnecessary overkill. Third, you should be able to describe how asynchronous event processing keeps a read model synchronized.
+
+The deeper outcome is better system design intuition. When a query path becomes slow, brittle, or overly dependent on many joins and services, you should be able to recognize that the issue may not be query tuning alone. The issue may be that the read model and write model are trying to do incompatible jobs.
+
+## Slide 3: Overview
+The core problem is tension between write optimization and read optimization. Write paths care about enforcing rules, preserving normalized data, and maintaining consistency. Read paths care about answering specific questions quickly, often in exactly the shape the UI or reporting tool needs.
+
+A good analogy is a warehouse versus a storefront display. The warehouse organizes inventory for correctness and storage efficiency. The storefront organizes items for fast customer access and convenient presentation. Both contain information about the same products, but they are optimized for different tasks.
+
+CQRS says it is acceptable, and often useful, to maintain different models for those different needs.
+
+## Slide 4: The Command Model
+The command model is the write side. Its job is to validate actions, apply business rules, and persist the authoritative state. This model is often more normalized and domain-focused because correctness matters most here.
+
+For example, an order creation command may validate item availability, payment status, and customer rules before saving an order. That model is not designed primarily to power a dashboard. It is designed to keep business logic correct.
+
+This is why trying to optimize the write model for every read use case can distort it. The write model should protect the business transaction first.
+
+## Slide 5: The Read Model
+The read model is optimized for answering queries quickly. It is often denormalized, pre-joined, or stored in a technology suited for rapid retrieval such as Redis, Elasticsearch, or a flattened SQL table.
+
+A dashboard record may combine order, customer, and payment summary data into one row because that is what the UI needs. That shape may be awkward or redundant from a write-model perspective, but it is excellent for reading.
+
+The key idea is that a read model is allowed to duplicate or reshape data if doing so gives faster and simpler queries.
+
+## Slide 6: CQRS Lite
+Full CQRS is often associated with event sourcing, where the event log is the source of truth and projections are rebuilt from that history. CQRS Lite is much simpler. The write model remains the main source of truth, and events are just used to keep a separate read model synchronized.
+
+This makes CQRS Lite attractive because it captures much of the read-side benefit without the full complexity of event sourcing. Teams can improve query performance and isolate write concerns without redesigning the entire system around events.
+
+A strong engineering habit is to adopt the smallest version of a pattern that solves the problem. CQRS Lite often fits that rule well.
+
+## Slide 7: The Synchronization Gap
+Because the read model is updated asynchronously, there is always a delay between a successful write and the moment every read projection reflects it. This is the synchronization gap, and its architectural name is eventual consistency.
+
+That gap is not necessarily a bug. It is part of the design tradeoff. The read side is fast and optimized, but not always instantly current.
+
+Good systems handle this explicitly. Some use optimistic UI updates. Some direct the user who just made the change to a write-authoritative query path for a short period. Some display status such as processing or updating while projections catch up.
+
+## Slide 8: Java Denormalized Read Model Example
+The Java example consumes order events, fetches user data, builds a dashboard record, and stores it in the read model. This is a good example of denormalization for query efficiency. The expensive joining work is done once during synchronization, not on every user query.
+
+This can make dashboards dramatically faster because the UI no longer depends on several live service calls or complicated joins at request time.
+
+The risk is synchronization failure. If the projection consumer breaks, the dashboard record can drift out of date unless the system supports replay or rebuild.
+
+## Slide 9: Node.js Querying a Read Model Example
+The Node.js example reads a dashboard object directly from Redis. This shows the payoff of the pattern. The query path becomes simple and fast because the heavy integration work was already done earlier when the projection was built.
+
+This is one of the strongest reasons to use read models. A user-facing read can be optimized for latency without contaminating the write model.
+
+The tradeoff is confidence in freshness. The faster read exists because the system accepted asynchronous synchronization earlier.
+
+## Slide 10: Go Emit Command Result Example
+The Go example saves the command result in the main database and then emits an `order.created` event so read models know to update. This is a good picture of CQRS Lite in practice. The write remains authoritative, and the event acts as the synchronization signal.
+
+This pattern works well when combined with transactional outbox or another reliable event publication mechanism, because the system must not lose the synchronization signal.
+
+That is an important design lesson: CQRS Lite depends on trustworthy event propagation. If the write succeeds but the event is lost, the read model may remain stale indefinitely.
+
+## Slide 11: Design Diagram
+The diagram shows a client issuing a command to the write API, which stores data in the write database and emits an event. A synchronization service consumes that event and updates the read database. Later, the client issues a query to the read API, which answers from the read model.
+
+This diagram matters because it visually separates command handling from query serving. The write path and read path are not just different endpoints. They are different optimization targets.
+
+That separation is the core advantage of the pattern. Each side can evolve toward its own performance and correctness goals.
+
+## Slide 12: Risks and Tradeoffs
+The first tradeoff is complexity. You are now operating two models instead of one and maintaining synchronization logic between them. The second is eventual consistency. Users may see old data briefly after an update, which can be confusing if the product experience does not handle it well.
+
+The third is recovery responsibility. If the sync process fails or misses events, the read model can drift and may need replay or rebuild capability. The practical takeaway is that read models are powerful when queries are performance-sensitive and structurally different from writes, but they are not free. Strong teams adopt them when the read-side pain is real enough to justify the extra moving parts.

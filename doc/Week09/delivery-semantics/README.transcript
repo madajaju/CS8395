@@ -1,0 +1,113 @@
+# Delivery Semantics Transcript
+
+This transcript follows the slide flow from `README.md` and `README.marp.adoc`. It is written as speaker notes for college students who already know the basics of distributed systems and messaging, but need a deeper explanation of how delivery guarantees affect correctness, design, and operations.
+
+## Slide 1: Delivery Semantics
+
+Today we are covering delivery semantics, which is one of the most foundational ideas in distributed systems. The phrase sounds abstract, but the underlying question is simple: when one system sends a message to another over a network, what exactly is being promised about delivery and processing?
+
+That question matters because distributed systems are built on unreliable communication. The sender may not know whether the message arrived, whether the consumer processed it, or whether the acknowledgment was lost. A system that does not define its behavior under these conditions is not truly reliable. Delivery semantics give us a vocabulary for describing what the system guarantees when uncertainty enters the picture.
+
+A useful analogy is shipping a package. You can send it with no delivery confirmation and accept the risk that it might disappear. You can require confirmation and resend if the confirmation never arrives. Or you can build a process where duplicates are recognized and ignored so the receiver gets one logical result even if several attempts happen under the hood. Those are very different delivery guarantees, and each one has a different cost and engineering consequence.
+
+## Slide 2: Purpose
+
+The purpose of this lecture is to explain the guarantees a message broker or transport layer can provide and to connect those guarantees to practical system design. Engineers often hear phrases like reliable messaging, exactly-once delivery, or durable event processing and assume those are platform features you can simply enable. In reality, every stronger guarantee adds overhead, complexity, and constraints.
+
+This means delivery semantics are not just a transport concern. They influence consumer behavior, storage design, compensation logic, observability, and business correctness. If the system retries aggressively but the consumer is not idempotent, the messaging layer may be reliable while the business logic becomes dangerous. If the consumer is perfectly safe against duplicates but the transport allows silent loss, critical state changes may still disappear.
+
+So the big shift in thinking is this: delivery semantics are not just labels on a broker. They are architectural decisions with business consequences.
+
+## Slide 3: Outcomes
+
+By the end of this lecture, you should be able to define at-most-once, at-least-once, and exactly-once delivery with confidence. You should also be able to explain how network failures and acknowledgment failures influence those guarantees. Finally, you should understand why idempotent consumer design is not optional in many message-based systems.
+
+The deeper goal is to help you reason about what the system is optimizing for. Is it optimizing for speed and simplicity? For no silent loss? For one logical business effect? You should be able to look at a system and recognize which tradeoff it has chosen and why.
+
+## Slide 4: Overview
+
+When sending a message over a network, failure is inevitable. That statement is not pessimistic. It is an engineering assumption. Networks drop packets. Services crash mid-request. Brokers restart. Acknowledgments time out. Once we accept that reality, delivery semantics become the framework for asking what the system should do next.
+
+At a business level, a workflow such as placing an order feels like one clean action. Underneath, it may involve several messages and several systems with different reliability assumptions. The messaging layer has to decide whether it is better to risk losing the message, risk delivering it more than once, or pay the cost of stronger coordination to produce one logical effect. Those are not just technical questions. They affect money, customer trust, and operational complexity.
+
+A mature engineering team does not ask only whether a message was sent. It asks what the system guarantees if the timing is unlucky, the acknowledgment disappears, or the consumer crashes halfway through processing.
+
+## Slide 5: 1. At-Most-Once
+
+At-most-once means the message is delivered zero or one time. The sender does not wait for an acknowledgment, and it does not retry if the message is lost. This is the cheapest and simplest model from a performance perspective. There is minimal coordination, minimal latency overhead, and very little bookkeeping.
+
+The tradeoff is silent loss. If the network drops the message or the consumer crashes before handling it, the message is gone. There is no recovery attempt. That means at-most-once delivery is only suitable when missing a message is acceptable.
+
+High-volume telemetry is the standard example. If you are sending CPU or memory metrics every second, losing one sample is usually fine. The next sample is coming almost immediately. Mouse movement analytics, debug-level traces, or low-value observability signals are also often acceptable under at-most-once assumptions.
+
+But the same pattern would be dangerous for financial operations, order creation, shipping state, or inventory mutation. In those domains, silent loss is often worse than duplication because the business may never know the action was skipped.
+
+The key lesson is that at-most-once is not careless by definition. It is a deliberate choice to prefer speed and simplicity over recovery.
+
+## Slide 6: 2. At-Least-Once
+
+At-least-once means the system retries until it receives an acknowledgment. The guarantee is one or more deliveries. This is a very common model because it strongly reduces the risk of losing important work silently.
+
+The tradeoff is duplicates. Imagine the consumer processes the message successfully, but the acknowledgment back to the broker is lost. From the broker's perspective, there is uncertainty. It cannot safely assume success, so it delivers the message again. The same logical business event may arrive two or more times.
+
+This is why at-least-once is almost always discussed together with idempotency. Once the system chooses retries, the question becomes how to make repeated delivery safe. It is no longer realistic to hope duplicates will not happen. They are a natural byproduct of reliability under uncertainty.
+
+A good real-world example is order submission. If an order-created event is retried, you do not want two shipments or two invoices. The transport layer is trying to avoid loss, but the application must be prepared to receive the same event again.
+
+So at-least-once is often a very practical middle ground. It accepts duplicate transport in order to avoid silent loss, and it pushes the consumer to become business-safe under retry.
+
+## Slide 7: 3. Exactly-Once
+
+Exactly-once sounds like the ideal guarantee, but it needs careful interpretation. In real systems, it usually means exactly one logical business outcome, not that no duplicate network transmission or retry happened under the hood.
+
+That distinction is extremely important. Students often imagine exactly-once as a magical capability of the broker. In practice, it is usually an end-to-end property that involves the producer, the broker, the consumer, and the storage system. Under the hood, retries may still happen. What makes the result exactly-once is that the business state changes only once.
+
+This is why exactly-once is often achieved through at-least-once delivery plus idempotent processing, or through expensive transactional coordination. Both approaches add overhead. Stronger guarantees usually mean more metadata, more coordination, and lower throughput.
+
+A useful analogy is scanning a concert ticket. The scanner may read the code twice, but the system should still grant one admission. The transport may repeat. The business effect must not.
+
+The right engineering mindset is to treat exactly-once as something that must be designed across boundaries, not simply toggled on in one component.
+
+## Slide 8: Code Example: Go (At-Most-Once)
+
+This Go example opens a UDP connection and writes a metric without checking whether anyone received it. That is a direct at-most-once pattern. The sender does not ask for confirmation, and it does not retry.
+
+The code is simple because the guarantee is weak. That simplicity is attractive in telemetry systems where the cost of coordination would outweigh the value of perfect delivery. It is fast, cheap, and low-overhead.
+
+The danger is copying this pattern into the wrong context. If a team becomes accustomed to fire-and-forget transport and then uses the same style for business events, the result can be silent loss in workflows where loss is unacceptable. So the implementation lesson is that the absence of retry and acknowledgment logic is not just a coding detail. It is a semantic decision.
+
+## Slide 9: Code Example: Python (At-Least-Once)
+
+This Python example retries publish operations until the broker call succeeds. That retry loop is the main clue that we are in at-least-once territory. The sender is explicitly saying, 'I would rather risk sending this more than once than risk not sending it at all.'
+
+This is a common design in RabbitMQ publishers, Kafka producers, or cloud queue clients configured for durability and retry. But the code also highlights a common architectural mistake: teams add retries and stop thinking. Retries alone do not make the system safe. They make the producer more persistent, but they also create downstream duplicate risk.
+
+That means producer reliability and consumer safety have to be designed together. Adding retries without duplicate-safe consumer behavior is one of the classic ways teams create hidden correctness bugs.
+
+## Slide 10: Code Example: Java (Idempotent Consumer)
+
+This Java example checks a processed store before applying business work. If the event ID already exists, the consumer skips the action. If the ID is new, it performs the work and records the message ID.
+
+This is one of the most important practical patterns in distributed systems. Instead of trying to eliminate all retries from the transport layer, the application accepts that retries happen and protects the business effect from repeating.
+
+There are still important implementation details. The duplicate marker and the business update should be coordinated carefully. If the consumer completes the business action and crashes before saving the message ID, a retry may cause the side effect to happen again. That is why teams often combine duplicate checks with transactional storage or conflict-safe writes.
+
+So this pattern is powerful, but it is not automatic. It has to be implemented with real attention to failure timing.
+
+## Slide 11: Design Diagram
+
+The diagram shows a classic at-least-once scenario. The producer sends a message to the broker. The broker delivers it to the consumer. The consumer processes it and sends an acknowledgment, but the acknowledgment is lost. Because the broker never receives confirmation, it re-delivers the same message after a timeout.
+
+This is a very important visualization because it shows that duplicates are often the result of the system trying to be safe. The broker is not necessarily malfunctioning. It is choosing replay over silent loss when the outcome is uncertain.
+
+That is the mindset students need to develop. When you see duplicates in a reliable messaging system, the right first question is not 'why is this broken?' It is 'what failure path made the system retry, and was the consumer designed to tolerate it?'
+
+## Slide 12: Risks and Tradeoffs
+
+The final tradeoffs are easy to summarize once the concepts are clear. At-most-once risks loss. At-least-once risks duplication. Exactly-once risks coordination cost and complexity.
+
+There is no free guarantee. The more the system tries to protect business correctness at the messaging level, the more infrastructure and application design work it usually requires. That includes additional storage, duplicate detection, lower throughput, or more difficult operational behavior.
+
+The main takeaway is that the right guarantee depends on the business problem. Engineers should choose the weakest guarantee that is still safe. If the workload can tolerate occasional loss, at-most-once may be appropriate. If loss is unacceptable but duplicates can be controlled, at-least-once plus idempotency is often the most practical answer. If the business truly requires one logical outcome with strong coordination, then exactly-once-style design may be justified despite its cost.
+
+In other words, delivery semantics are not just transport options. They are business tradeoffs made visible in technical form.

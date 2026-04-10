@@ -5,6 +5,8 @@
 :source-highlighter: highlightjs
 :icons: font
 
+Video: https://youtu.be/yF8CWUu0mYM
+
 == Purpose
 Explains how to use distributed caching to improve the performance and scalability of distributed systems.
 

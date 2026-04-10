@@ -1,0 +1,77 @@
+# Pub/Sub vs. Message Queues
+
+## Slide 1: Purpose
+This lecture examines two of the most common asynchronous communication patterns in distributed systems: message queues and publish-subscribe, often shortened to pub-sub. Students often encounter both patterns early and treat them as interchangeable because both involve producers, messages, and consumers. In practice, they solve different problems. Choosing the wrong one can create missed notifications, duplicated work, poor scaling behavior, or overly complicated recovery logic.
+
+The core difference is audience. A queue is usually about handing work to one consumer from a group. Pub-sub is about broadcasting information to multiple interested consumers. That sounds simple, but the consequences are significant. It affects how you scale consumers, how you model business intent, how you reason about message durability, and how you debug behavior when systems fail.
+
+By the end of this lecture, you should be able to contrast the semantics of message queues and pub-sub, identify practical use cases for each, explain how consumer competition changes system behavior, and recognize modern hybrids such as consumer groups that combine aspects of both models.
+
+## Slide 2: Overview
+Asynchronous communication exists because distributed systems often need to decouple work in time. A service may need to hand off a task without waiting for immediate completion, or publish information so that many other services can react independently. Queues and pub-sub are both tools for that decoupling, but they answer different questions.
+
+A queue answers the question, who will do this work item? A pub-sub topic answers the question, who wants to know that this happened? That distinction maps closely to business intent. If a photo upload service needs one worker to resize an image, that is a queue problem. If an order service wants many downstream systems to know an order was placed, that is a pub-sub problem.
+
+A real-world analogy helps. Think about a deli counter ticket system. Customers take numbered tickets, and whichever clerk is free next serves the next customer. That is queue behavior: each ticket is handled by one worker. Now think about a school intercom announcement. One person speaks once, and every classroom hears the message. That is pub-sub behavior: the same information fans out to many listeners.
+
+When teams confuse these models, they often build systems that either over-distribute work or accidentally under-distribute information. That is why the semantic difference matters as much as the infrastructure difference.
+
+## Slide 3: Message Queues
+A message queue is a point-to-point or work-queue model. Producers place messages into a queue, and one consumer from a pool handles each message. If there are multiple consumers attached to the same queue, they compete for messages. This is often called the competing consumers pattern. It is useful because it spreads workload horizontally across workers.
+
+Queues are ideal for jobs where exactly one worker should perform the task: generating thumbnails, sending a single invoice email, processing a payment request, or running a fraud check. The queue acts as a buffer between producer and worker capacity. If requests spike, messages accumulate temporarily instead of overwhelming the workers immediately.
+
+The persistence behavior is important. In many queue systems, a message remains in the queue until a consumer acknowledges successful processing. If the consumer crashes before acknowledging, the broker can redeliver the message. That increases reliability, but it also means consumers must handle duplicates safely, which is why queue design often connects directly to idempotency.
+
+A practical benefit of queues is operational smoothing. If your web application receives ten thousand image uploads in five minutes, the queue gives your image processors time to catch up. Instead of failing fast under burst traffic, the system absorbs the spike and drains it over time. The downside is latency: users may wait longer if the backlog grows too much.
+
+## Slide 4: Publish/Subscribe
+Publish-subscribe is a one-to-many distribution model. A publisher sends a message to a topic, and all interested subscribers receive a copy according to the rules of the system. The publisher is not targeting a specific consumer. It is publishing information and letting subscribers decide what to do with it.
+
+This model is ideal for broadcasting facts or notifications. When an order is placed, several services may care: inventory, shipping, analytics, fraud detection, customer communication, and loyalty rewards. Pub-sub lets the order service publish OrderPlaced once while many subscribers react independently. That supports low coupling because the publisher does not need direct knowledge of each downstream consumer.
+
+The challenge is delivery semantics and observability. In older or simpler pub-sub systems, subscribers that are offline may miss messages unless durable subscriptions or replay mechanisms exist. In modern platforms such as Kafka, topics can act like durable logs, allowing subscribers to catch up later. That makes pub-sub much more powerful, but it also means teams must understand offsets, retention, and consumer lag.
+
+A useful way to frame pub-sub is that it optimizes for independent reactions. If multiple teams need to build on the same business fact without tightly coordinating release cycles, pub-sub is often the right model.
+
+## Slide 5: Architectural Comparison
+The comparison table highlights the biggest semantic differences. In a queue, each message has one effective recipient from a worker pool. In pub-sub, each message may have many recipients. Queue logic is usually task-oriented: do this unit of work. Pub-sub logic is usually fact-oriented: this happened, react if relevant.
+
+Scaling also differs. Queue scaling is about adding workers to process the same kind of task faster. Pub-sub scaling is about allowing different services to consume the same information independently. Visibility differs too. A queue message is generally hidden once one worker claims it, while a pub-sub message is conceptually available to every subscription or consumer group that is configured to receive it.
+
+These differences affect architecture choices. If a product manager says, every order must trigger exactly one shipping label creation, you are hearing queue semantics for that step. If they say, every order should notify all downstream interested systems, you are hearing pub-sub semantics. The broker technology might support both, but the business question should drive the choice.
+
+## Slide 6: Node.js Queue Consumer Example
+The Node.js queue example shows a worker connecting to a work queue and consuming messages. Each worker logs that it is processing a task, performs the task, and then acknowledges the message. The acknowledgment is crucial because it tells the broker the work completed successfully and the message can be removed.
+
+This pattern is common in job processing services. For example, a video platform may enqueue transcoding jobs. Worker A may process one video, Worker B another. If Worker A crashes during processing, the system can reassign the unfinished job. That makes the system resilient, but it also means the processing logic should be safe to retry.
+
+A common operational mistake is acknowledging too early. If a worker acknowledges the message before the task is truly complete, a crash can cause silent data loss because the broker thinks the work finished. Another mistake is failing to set concurrency limits, causing workers to pull more work than they can handle and increasing memory pressure. Queue consumers are simple to start and surprisingly easy to mis-tune in production.
+
+## Slide 7: Python Pub/Sub Subscriber Example
+The Python pub-sub example subscribes to an orders topic and reacts when an order is created. The subscriber prints that inventory should be reserved. The important idea is that this subscriber is only one of many possible listeners. Another service could subscribe to the same topic to send an email, and another could subscribe to update analytics. The publisher stays unchanged.
+
+This is where pub-sub shines organizationally. New behavior can be added by introducing new subscribers rather than editing the original service. That reduces direct coupling and often speeds up team autonomy. A notifications team can build on OrderCreated without requiring the ordering team to call them directly from the write path.
+
+But the freedom comes with coordination costs. Subscribers need stable event schemas, clear ownership, and version management. If every team assumes different meanings for the same topic, the pub-sub model becomes chaotic. Strong event naming and schema review are essential.
+
+## Slide 8: Go Hybrid Consumer Group Example
+The Go example points to an important modern reality: many platforms blur the line between queues and pub-sub. Kafka consumer groups are the classic example. Within one consumer group, members share work like a queue: each partition record is delivered to one active group member. Across different consumer groups, the same topic behaves like pub-sub: multiple groups each get their own view of the stream.
+
+This hybrid model is powerful because it gives you fan-out and load balancing together. For example, an analytics consumer group may scale horizontally across three instances, while a fraud detection consumer group separately reads the same topic with its own scaling pattern. The same business event is broadcast to multiple groups, but within each group work is distributed.
+
+The tradeoff is complexity. Teams now need to understand partitions, rebalancing, offsets, and ordering guarantees. Hybrids are flexible, but flexibility usually means more operational concepts to master.
+
+## Slide 9: Design Diagram
+The diagram makes the contrast visual. In the queue section, the producer sends messages into one queue, and Worker A and Worker B each receive different messages. That is load-balanced work distribution. In the pub-sub section, the publisher sends one message to a topic, and Services A, B, and C all receive it. That is fan-out.
+
+This visual difference matters because architecture diagrams often hide semantics behind the word broker. A box labeled message broker tells you very little unless the interaction style is clear. Are consumers competing for work? Are they all supposed to see the same event? Those are different systems even if the same vendor product powers both.
+
+A good architecture review should always ask what delivery audience is intended for each flow. That question usually reveals whether queue semantics or pub-sub semantics are the better fit.
+
+## Slide 10: Risks and Tradeoffs
+Neither model is universally better. Queues can accumulate backlogs if consumers are too slow, increasing latency and storage pressure. They can also make strict ordering harder when many workers compete. Pub-sub can create reliability issues if subscribers are transient and messages are not durable. It can also produce hidden complexity when many services react to the same event and overall business flow becomes hard to follow.
+
+Another tradeoff is cost. Broadcasting large event volumes to many consumers can multiply compute and storage usage. On the other hand, forcing all work through tightly coupled queues can make feature growth slower because every new capability requires a direct integration path.
+
+The practical takeaway is this: choose queues when the business need is work distribution to one handler, choose pub-sub when the need is to broadcast information to many independent consumers, and use hybrids carefully when you need both. The correct pattern is the one that matches the communication semantics of the problem, not the one that happens to be supported by your current broker.

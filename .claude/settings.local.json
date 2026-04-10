@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \":*)",
+      "Bash(for p:*)",
+      "Bash(do)",
+      "Bash(echo \"=== project$p/data-large ===\")",
+      "Read(//c/Users/darre/IdeaProjects/CS8395/doc/projects/project$p/**)",
+      "Bash(echo \"=== project$p/data-small ===\")",
+      "Bash(done)",
+      "Bash(echo \"=== project$p/data-large line counts ===\")",
+      "Read(//c/Users/darre/IdeaProjects/CS8395/doc/projects/project$p/data-large/**)",
+      "Bash(python3 -:*)",
+      "Bash(echo \"=== project$p ===\")"
+    ]
+  }
+}

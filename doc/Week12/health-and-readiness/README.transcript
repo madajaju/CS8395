@@ -1,0 +1,69 @@
+# Health and Readiness
+
+## Slide 1: Purpose
+Today we are covering health and readiness checks, which are deceptively simple but critically important in containerized and distributed systems. Many teams treat health endpoints as trivial always-return-200 pages, while others overload them with deep dependency checks that are expensive, noisy, and unstable. Both extremes are dangerous because probe results directly influence infrastructure behavior.
+
+The real purpose of health probes is to help the platform make the right lifecycle decision about each service instance. Should the orchestrator restart this process? Should it keep the process alive but stop sending traffic? Has the application even finished starting yet? Those are different questions, and they require different signals. When teams collapse them into one generic health endpoint, the platform is forced to react to the wrong kind of failure.
+
+By the end of this lecture, you should be able to distinguish liveness, readiness, and startup probes, understand what should be checked in each one, and reason about how poorly designed probes can cause outages instead of preventing them. The deeper lesson is that health endpoints are not status decorations. They are control inputs to automation.
+
+## Slide 2: Outcomes
+There are three main goals here. First, you should be able to contrast liveness, readiness, and startup checks. Second, you should know which dependencies belong in which kind of probe. Third, you should be able to design health endpoints that are useful to orchestrators without becoming brittle, slow, or misleading.
+
+The deeper outcome is operational judgment. A health endpoint is not just a debugging convenience. It is an automated signal consumed by load balancers, orchestrators, and restart policies. If that signal is wrong, the infrastructure may make the wrong decision at scale. One misclassified dependency can turn a recoverable incident into a restart storm.
+
+## Slide 3: Overview
+A service instance can be in several states. It can be starting, alive but not ready, temporarily degraded, permanently broken, or externally blocked by a dependency. Infrastructure platforms such as Kubernetes need signals that distinguish those states because each one should trigger a different operational response.
+
+That is why probe design matters. Restarting a healthy-but-warming service is very different from removing a live-but-unready service from traffic, and both are different from waiting for a slow-booting application to finish startup. If the signals are wrong, the platform might repeatedly kill a service that only needed time, or keep routing traffic to a service that cannot actually do useful work.
+
+A useful analogy is an airport gate. A plane may exist and have power, but that does not mean boarding should begin. It may still be refueling, cleaning, or waiting for crew. Health probes in software play a similar role: they communicate what kind of operational action is appropriate right now.
+
+## Slide 4: Core Concepts
+Liveness answers the question, is the process alive enough that it should keep running? If liveness fails, the orchestrator restarts the instance. Readiness answers the question, is this instance ready to handle traffic right now? If readiness fails, the orchestrator stops routing traffic to it. Startup answers the question, has the application finished booting yet? Until startup passes, the platform may delay liveness and readiness checks.
+
+This distinction matters because the wrong probe causes the wrong action. Failing liveness because a database is temporarily down often creates needless restarts that do not solve the real problem. Failing readiness for that same dependency issue may be exactly right because it protects users from hitting a broken instance while keeping the process alive to recover as soon as the dependency returns.
+
+The best health-check design is therefore about matching the signal to the infrastructure action that should follow. That sounds simple, but it is where many teams make expensive mistakes.
+
+## Slide 5: What to Check
+The table captures the core rule. Internal process health belongs in liveness. Dependencies needed to serve traffic often belong in readiness. Slow initialization and warm-up belong in startup. This is a clean mental model because it ties the check to the response you want from the platform.
+
+Database connectivity is usually a readiness concern, not a liveness concern. The same is often true for message brokers, caches, or search indexes if the service cannot safely serve traffic without them. Downstream APIs are more nuanced. Sometimes readiness should remain true if a circuit breaker and fallback path exist, because the service can still provide degraded but acceptable behavior.
+
+A strong team asks what operational action should follow a probe failure. If the right answer is restart the process, think liveness. If the right answer is stop sending traffic for now, think readiness. If the right answer is this service simply needs time to initialize, think startup.
+
+## Slide 6: Node.js Express Readiness Example
+The Node.js example checks the database and Redis before returning readiness success. This is a classic readiness design. If required dependencies are reachable, the instance says it is ready. If not, it returns 503 and tells the load balancer to keep traffic away.
+
+This is useful because it protects users from reaching an instance that cannot do meaningful work. But it can also be dangerous if every instance depends on the same shared database and all of them fail readiness simultaneously. In that case the load balancer may have no healthy targets at all. The probe is locally correct and systemically brutal.
+
+That is a realistic production lesson. Suppose a payment service marks readiness false whenever the database is briefly unreachable. If the outage is shared across all pods, the entire service can disappear from rotation in seconds. Sometimes that is the right choice. Sometimes it means the system should instead use degraded behavior, cached reads, or a write-blocked mode that still serves some traffic. Probe design is inseparable from resilience design.
+
+## Slide 7: Go Simple Liveness Example
+The Go example returns a simple OK response and is appropriate as a basic liveness probe. The point of liveness is not to verify every dependency. It is to determine whether the process is fundamentally running and not stuck in a deadlock, crash loop, or unrecoverable bad state.
+
+This is why liveness endpoints are often intentionally shallow. If they become too deep, every temporary dependency outage starts looking like a process death and the orchestrator begins restarting instances that were actually still capable of recovering. That can amplify outages by adding cold starts, dropped caches, and repeated initialization cost.
+
+A good engineering rule is that liveness should fail only when restarting the process is likely to help. If restart is not a useful remedy, liveness is probably the wrong place to encode the problem.
+
+## Slide 8: Java Spring Boot Actuator Example
+The Spring Boot Actuator example groups readiness around specific dependencies such as the database and Redis. This is a more structured production approach because the framework can expose grouped health information instead of forcing every team to hand-roll the same logic. Grouping also encourages teams to think explicitly about which dependencies are essential for serving traffic.
+
+The advantage of framework support is consistency, discoverability, and easier operational integration. The downside is that the framework still cannot decide your business policy for you. It can expose health groups, but it cannot tell you whether a stale cache is acceptable, whether one replica being slow should fail readiness, or whether partial service mode is valid for your product.
+
+That means health endpoint configuration is not just a framework checkbox. It is part of service operations design. Teams that copy example settings blindly often end up with probes that are technically correct and operationally harmful.
+
+## Slide 9: Design Diagram
+The design diagram shows three states. During boot, readiness returns 503 and the load balancer hides the instance. Once dependencies are reachable and warm-up is complete, readiness returns 200 and the instance joins rotation. During a dependency outage, readiness returns 503 again and the instance is removed from traffic while the process itself remains alive.
+
+This is a strong illustration of why readiness is about traffic eligibility, not process existence. The instance may still be alive and worth keeping in memory, but users should not be routed to it until it can serve correctly. That distinction becomes even more important during rolling deployments, warm caches, or recovery after an outage.
+
+The diagram also helps explain why startup probes exist. Some applications take a long time to initialize, hydrate caches, or perform schema checks. Without startup protection, impatient liveness checks may kill the instance before it ever has a chance to become healthy.
+
+## Slide 10: Risks and Tradeoffs
+Health checks have several tradeoffs. Deep checks can become brittle and expensive. Shallow checks may allow users to hit broken instances. Shared dependency outages can cause every instance to fail readiness at once, creating total outage. Health endpoints can also leak useful information to attackers if too much detail is exposed publicly.
+
+There are also timing concerns. Probe intervals that are too aggressive create noise and overhead. Probe thresholds that are too forgiving delay removal of bad instances. Probe thresholds that are too strict make transient blips look catastrophic. Even a correct readiness check can create churn if it flips rapidly under borderline conditions.
+
+The practical takeaway is that health checks are control signals, not status decorations. They should be designed around the action the infrastructure should take after each result. Strong teams keep liveness shallow, readiness meaningful, startup protective, and all three aligned with how the service should behave under failure, recovery, and deployment transitions.

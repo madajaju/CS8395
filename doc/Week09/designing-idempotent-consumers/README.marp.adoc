@@ -3,7 +3,11 @@
 :revealjs_theme: black
 :revealjs_transition: slide
 :source-highlighter: highlightjs
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 :icons: font
+
+Video: https://youtu.be/VWc9H13JMUM
 
 == Purpose
 Provides practical strategies for building services that can process the same message multiple times without unintended side effects.

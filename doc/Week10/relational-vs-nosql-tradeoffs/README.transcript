@@ -1,0 +1,76 @@
+# Relational vs. NoSQL Tradeoffs
+
+## Slide 1: Purpose
+Today we are looking at one of the most common data architecture decisions in distributed systems: when to use a relational database and when to use some form of NoSQL database. This topic is often taught as if SQL and NoSQL are competing teams in a debate, but real engineering is not that simple. The better question is which data model, consistency model, and operational profile fit the workload you actually have.
+
+For years, many organizations tried to use one database type for everything. That is much less common now because distributed systems often have very different workloads in different places. Payments, search, session storage, recommendation graphs, and event logs do not all ask for the same strengths. The challenge is that every database choice carries design consequences for integrity, scaling, latency, and team operations.
+
+By the end of this lecture, you should be able to explain ACID and BASE in practical terms, understand why CAP matters, distinguish major NoSQL categories, and make a reasoned argument for using one data model over another in a specific service.
+
+## Slide 2: Outcomes
+There are three main outcomes for this lecture. First, you should be able to contrast strong transactional consistency with eventual consistency and explain why teams care about that difference. Second, you should be able to apply CAP thinking to database selection without treating CAP like a slogan. Third, you should recognize the major NoSQL families and understand what kinds of problems they are designed to solve.
+
+The deeper outcome is decision-making maturity. When someone says we need NoSQL because we need scale, or we should use SQL because we need structure, you should be able to ask better follow-up questions. Scale of what? Structure of what? What kind of consistency does the user experience require? What kind of queries matter most? Strong engineering decisions start with workload characteristics, not buzzwords.
+
+## Slide 3: Overview
+The era of one-size-fits-all databases is effectively over for many distributed systems. Modern architectures often use polyglot persistence, meaning different services choose different databases because their data shapes and access patterns differ.
+
+A good analogy is transportation. You would not use the same vehicle for hauling gravel, delivering pizzas, and crossing the ocean. Each job has different constraints. The same is true of databases. A relational system may be ideal for bank transfers, but a document database may be a much better fit for a flexible product catalog, and a key-value store may be perfect for short-lived session data.
+
+The hard part is that choosing multiple database types increases operational complexity. So the goal is not variety for its own sake. The goal is choosing the right storage behavior for the right problem.
+
+## Slide 4: CAP Theorem
+CAP Theorem says that in the presence of a network partition, a distributed system must choose between strong consistency and availability. The three letters stand for Consistency, Availability, and Partition Tolerance. In practice, because network partitions are unavoidable in real distributed environments, the meaningful design question is usually whether the system leans toward CP or AP behavior when partitioned.
+
+Consistency in CAP means that every read sees the latest successful write or receives an error. Availability means the system always returns a response, even if that response may not reflect the latest write. Partition tolerance means the system continues operating despite dropped or delayed network communication between nodes.
+
+Students often misunderstand CAP as a menu where you casually pick any two. That is not quite right. You do not choose whether partitions exist. They do. The real question is what your system will do when communication breaks. A payment ledger may prefer consistency and reject requests during uncertainty. A social feed may prefer availability and tolerate temporary inconsistency.
+
+## Slide 5: ACID vs. BASE
+ACID is the classic relational transaction model: Atomicity, Consistency, Isolation, Durability. In practice, ACID means the system is designed to make multi-step changes behave reliably, especially when money, inventory, or other sensitive state is involved. If one part of the transaction fails, the whole unit can roll back.
+
+BASE stands for Basically Available, Soft state, Eventual consistency. This family of ideas is more common in NoSQL systems that prioritize horizontal scale and high availability under partition. BASE does not mean incorrect or sloppy. It means the system is willing to accept that not all nodes will agree immediately as long as they converge eventually.
+
+A useful example is account transfer versus profile update. A bank transfer usually demands ACID-like guarantees because partial completion is unacceptable. A profile bio update can often tolerate eventual consistency because a delay of a few seconds is usually harmless. The storage choice follows from the business consequences of inconsistency.
+
+## Slide 6: Data Models
+The comparison table introduces the major storage categories. Relational databases are best when you need structured schemas, joins, and strong transactional guarantees. Key-value stores are best for simple lookups, caching, and session state. Document stores work well when records are hierarchical and schemas change often, such as product catalogs or content management data.
+
+Column-family databases are useful for very large write-heavy workloads such as time-series ingestion or logging. Graph databases are useful when relationships are central, such as fraud rings, recommendation paths, or social connections.
+
+The important lesson is that NoSQL is not one thing. It is a broad collection of storage models with very different strengths. Saying use NoSQL is not a meaningful recommendation until you specify which model and why.
+
+## Slide 7: Java Relational Transaction Example
+The Java example shows a transaction for transferring funds. The account is debited from one place, credited to another, and the transaction ensures the outcome is both or neither. This is a textbook example of why relational transactional systems remain important. When partial success would be financially dangerous, strong atomicity matters.
+
+The code also illustrates an important design lesson: not every important workload is primarily about raw scale. Sometimes the first requirement is correctness under failure. That is why relational systems continue to dominate many financial, accounting, and order-management domains.
+
+The limitation is that relational transactions become harder to stretch across multiple services or databases. What is easy in one database becomes much more complex in distributed workflows. That is why service boundaries and database choices must be aligned carefully.
+
+## Slide 8: Node.js Document Storage Example
+The Node.js example shows a flexible product document with nested fields. This is a good fit for a document store because product attributes vary widely. One product may have CPU and RAM fields, another may have fabric type and size chart information. A document database can store those variations naturally without redesigning a rigid relational schema every time a product category evolves.
+
+This does not mean document databases are schema-free in the practical sense. Good teams still impose application-level structure, validation, and versioning. What they gain is flexibility and closer alignment between stored objects and the application's natural document shape.
+
+The danger is letting flexibility become chaos. If every writer stores a slightly different shape with no validation strategy, the system becomes hard to query and hard to maintain. Schema flexibility should be used deliberately, not as permission to ignore modeling discipline.
+
+## Slide 9: Go Key-Value Example
+The Go example stores and retrieves session data from Redis. This is a strong example of a key-value workload because the access pattern is extremely simple: given a session ID, get the associated value quickly. Key-value systems are often chosen when latency is critical and the data access pattern is predictable.
+
+Session storage, rate limits, cache entries, short-lived tokens, and feature-flag lookups are all common fits. These are usually not workloads that need joins or rich ad hoc querying. They need fast lookup and predictable expiration behavior.
+
+The limitation is that once the query pattern becomes more complex, the simplicity of key-value storage becomes restrictive. If a team starts needing analytics or relationship-heavy queries over the same data, the original fit may no longer hold.
+
+## Slide 10: Design Diagram
+The design diagram shows one application using a relational database for financial transactions and a NoSQL store for user profiles or sessions. This is a simple but realistic example of polyglot persistence. Different parts of the same system optimize for different guarantees.
+
+What matters here is that the diagram is not making a value judgment that one type is modern and the other is outdated. Instead, it shows workload alignment. Strong consistency and transactions matter for one path. Availability and flexible scale matter for another.
+
+That is how strong teams should think about storage. Not which database is fashionable, but which operational and data-model behavior matches the responsibility of this particular service.
+
+## Slide 11: Risks and Tradeoffs
+The first tradeoff is complexity. Running multiple database types means more operational tooling, more expertise, and more room for mistakes. The second tradeoff is integrity enforcement. When you move away from relational constraints, the application layer often has to take over more responsibility for validation and consistency checks.
+
+The third tradeoff is vendor or API lock-in. Many NoSQL systems have specialized APIs and operational models that do not map cleanly to other products. SQL gives a stronger industry-wide standard interface than many NoSQL tools do.
+
+The practical takeaway is that relational and NoSQL systems are not enemies. They are tools with different strengths. The correct choice depends on what matters most in that part of the architecture: consistency, flexibility, write throughput, read latency, relationship depth, or operational simplicity. Strong architects choose based on workload and consequences, not slogans.

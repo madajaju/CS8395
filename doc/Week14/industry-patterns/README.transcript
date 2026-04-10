@@ -1,0 +1,61 @@
+# Industry Patterns Transcript
+
+This transcript follows the slide flow from `README.md`. It is written as speaker notes for college students who need a practical view of how large tech companies apply distributed system patterns at extreme scale.
+
+## Slide 1: Industry Patterns
+
+"Today we are looking at industry patterns from large-scale companies such as Amazon, Netflix, and Uber. The point is not to copy them blindly. The point is to understand how familiar distributed system patterns evolve when the scale becomes extreme.
+
+At millions of requests per second, even tiny error rates become operationally significant, so design patterns stop being theoretical and start becoming survival mechanisms."
+
+## Slide 2: Purpose
+
+"The purpose of this lecture is to explore how major companies apply the patterns and principles we have studied throughout the semester at very large scale."
+
+## Slide 3: Outcomes
+
+"By the end of this lecture, you should be able to identify real-world uses of sagas, circuit breakers, mTLS, and related patterns, compare scaling philosophies across companies, and understand how systems evolve from monoliths into globally distributed architectures."
+
+## Slide 4: Overview
+
+"What works for a small startup often does not work for a company operating at global scale. At that level, architecture is shaped not only by feature needs, but by fault isolation, operational efficiency, and organizational complexity.
+
+This lecture looks at standard industry blueprints, but also at the reasons those blueprints exist."
+
+## Slide 5: Core Case Studies
+
+"Amazon uses cell-based architecture to partition infrastructure into isolated units so one failure affects only a subset of users. Netflix uses chaos engineering to prove resilience mechanisms actually work under real failure. Uber evolved toward domain-oriented microservices to reduce internal complexity by grouping related services behind clearer domain boundaries.
+
+These examples show that scaling is not one thing. Different companies solve different bottlenecks in different ways."
+
+## Slide 6: Industry Standard Tools
+
+"The table on this slide lists common categories and tools. Kubernetes manages container lifecycles. Kafka and Pulsar provide high-throughput event streams. Prometheus and Jaeger support observability. Istio and Linkerd help with internal traffic and security.
+
+The bigger lesson is that patterns at industry scale are often inseparable from the surrounding tooling ecosystem."
+
+## Slide 7: Code Example: Java (Hystrix)
+
+"This Java example shows a classic Hystrix circuit breaker with a fallback. Hystrix is historically important because it popularized resilience patterns in cloud-native service architectures, even if newer libraries have replaced it in many places."
+
+## Slide 8: Code Example: Go (Uber-style Domain Interface)
+
+"This Go example shows a domain gateway that hides the internal complexity of multiple services behind one domain-oriented interface. That is a useful simplification strategy when service sprawl becomes hard for teams to manage."
+
+## Slide 9: Code Example: Python (AWS-style Cell Routing)
+
+"This Python example routes a user to a specific cell based on user ID. That reflects a cell-based architecture where failures are intentionally contained to part of the fleet rather than the entire platform."
+
+## Slide 10: Design Diagram
+
+"The diagram shows a router sending one group of users to Cell A and another group to Cell B. If Cell A fails, only the users assigned to that cell are affected.
+
+That is the main value of fault isolation: localizing blast radius instead of letting one failure cascade everywhere."
+
+## Slide 11: Risks and Tradeoffs
+
+"The main tradeoffs are operational complexity, the cost of resilience, and the Netflix fallacy.
+
+Technologies like Kafka and Kubernetes often require specialized operational expertise. Resilience patterns such as multi-AZ redundancy cost real money. And the Netflix fallacy is adopting extreme-scale architecture before your product actually needs it.
+
+The takeaway is that industry patterns are valuable examples, but they are not automatic requirements for smaller systems."

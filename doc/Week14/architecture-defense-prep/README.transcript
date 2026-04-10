@@ -1,0 +1,59 @@
+# Architecture Defense Prep Transcript
+
+This transcript follows the slide flow from `README.md` and `README.marp.adoc`. It is written as speaker notes for college students preparing to justify distributed system designs to technical and business audiences.
+
+## Slide 1: Architecture Defense Prep
+
+"Today we are covering architecture defense preparation. Designing a system is only half the job. The other half is explaining why the design makes sense under the real business and technical constraints.
+
+A strong architecture defense does not try to prove the design is perfect. It proves the design is thoughtful, defensible, and aware of alternatives and tradeoffs."
+
+## Slide 2: Purpose
+
+"The purpose of this lecture is to help you present and justify complex distributed system designs to different stakeholders, including architects, developers, and product managers."
+
+## Slide 3: Outcomes
+
+"By the end of this lecture, you should be able to build a system story, anticipate common critiques, and steel-man alternative designs so your final defense is stronger and more credible."
+
+## Slide 4: Overview
+
+"Defending an architecture is not about being 'right.' It is about showing that you considered the relevant variables and made deliberate choices. A senior architect must connect technical decisions back to business goals, risk, and long-term maintenance."
+
+## Slide 5: Core Elements of a Defense
+
+"The slide lists three core elements. First, the story: explain how the architecture evolved and what problem forced the change. Second, happy path versus chaos: explain not only how the system works when healthy, but how it behaves under failure. Third, address the sacred cows: be ready to justify decisions that go against team defaults or organizational habits.
+
+A defense is strongest when it explains both the normal path and the failure path."
+
+## Slide 6: Common Critique Themes
+
+"Common critique themes include reliability, consistency, security, and cost. The best defense is never vague. It answers concerns with specific mechanisms such as circuit breakers, optimistic UI, mTLS, or cost controls.
+
+In practice, most architecture reviews come back to some version of these same questions."
+
+## Slide 7: Code Example: Java (Circuit Breaker)
+
+"This Java example shows a circuit breaker with a fallback response. That is the kind of concrete evidence reviewers want to see when they ask, 'what happens if the backend is down?'"
+
+## Slide 8: Code Example: Go (Context Timeout)
+
+"This Go example defends against slow APIs with a context timeout. That is another important review theme. A system should not wait forever on a dependency that may be slow or broken."
+
+## Slide 9: Code Example: Node.js (Input Validation)
+
+"This Node.js validation example shows how the edge is protected from malformed or malicious input. Security defenses are much stronger when they can be shown concretely, not just promised abstractly."
+
+## Slide 10: Design Diagram
+
+"The diagram personifies the architecture review as an attack-and-defense exercise. The critic asks questions about scale, security, and resilience, and the architecture responds with concrete mechanisms and tradeoff narratives.
+
+That is a useful framing because good architecture defense is really structured justification under scrutiny."
+
+## Slide 11: Risks and Tradeoffs
+
+"The main risks are over-engineering, cognitive bias, and communication gaps.
+
+If you try to defend against every possible failure, the design may become too complex to build. If you fall in love with your own design, you stop seeing its weaknesses. And if you cannot translate technical value into business value, even a good design may fail the review.
+
+The takeaway is that architecture defense is part technical depth and part communication discipline."

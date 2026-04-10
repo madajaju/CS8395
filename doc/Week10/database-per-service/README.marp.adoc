@@ -5,6 +5,8 @@
 :source-highlighter: highlightjs
 :icons: font
 
+Video: https://youtu.be/T9RIAXCk350
+
 == Purpose
 Explains the fundamental pattern of isolating data at the service level to ensure loose coupling and independent scalability.
 

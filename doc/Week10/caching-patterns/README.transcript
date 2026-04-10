@@ -1,0 +1,73 @@
+# Caching Patterns
+
+## Slide 1: Purpose
+Today we are looking at caching patterns, which is one of the most common performance techniques in distributed systems and also one of the easiest to misuse. Students often hear that caching makes systems faster, and that is true, but speed is only the surface-level benefit. In a real distributed system, caching is also about protecting downstream services, absorbing bursts of traffic, and reducing the number of expensive calls to databases or remote APIs. Once a system grows, caching becomes less of a nice optimization and more of a structural design tool.
+
+The danger is that caching is not just a performance feature. It changes consistency behavior. The moment you store a copy of data somewhere else, you create the possibility that the copy and the source of truth disagree. That means every caching decision is also a correctness decision. A team that adds Redis or an in-memory cache without thinking about invalidation, expiry, and failure modes often ends up with a system that is fast but wrong.
+
+By the end of this lecture, you should be able to explain the major caching strategies, understand why invalidation is so difficult, and reason about operational problems like thundering herd behavior, stampedes, stale data, and cascade failures.
+
+## Slide 2: Outcomes
+There are three learning goals in this lecture. First, you should be able to identify the major caching strategies and explain when each one fits. Second, you should be able to analyze how cache invalidation and eviction affect reliability, not just performance. Third, you should be able to reason about common failure modes such as many requests missing at once, stale data persisting too long, or a cache outage pushing far too much traffic back onto the database.
+
+The deeper goal is to improve your intuition. When a team says, let us just cache this response, that should immediately trigger follow-up questions in your head. What is the source of truth? How stale can the data be before users notice? What happens when the cache is empty? What happens when it is wrong? Strong engineers do not see cache as a simple speed boost. They see it as a tradeoff between latency, load, freshness, and complexity.
+
+## Slide 3: Overview
+Caching means storing a copy of data in a faster layer, usually memory, so future requests can be served more quickly. In a laptop program, that may just mean keeping something in process memory. In distributed systems, it usually means a shared cache such as Redis, Memcached, or a dedicated caching tier at the edge, in front of an API, or alongside an application service.
+
+A good everyday analogy is a convenience store refrigerator placed near the checkout counter. The full warehouse may still exist in the back, but popular drinks are moved closer to where customers ask for them most often. That makes service faster and reduces work for the staff. But if the refrigerator is not restocked correctly, customers may see the wrong inventory, the wrong price, or a sold-out product that the warehouse still has. That is very close to the software problem.
+
+In system design, caching is especially useful when reads are much more common than writes, when the source of truth is slow or expensive, or when the same data is requested repeatedly by many clients. But the moment data can change, the real question becomes not can we cache it, but how fresh does it need to be and how will we keep it that way?
+
+## Slide 4: Core Caching Strategies
+The first strategy is cache-aside, also called lazy loading. The application checks the cache first. If it finds the data, that is a cache hit and the response is fast. If it does not, that is a miss, so the application loads from the database and writes the result into the cache for next time. This is the most common strategy because it is easy to implement and resilient if the cache goes down. The downside is that the first request after a miss still pays the full database cost.
+
+The second strategy is read-through. Here the application asks the cache for data, and the cache itself is responsible for fetching from the source on a miss. This simplifies application code because the application only talks to one layer, but it assumes a more capable cache product or a custom caching layer that knows how to fetch and populate data correctly.
+
+The third family is write-through and write-behind. In write-through, updates are written to the cache and the database together, which helps keep cached data fresh but can increase write latency. In write-behind, updates go to the cache first and the database is updated asynchronously later. That can improve write performance, but it introduces the risk that the cache acknowledges data the database has not durably stored yet. If the cache fails in the wrong moment, data can be lost.
+
+A useful real-world example is an ecommerce product page. Product details are read constantly and updated occasionally. Cache-aside is often a good fit because the application can populate popular items lazily and reuse them for many requests. Write-through might make sense for inventory counters where freshness matters more. Write-behind would be much riskier unless the team is comfortable with temporary inconsistency and has good recovery logic.
+
+## Slide 5: The Invalidation Problem
+Cache invalidation is famous because it sounds easy until a real system has to do it correctly. A cache becomes dangerous when it serves data that used to be true but is no longer true. If a product price changes in the database but the cache still serves the old price, customers see stale data. If a permissions record changes but the cache keeps an old copy, a security problem may appear instead of just a UI problem.
+
+The simplest invalidation strategy is TTL, time to live. Every cache entry expires after some fixed interval. TTL is attractive because it is easy to reason about operationally and easy to implement. But TTL is only a freshness guess. If you set it too short, the cache becomes less useful because entries expire before they save much work. If you set it too long, stale data lingers longer than the business can tolerate.
+
+The more precise alternative is event-based invalidation. When the source of truth changes, the owning service emits an event and other services or caching layers remove or refresh the affected keys. This is often a better fit for distributed systems because it ties invalidation to real state changes instead of arbitrary time windows. The cost is complexity. Events can be delayed, dropped, or processed out of order, so now your caching correctness depends partly on your messaging correctness as well.
+
+A good engineering habit is to ask what bad outcome stale data creates. If stale user profile text is acceptable for thirty seconds, a TTL may be fine. If stale inventory causes overselling or stale permissions expose data, you need something much stricter.
+
+## Slide 6: Python Cache-Aside Example
+The Python example demonstrates the cache-aside pattern. The function first checks the cache for a user profile. If the profile is already present, it returns immediately. If the cache misses, the function queries the database, then stores the result with a TTL before returning it. This is exactly how many real API handlers behave.
+
+What matters in practice is not the syntax but the behavior under traffic. If one user profile is requested constantly, the first miss loads it and many later requests become cheap. If a profile is rarely used, the system never wastes cache space on it. That is one reason cache-aside is so popular: it naturally caches hot data and ignores cold data.
+
+But the code also reveals risk. What happens if the database is slow and many requests for the same key arrive at once? They may all miss the cache together and all hammer the database together. That is one form of a cache stampede. So even a simple cache-aside handler usually needs protection such as request coalescing, locking, or singleflight behavior when the data is especially hot.
+
+## Slide 7: Go Thundering Herd Prevention Example
+The Go example uses singleflight to ensure only one concurrent call fetches the slow data source for a given key. This is a direct defense against thundering herd behavior, where many identical misses happen at the same time. Without that guard, if a popular cache entry expires, hundreds of requests may all rush to the database simultaneously, creating the very spike the cache was meant to prevent.
+
+This is a strong example because it shows that caching is not only about where data is stored. It is also about concurrency behavior when the cache does not have the data. A cache miss on a cold key is one thing. A miss on a hot key under heavy traffic is a completely different operational event.
+
+A good real-life analogy is a stadium exit after a game. If one gate closes suddenly, thousands of people rush toward the remaining gates. The problem is not just that one gate is unavailable. The problem is what everyone does next. In software, a stampede is the system-wide behavior after a miss, not just the miss itself.
+
+## Slide 8: Node.js Event-Driven Invalidation Example
+The Node.js example listens for a `user.updated` event and deletes the relevant cache key. This is a practical version of event-driven invalidation. The application does not wait for TTL expiration. It actively removes the stale entry when it learns the underlying data changed.
+
+This approach is powerful because it aligns freshness with the business lifecycle. If a user changes their profile photo or display name, other services can clear or refresh their cached copy immediately. That gives much better freshness than a long TTL while still preserving read performance.
+
+The operational risk is that invalidation events must be treated seriously. If the messaging path breaks, the cache may quietly hold stale data much longer than intended. This is why teams sometimes combine event-driven invalidation with a TTL as a safety net. The event gives freshness in the normal case, and the TTL prevents infinite staleness in the failure case.
+
+## Slide 9: Design Diagram
+The design diagram shows the two core read paths. On a cache hit, the application asks the cache for a profile and receives it immediately. That is the fast path everyone wants. On a cache miss, the application asks the cache, gets nothing, falls back to the database, then writes the result into the cache so later requests become hits.
+
+The important lesson in the diagram is that the cache sits between the application and the source of truth as a performance optimization, not as the authoritative system of record. The database still holds the durable truth. The cache is a temporary copy meant to reduce future load and latency.
+
+This distinction matters during incidents. If the cache is wrong, engineers need to know where to repair the real data and where to clear temporary copies. Treating a cache like a source of truth leads to operational confusion and sometimes data corruption.
+
+## Slide 10: Risks and Tradeoffs
+The biggest risk is stale data. A cache that responds quickly with the wrong answer is still wrong. The second risk is memory pressure. Caches are finite and usually expensive because memory is not cheap. That means teams need eviction policies such as LRU or LFU, and those policies change which data remains hot and which data falls out.
+
+The third risk is availability coupling. Ironically, a cache added for performance can become a new reliability problem. If the entire system depends on the cache to protect the database and the cache suddenly fails, all the traffic may surge back to the database at once. That can create a cascade failure where the database falls over too.
+
+The practical takeaway is that caching is a design tradeoff, not a free speed button. The right pattern depends on how often the data changes, how expensive misses are, how stale the answer may be, and what happens to the rest of the system when the cache fails. Strong teams design the miss path, the invalidation path, and the failure path with as much care as the hit path.

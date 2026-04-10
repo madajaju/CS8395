@@ -1,0 +1,74 @@
+# Sagas vs. Two-Phase Commit
+
+## Slide 1: Purpose
+Today we are contrasting sagas with Two-Phase Commit, or 2PC. Both patterns try to solve the same business problem: how do we coordinate a multi-step workflow across several services? The difference is philosophical as much as technical. Two-Phase Commit tries to preserve strong all-or-nothing behavior. Sagas accept that steps will commit locally and rely on compensating actions if later steps fail.
+
+This matters because large distributed systems often cannot afford the latency, blocking, and tight coupling of strict distributed commit. At the same time, the business still needs coherent outcomes. Sagas are one of the main ways modern systems balance that tension.
+
+By the end of this lecture, you should understand the difference between strong consistency and eventual consistency in workflow design, know what compensating transactions actually mean, and be able to compare choreography and orchestration styles for sagas.
+
+## Slide 2: Outcomes
+There are three learning goals. First, you should be able to define a saga and explain compensating transactions. Second, you should be able to contrast choreography and orchestration. Third, you should be able to explain why the trade between strong and eventual consistency is often really a trade between tighter control and higher scalability.
+
+The deeper outcome is practical judgment. Sagas are not a magic replacement for transactions. They are a different way of living with failure and coordination. Strong architects choose them because the system's scale and autonomy needs make strict cross-service atomicity too expensive.
+
+## Slide 3: Overview
+As distributed systems scale, 2PC becomes harder to justify because it blocks resources and ties service availability together. The saga pattern offers a different model. Instead of one giant transaction, the workflow is decomposed into a sequence of local ACID transactions. Each successful local step triggers the next. If something fails later, compensating actions undo or offset the earlier work.
+
+A practical analogy is travel booking. If you book a flight, then the hotel booking fails, you may cancel the flight rather than pretending both bookings were one giant database transaction. That cancellation is compensation. It is not identical to never having booked the flight, but it restores the business process to an acceptable state.
+
+This is the right mindset for sagas. They are about business recovery, not perfect rollback at the storage level.
+
+## Slide 4: 2PC vs. Sagas
+Two-Phase Commit uses a coordinator to ensure all participants either commit or none do. Its main benefit is strong consistency. Its main cost is blocking, latency, and tight coordination.
+
+Sagas use a series of local commits and accept that intermediate states may exist. Their main benefit is resilience and scalability. Their main cost is that the system must handle compensation, temporary anomalies, and more complex debugging.
+
+A useful way to phrase the difference is that 2PC protects atomicity through coordination before commit, while sagas protect business correctness through recovery after partial completion.
+
+## Slide 5: Saga Styles: Choreography
+In choreography, services coordinate by publishing and reacting to events. No central orchestrator tells everyone what to do next. Instead, each service knows which events matter and what action it should take when one appears.
+
+This style is attractive because it is decentralized and can feel elegant in smaller workflows. Services remain autonomous, and the system avoids adding a central coordination service.
+
+The downside is visibility. As the workflow becomes more complex, it becomes harder to answer simple questions like where is this order in the process right now or why did it stall? When many event reactions chain together, teams often describe the result as saga spaghetti.
+
+## Slide 6: Saga Styles: Orchestration
+In orchestration, a central saga orchestrator keeps track of workflow state and explicitly tells each participant what local action to perform next. This gives a clearer control plane for the business process.
+
+This is often easier to debug and reason about in larger workflows. The orchestrator becomes the place where current state, next step, timeout behavior, and compensation logic can be tracked explicitly.
+
+The tradeoff is that orchestration reintroduces central logic and a potential central point of failure. It is often a better fit when visibility and control matter more than maximal decentralization.
+
+## Slide 7: Java Saga Orchestrator Example
+The Java example shows a switch on saga state. If the saga is newly created, the orchestrator asks the payment service to charge the card. If payment fails, it tells the order service to cancel the order as compensation.
+
+This is a strong example because it makes the workflow state explicit. The orchestrator knows what happened, what should happen next, and what compensation is appropriate if something fails.
+
+The cost is that the orchestrator becomes a critical piece of application logic. It must be durable, observable, and carefully versioned as workflows evolve.
+
+## Slide 8: Python Choreography Example
+The Python example shows the choreography style. The payment service reacts to order creation and emits either payment succeeded or payment failed. Then the order service reacts to payment failed and marks the order cancelled.
+
+This feels lightweight because no central workflow manager is visible. Each service just reacts to events. That can be a very good fit for smaller processes where the chain of reactions is easy to understand.
+
+The risk is that as more services join the process, the overall workflow becomes harder to trace. No single place owns the full state narrative unless the team builds additional observability around it.
+
+## Slide 9: Node.js Compensating Action Example
+The Node.js example performs a compensating action by updating the order status to cancelled and refunded. This is a good reminder that compensation is not always a literal rollback. Often you cannot erase the fact that some step happened. Instead, you apply a new step that restores acceptable business meaning.
+
+For example, refunding a payment is not the same as pretending the charge never occurred. It is a compensating business action that corrects the workflow outcome.
+
+This is why saga design is domain-heavy. Good compensation depends on business semantics, not just storage operations.
+
+## Slide 10: Design Diagram
+The diagram shows an orchestrator asking the order service to create the order, then asking the payment service to charge the card. Payment fails, so the orchestrator enters compensation and tells the order service to mark the order failed.
+
+This illustrates the key advantage of orchestration: the control flow is visible and explicit. The orchestrator knows what step succeeded, what failed, and what to do next.
+
+It also highlights the practical reality of sagas: the order may exist briefly before the workflow settles on failure. That intermediate visibility is part of the eventual consistency model.
+
+## Slide 11: Risks and Tradeoffs
+The first risk is complexity. Every step may need a compensating action, and those actions must be designed carefully. The second is anomalies. Because local transactions commit immediately, other users or services may see partial states such as reserved stock before the overall order succeeds. The third is debugging. Following a distributed business process across services and events is harder than inspecting one SQL transaction log.
+
+The practical takeaway is that sagas are powerful because they preserve service autonomy and scale better than strict distributed commit, but they require teams to think in terms of workflow state, compensation, and observability. They are not simpler than 2PC. They are better aligned with the realities of distributed systems.

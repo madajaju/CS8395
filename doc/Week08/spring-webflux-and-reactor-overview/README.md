@@ -1,6 +1,6 @@
 # Spring WebFlux and Reactor Overview
 
-**Length:** 10-15 minutes
+Video: https://youtu.be/q95g2RAFl9Y
 
 **Purpose:** Explain reactive request processing in Spring WebFlux using Reactor and when it is an effective design choice.
 

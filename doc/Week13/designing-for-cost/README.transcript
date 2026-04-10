@@ -1,0 +1,83 @@
+# Designing for Cost
+
+## Slide 1: Purpose
+Today we are covering designing for cost, which means treating money as a first-class architectural constraint rather than an accounting afterthought. In cloud systems, scalability often means scalable bills. A system can be technically elegant and still be a failed architecture if its operating cost is unjustifiable for the value it delivers.
+
+This matters because many distributed-system design choices have hidden financial consequences. More replicas improve resilience but increase compute spend. Cross-region redundancy improves availability but raises network cost. Verbose payloads make debugging easier but increase bandwidth and storage expense. Even good practices like observability and redundancy have prices, so cost-aware design means understanding those tradeoffs early rather than discovering them in an unexpectedly large invoice later.
+
+By the end of this lecture, you should be able to identify major cloud cost drivers, explain common cost-saving patterns, and reason about the trade between performance, resilience, and expense. The deeper goal is to see cost as an engineering signal, not a separate business problem that appears after the architecture is already fixed.
+
+## Slide 2: Outcomes
+There are three major goals. First, you should be able to identify hidden cloud costs such as egress, storage tier choice, and IOPS. Second, you should be able to explain patterns like autoscaling, compression, spot instances, caching, and tiered storage. Third, you should be able to reason about cost not as an isolated finance topic, but as a design dimension alongside latency, resilience, and maintainability.
+
+The deeper outcome is architectural maturity. A strong engineer knows that performance, resilience, and cost are linked. A design that optimizes one while ignoring the others is often incomplete. A system that is lightning fast but impossibly expensive is not necessarily well-designed, and a system that is cheap but constantly failing is not cost-effective either.
+
+## Slide 3: Overview
+Cloud architecture is attractive partly because it lets systems scale quickly. But the same elasticity can hide inefficient design because the platform keeps absorbing mistakes until the bill reveals them. Many teams learn this only after launch, when a feature that was operationally successful turns out to be financially inefficient.
+
+A useful way to think about this is that cloud systems meter not just compute, but movement and retention. Every byte stored, transferred, compressed, replicated, queried, or indexed can have a cost implication. That means cost-aware architecture is not about being cheap in a simplistic way. It is about making deliberate tradeoffs so the system spends money where it creates the most value.
+
+A practical example is an analytics platform that stores every event forever in hot storage because retrieval is easy. The system works, but over time the retention policy becomes the dominant bill driver. Nothing was broken technically. The issue was that the architecture made no distinction between hot operational data and cold historical data.
+
+## Slide 4: Compute
+Compute cost is the most visible category because engineers see instance sizes, container counts, and autoscaling groups directly. CPU and memory decisions dominate many infrastructure conversations. That visibility is useful, but it can also be misleading because teams may optimize compute heavily while ignoring more subtle cost drivers elsewhere.
+
+Autoscaling is a common cost-saving pattern because it helps match supply to demand rather than paying peak cost all day. Spot instances are another strong option for workloads that are interruptible, such as batch jobs, analytics pipelines, and offline processing. Serverless models can also be cost-effective for bursty workloads where idle capacity would otherwise dominate the bill.
+
+The tradeoff is predictability. Spot capacity is cheaper because it can disappear. Aggressive autoscaling can save money, but if it reacts too slowly it may hurt latency or trigger retry storms. Cost-aware compute design therefore includes both pricing awareness and workload behavior awareness.
+
+## Slide 5: Networking
+Networking is often the hidden cost category because teams underestimate how expensive data movement can become. Egress charges, cross-zone traffic, and cross-region replication can accumulate quickly. A system can have modest compute usage and still become expensive because it moves too much data too often.
+
+A service architecture that looks elegant on a whiteboard may become costly if every request fans out across availability zones or sends large payloads to external systems. This is one reason why data locality and payload efficiency matter. The cost of communication is not only latency. In cloud environments, it is often literal money.
+
+A strong design question is not only how many calls happen, but where those calls cross billing boundaries. Teams that embrace microservices without watching chatty boundaries sometimes rediscover that decoupling can increase financial coupling through network fees.
+
+## Slide 6: Storage
+Storage cost is more than the price per gigabyte. It includes access pattern, performance tier, retention policy, retrieval pricing, and lifecycle behavior. Hot SSD-backed storage is expensive but useful for frequently accessed data. Cold archival storage is much cheaper but much slower to retrieve and may even charge retrieval fees.
+
+Tiered storage is therefore a major cost-saving pattern. Data that is accessed constantly belongs in a fast tier. Data that is rarely touched should move to a cheaper one automatically where possible. This works well when teams understand actual data temperature instead of assuming everything must stay hot forever.
+
+The engineering challenge is making sure lifecycle rules match real access patterns. Cheap storage is not useful if the system unexpectedly needs low-latency access to that data later. A cost-optimized design that forces urgent historical recovery through a slow archive tier may save money most days and create operational pain on the worst day.
+
+## Slide 7: Cost-Aware Architectural Decisions
+The comparison table highlights several common tradeoffs. Binary formats like Protobuf or Avro often reduce network and storage cost compared with verbose text formats like JSON or XML. Eventual consistency may cost less than strong consistency because it reduces coordination overhead. Single-AZ designs are cheaper than multi-region designs, though clearly less resilient.
+
+This is why cost-aware design is rarely about one big cost decision. It is the sum of many small choices about format, redundancy, consistency, scaling model, and retention policy. Architects who ignore those cumulative effects often end up surprised by bills that are the predictable result of their own design decisions.
+
+A strong architect should be able to explain not just the technical result of a design choice, but also the operational cost profile it creates. If a team chooses multi-region active-active or always-on premium storage, it should also be able to explain why that extra spend is justified by business value or risk reduction.
+
+## Slide 8: Go Compression Example
+The Go example compresses data before sending it across the network. This is a clear cost-saving strategy because smaller payloads reduce bandwidth and sometimes egress cost. It can also improve latency when the network is the dominant bottleneck.
+
+The tradeoff is CPU. Compression is not free. You are spending compute to save network and storage. Whether that is a good trade depends on payload size, CPU headroom, compression ratio, and how expensive transfer is in your environment. If the service is already CPU-bound, adding compression may save money in one place while creating performance risk in another.
+
+This is a good example of how cost optimization often means shifting cost from one category to another rather than eliminating it entirely. Mature teams understand that trade and measure both sides before deciding.
+
+## Slide 9: Python Spot Interruption Example
+The Python example handles a spot interruption by saving a checkpoint and cleaning up before exit. This is exactly the kind of operational logic needed to safely use cheaper spot capacity. The infrastructure discount only becomes valuable if the workload can survive interruption cleanly.
+
+This illustrates a larger lesson: cost-saving patterns often require more engineering discipline. Spot instances are cheaper because you accept interruption risk, so the workload has to be restartable, idempotent, and checkpoint-aware. If the job cannot resume safely, then the discount may not be worth the operational complexity.
+
+This is why cost optimization is often a build-versus-buy tradeoff. The infrastructure savings may be real, but they can require more application logic, more resilience design, and better operational maturity. Cost-aware design is rarely free in implementation effort.
+
+## Slide 10: Node.js Caching Costly API Responses
+The Node.js example caches responses from an expensive third-party API. This is a direct and practical cost optimization because it avoids repeated paid external calls and often improves latency at the same time. It is especially valuable when the provider charges per request or per volume of transferred data.
+
+This pattern appears often in systems that depend on geocoding, AI inference APIs, fraud providers, or marketing data enrichments. One extra call is not just technical overhead. It can be a line item on the bill. Caching therefore becomes both a performance optimization and a pricing optimization.
+
+The caution is cache invalidation and staleness. If the external data changes frequently, aggressive caching may reduce bills while increasing inconsistency. Cost-aware design still has to respect correctness requirements. Saving money by serving wrong data is usually not a good trade.
+
+## Slide 11: Design Diagram
+The diagram shows a web service using hot standard storage, a batch job running on spot capacity, and older data moving into archival storage. This is a compact example of designing different parts of the system around different cost profiles instead of assuming every workload deserves the same infrastructure.
+
+It also shows an important mindset: not all workloads deserve the same level of speed, availability, or permanence. Some paths justify expensive low-latency infrastructure because they are directly user-facing. Others can be processed slowly and cheaply because they are asynchronous or rarely accessed.
+
+That tiered thinking is one of the most important habits in cost-aware architecture. Systems become financially healthier when teams stop treating all data and all workloads as equally urgent.
+
+## Slide 12: Risks and Tradeoffs
+Cost optimization always comes with tradeoffs. Compression adds CPU overhead. Tiered storage increases cold-data latency. Spot instances demand checkpointing and interruption handling. Provider-specific discounts and reserved-capacity strategies can increase vendor lock-in. Even aggressive autoscaling can cause instability if it is tuned purely for cost and ignores user experience.
+
+There are also organizational risks. If cost becomes the only design goal, teams may under-provision capacity, delay resilience work, or remove useful observability because it appears expensive. That often creates hidden operational risk that is much more costly during incidents than the telemetry or redundancy ever was.
+
+The practical takeaway is that designing for cost is not about minimizing every bill category blindly. It is about spending deliberately. Strong teams know where extra spend buys real resilience or performance and where cheaper patterns are good enough. Cost-aware architecture is ultimately about aligning technical design with business value rather than optimizing for the cloud bill in isolation.

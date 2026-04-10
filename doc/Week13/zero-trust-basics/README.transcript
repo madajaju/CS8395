@@ -1,0 +1,83 @@
+# Zero Trust Basics
+
+## Slide 1: Purpose
+Today we are covering Zero Trust, which is one of the most important shifts in modern distributed-system security. Traditional network security assumed that if traffic was inside the trusted perimeter, it could often be treated as safe. In cloud-native and service-based systems, that assumption is much less defensible because infrastructure boundaries are softer, systems are more distributed, and compromise paths are more numerous.
+
+Modern systems run across containers, service meshes, cloud networks, managed services, and third-party integrations. The network is no longer a clean trust boundary. Zero Trust responds by assuming the network is untrusted and requiring verification at each meaningful step. That does not mean systems trust nothing forever. It means trust is granted because identity and policy justify it, not because packets originated from a familiar subnet.
+
+By the end of this lecture, you should understand the core pillars of Zero Trust, the role of service identity, mTLS, and JWT validation, and why Zero Trust is a change in trust model rather than just a new collection of security tools. The deeper goal is to replace location-based trust with verification-based trust as a normal architectural habit.
+
+## Slide 2: Outcomes
+There are three major learning goals. First, you should be able to define the core pillars of Zero Trust. Second, you should be able to contrast the Zero Trust mindset with perimeter-based security. Third, you should understand how mechanisms like mTLS and JWT validation support identity-centered verification.
+
+The deeper outcome is that you should stop thinking of the internal network as automatically safe. Strong security design begins by questioning default trust, especially in distributed systems with many services, many pathways, and many possible points of misconfiguration. Security becomes a property of verified identity and explicit authorization rather than assumed proximity.
+
+## Slide 3: Overview
+Perimeter security is often summarized as hard shell, soft center. Once inside the network, a service or user may be given broad implicit trust. That model made more sense in older, more centralized environments where applications and data lived in relatively bounded spaces and internal movement was limited.
+
+In distributed cloud systems, internal networks are full of moving parts and compromise paths. A service may be misconfigured, a credential may leak, or an attacker may gain a foothold in one zone and attempt lateral movement. Internal traffic is not magically safe simply because it did not cross the public internet.
+
+Zero Trust responds by shifting trust from network location to verified identity and explicit authorization. That is why the model is as much about assumptions and architecture as it is about tooling.
+
+## Slide 4: Identity-Based Security
+The first pillar is identity-based security. Trust decisions should be based on who or what the caller is, not simply where the request came from. This applies to both users and services. In a Zero Trust model, the fact that traffic originates from an internal address is not enough to justify access.
+
+Service identity becomes especially important in microservice systems. One service should know whether it is really talking to the payment service or just to something on a familiar network address. If service identity is weak, then internal DNS names and network location become a dangerous substitute for actual verification.
+
+This is why systems such as SPIFFE, Spire, and cloud-managed workload identities matter. They give services verifiable identities that can be used in authentication and authorization decisions. Identity-based security is the foundation that makes the rest of Zero Trust practical.
+
+## Slide 5: Micro-Segmentation
+Micro-segmentation means dividing the network into smaller trust zones so that a compromise in one place does not automatically grant broad movement everywhere else. It is one of the main defenses against lateral movement after initial compromise.
+
+This is valuable because attackers often exploit overly broad internal access. If one service can talk to everything simply because it is internal, the blast radius of compromise becomes much larger. Micro-segmentation reduces that blast radius by limiting which workloads can communicate with which others.
+
+Micro-segmentation is not free. It adds policy complexity and requires a good understanding of real communication patterns. Teams need to know who truly needs to talk to whom. Otherwise they create either overly permissive policies that do not help or overly restrictive ones that break legitimate traffic.
+
+## Slide 6: Mutual TLS
+Mutual TLS, or mTLS, requires both the client and the server to present and verify certificates. This provides both encryption and authenticated service identity. In Zero Trust systems, mTLS is a core building block because it ensures that service-to-service communication is not only encrypted, but also identity-verified.
+
+That matters because encryption alone is not enough. A connection can be encrypted and still terminate at the wrong peer. mTLS helps ensure that the caller and callee actually are who they claim to be, which supports both authentication and subsequent authorization decisions.
+
+The tradeoff is operational complexity. Certificate issuance, rotation, trust bundles, revocation strategy, and failure handling all become part of the platform responsibility. Strong Zero Trust designs often depend on strong platform engineering because PKI at scale is an operational system, not just a checkbox.
+
+## Slide 7: JWT and Authentication
+JWTs are a common way to propagate user identity and permissions across service boundaries. Instead of forcing every service to re-authenticate the user from scratch, the token can carry signed claims about the user or caller. This allows identity context to travel with the request.
+
+This is useful for efficiency and consistency, but it requires careful validation. Services must verify signatures, expiry, issuer, and audience correctly. A token that exists is not automatically a token that should be trusted.
+
+The broader lesson is that Zero Trust still needs delegation mechanisms. Identity has to move across the system, but it has to move in a verifiable way. JWTs are helpful only when validation discipline is strong.
+
+## Slide 8: Java JWT Verification Example
+The Java example checks the Authorization header and verifies the JWT signature against a public key. This is a standard service-boundary pattern. The important point is that the service does not simply accept the token because it is present. It verifies that the token is valid and trusted before allowing the request to continue.
+
+The risk is incomplete validation. Signature check alone is not enough if issuer, audience, and expiry are ignored. A token can be cryptographically intact and still be inappropriate for this service or already expired. Partial verification often creates a false sense of security, which can be worse than obvious absence of checks.
+
+This is why authentication libraries are helpful but not sufficient by themselves. Teams still need to understand what the checks mean and which ones are mandatory for their trust model.
+
+## Slide 9: Go mTLS Server Example
+The Go example configures the server to require and verify client certificates. This is a clear example of identity-based service-to-service trust. The service can reject unauthenticated or untrusted callers before business logic even begins.
+
+The benefit is strong trust at the transport layer. The cost is that PKI operations become part of the system's everyday reliability story. If certificate rotation fails, trust bundles are inconsistent, or the control plane distributes bad configuration, healthy traffic can fail even when application code is fine.
+
+This is one reason Zero Trust often depends on strong platform support rather than just application code. Good security posture relies on reliable certificate and identity management under real operational conditions.
+
+## Slide 10: Python Caller Identity Example
+The Python example extracts the caller identity from the peer certificate. This shows how identity becomes available to the application after the transport layer has authenticated the caller. That identity can then drive authorization decisions in business logic.
+
+The important distinction is that authentication tells you who is calling, while authorization decides what that caller is allowed to do. Strong Zero Trust systems need both. Identity without policy is not enough, and policy without trustworthy identity is not enforceable.
+
+A real-world example would be an internal admin service that can read user data but cannot perform billing operations. Both services may be internal and mutually authenticated, but their permissions still differ. Zero Trust therefore requires explicit authorization boundaries, not just mutual recognition.
+
+## Slide 11: Design Diagram
+The diagram shows Service A calling Service B over mTLS inside an untrusted network. Service B verifies Service A's certificate and also validates JWT information before responding. This is a useful visual because it makes the Zero Trust principle concrete: the network itself is not trusted. Trust is created by verification at the connection and request level.
+
+That picture is important because many students initially think Zero Trust means adding one security appliance at the edge. The diagram shows the opposite. Verification happens throughout the path, especially at service boundaries where trust decisions matter most.
+
+That is the key mindset shift: location is not trust. Verified identity plus authorization policy is trust.
+
+## Slide 12: Risks and Tradeoffs
+Zero Trust comes with real tradeoffs. PKI management at scale is complex. Certificate handshakes and token verification add some latency. The root of trust becomes operationally critical. Stolen tokens remain dangerous until they expire or are revoked. Overly aggressive segmentation can also make systems harder to operate if teams do not understand real communication paths.
+
+There are also organizational costs. Zero Trust often forces teams to document dependencies, clean up implicit access patterns, and build more explicit identity and authorization policies. That discipline is valuable, but it is not free.
+
+The practical takeaway is that Zero Trust is not free, but it is often necessary in distributed systems where perimeter assumptions no longer hold. Strong teams adopt it not because it sounds strict, but because identity-based verification is more realistic than network-based trust in modern architectures. Zero Trust is ultimately a better model of how distributed systems actually behave under compromise.

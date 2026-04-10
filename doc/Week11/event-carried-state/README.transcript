@@ -1,0 +1,74 @@
+# Event Carried State Transfer
+
+## Slide 1: Purpose
+Today we are covering Event Carried State Transfer, often abbreviated ECST. This pattern is about reducing service coupling by putting enough useful data directly into events so consumers can act without immediately making another synchronous call back to the producer.
+
+This matters because many event-driven systems accidentally recreate synchronous dependency chains. A service emits a tiny notification such as User 123 updated, and every consumer then has to call the user service to fetch the actual data it needs. At that point the system is technically event-driven, but the consumer still depends on the producer being available for real work.
+
+By the end of this lecture, you should be able to contrast event notification with event-carried state, understand how ECST improves service autonomy, and explain the tradeoffs around event size, duplication, and eventual consistency.
+
+## Slide 2: Outcomes
+There are three main outcomes. First, you should be able to define the difference between a small notification event and a state-carrying event. Second, you should understand how ECST improves autonomy by reducing synchronous lookups. Third, you should be able to reason about the cost of larger payloads, stale copied data, and stronger schema contract expectations.
+
+The deeper outcome is architectural sensitivity. When a team says we are using events, you should immediately ask whether those events actually enable autonomy or whether they still force every consumer to call home for real data.
+
+## Slide 3: Overview
+The contrast at the center of this topic is simple. Event notification means the consumer hears that something changed and must go ask the producer for details. Event carried state means the consumer receives enough useful state in the event itself to do its work locally.
+
+A good example is user updates. If the event just says User 123 updated, an email service may still need to call the user service to get the address. If the event includes the email address and relevant profile data, the email service can continue even if the user service is currently slow or unavailable.
+
+This is why ECST is really a resilience and autonomy pattern. It helps consumers continue functioning with fewer synchronous dependencies in the critical path.
+
+## Slide 4: Reducing Coupling
+By including useful state in the event, the consumer no longer needs to perform a second network round-trip for every reaction. That reduces temporal coupling because the producer does not have to be up at the exact moment the consumer is processing the event.
+
+This is especially important in large event-driven systems. If every consumer turns each event into a synchronous lookup, then the producer becomes a hidden bottleneck. A single outage in the producer can indirectly break many downstream consumers.
+
+A practical example is a welcome-email service. If the event already contains the email address, the service can send the message without a lookup. If it only contains a user ID, the email service is now dependent on the user service at event-processing time.
+
+## Slide 5: Autonomous Services
+ECST supports autonomous services because consumers can build their own local read models from state-rich events. That means queries can often be answered locally and business reactions can often happen without calling back to the original owner service.
+
+Autonomy improves speed and resilience. Local lookups are faster than network calls, and a local copy of needed state can keep a service working through upstream outages or temporary latency spikes.
+
+The tradeoff is that autonomy is purchased through duplication and eventual consistency. The consumer is now responsible for maintaining a useful local copy, and that copy may lag behind the source of truth.
+
+## Slide 6: Tradeoff Table
+The comparison table captures the core exchange. Notification events are smaller, but they create more coupling because consumers need follow-up API calls. State-carrying events are larger, but they increase autonomy because consumers have what they need immediately.
+
+Notification events often give fresher data because the consumer is asking the producer in real time. ECST gives more independence but accepts that the event may carry data that becomes stale relative to the source later. So the decision is not simply more data is better. The decision is about whether autonomy is worth the duplication and staleness tradeoff.
+
+This is why event design should begin with a concrete consumer question: what information must a consumer have to do its work without calling back? That question usually reveals whether you need a notification or carried state.
+
+## Slide 7: Java Producing ECST Example
+The Java example creates a `UserUpdatedEvent` that includes the user ID, name, and email rather than only an identifier. This is a direct expression of ECST because the producer is deliberately shipping useful business state, not just a pointer.
+
+That choice is significant. The producer is deciding that downstream services should be able to react using the event alone. In many cases that improves resilience dramatically.
+
+The engineering cost is that event schema now matters more. Once you start carrying state, field definitions, optionality, and versioning become shared contracts across many consumers.
+
+## Slide 8: Python Consuming ECST Example
+The Python example receives the event and builds a local cache used by an analytics service. This is one of the best uses of ECST. Analytics usually does not need perfectly fresh synchronous source-of-truth lookups on every event. It often needs enough state to classify, aggregate, or enrich its local models.
+
+By storing the carried state locally, the analytics service can answer its own queries quickly and avoid repeated API calls to the user service.
+
+The risk is that if the event stream lags or fields change unexpectedly, the local copy may be incomplete or stale. That means ECST consumers should be designed with replay and schema evolution in mind.
+
+## Slide 9: Go Event Structure Example
+The Go example highlights a common design decision: how much state should be included in an event. A minimal event might contain only an order ID. A richer event might include items and total value.
+
+This is not just a technical size issue. It is a coupling decision. A minimal event pushes more lookup work to consumers. A richer event shifts more responsibility to the producer and the shared schema.
+
+A good rule is to include the state that downstream consumers repeatedly need to perform their common tasks, but not to blindly ship an entire database row every time if most of it is irrelevant.
+
+## Slide 10: Design Diagram
+The diagram shows the user service publishing a user-created event that already contains the email address. The email service receives it and sends the welcome email without making an API call back to the user service.
+
+This diagram matters because it shows the practical value of the pattern very clearly. The consumer is operationally independent at processing time. The producer does not need to be available for the consumer to succeed.
+
+That independence is one of the main reasons event-driven architectures scale organizationally and operationally when designed well.
+
+## Slide 11: Risks and Tradeoffs
+The first risk is data duplication. The same facts are now stored or transmitted in many places. The second is staleness. If events are delayed or consumers fall behind, they may operate on older state. The third is event size. Larger payloads mean more network cost and more storage pressure in the broker or event log.
+
+The fourth and often most underestimated issue is schema coupling. Once many consumers depend on carried state, changing event structure becomes a compatibility problem. The practical takeaway is that ECST is powerful when autonomy matters, but it requires disciplined schema versioning and a clear idea of which state consumers truly need.

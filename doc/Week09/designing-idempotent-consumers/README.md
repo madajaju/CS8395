@@ -1,6 +1,9 @@
 # Designing Idempotent Consumers
 
+Video: https://youtu.be/VWc9H13JMUM
+
 **Purpose:** Provides practical strategies for building services that can process the same message multiple times without changing the system state beyond the initial call.
+
 
 **Outcomes**
 - Explain the necessity of idempotency in distributed systems

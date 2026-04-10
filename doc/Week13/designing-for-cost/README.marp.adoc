@@ -1,0 +1,94 @@
+= Designing for Cost
+:revdate: 2026-03-24
+:revealjs_theme: black
+:revealjs_transition: slide
+:source-highlighter: highlightjs
+:icons: font
+
+== Purpose
+Provides a framework for making architectural decisions that consider the financial impact of cloud infrastructure in distributed systems.
+
+== Outcomes
+- Identify hidden cloud costs such as egress, storage tiers, and IOPS.
+- Apply cost-saving patterns like autoscaling, spot instances, compression, and tiered storage.
+- Evaluate tradeoffs between performance, resilience, and cloud spend.
+
+== Overview
+In the cloud, scalable architecture often means scalable bills.
+- A system can be technically correct and still be financially unsustainable.
+- Cost-aware architecture is part of production design, not an afterthought.
+
+== The Pillars of Cloud Cost
+1. **Compute:** CPU and RAM charges.
+   - Use autoscaling and spot instances where appropriate.
+2. **Networking:** Egress and cross-zone or cross-region traffic.
+   - Moving data can cost more than teams expect.
+3. **Storage:** Hot, warm, and cold data tiers.
+   - Match storage cost to access frequency.
+
+== Cost-Aware Decisions
+| Decision | Low Cost | High Cost |
+| :--- | :--- | :--- |
+| **Data Format** | Binary (Protobuf, Avro) | Text (JSON, XML) |
+| **Scaling** | Horizontal (Small nodes) | Vertical (Mega-nodes) |
+| **Consistency** | Eventual (Async) | Strong (Sync/Locked) |
+| **Availability** | Single AZ | Multi-Region |
+
+== Code Example: Go (Compression)
+[source,go]
+----
+func compressAndSend(data []byte) {
+    var b bytes.Buffer
+    w := gzip.NewWriter(&b)
+    w.Write(data)
+    w.Close()
+    sendToExternalService(b.Bytes())
+}
+----
+
+== Code Example: Python (Spot Interruption)
+[source,python]
+----
+def handle_spot_interruption(signal, frame):
+    save_checkpoint_to_s3()
+    cleanup_local_resources()
+    sys.exit(0)
+----
+
+== Code Example: Node.js (Caching Costly API Calls)
+[source,javascript]
+----
+async function getCostlyData(id) {
+    const cached = await redis.get(`costly:${id}`);
+    if (cached) return cached;
+
+    const data = await fetchFromThirdParty(id);
+    await redis.set(`costly:${id}`, data, 'EX', 3600);
+    return data;
+}
+----
+
+== Design Diagram
+[plantuml, designing-for-cost-diagram, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Cloud Region" {
+    [Web Service] as Web
+    [Batch Job (Spot)] as Batch
+    database "S3 (Standard)" as S3
+    database "S3 (Glacier)" as Glacier
+}
+
+Web -> S3 : Read/Write Hot Data
+Batch -> S3 : Process Data
+Batch -> Glacier : Move data older than 30 days
+note right of Glacier : 90% Cheaper than Standard
+@enduml
+----
+
+== Risks and Tradeoffs
+- **Performance:** Compression saves bandwidth but costs CPU.
+- **Complexity:** Spot handling and tiering require more engineering work.
+- **Lock-in:** Provider-specific cost optimizations can make migration harder.

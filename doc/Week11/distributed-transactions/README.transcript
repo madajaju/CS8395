@@ -1,0 +1,74 @@
+# Distributed Transactions
+
+## Slide 1: Purpose
+Today we are covering distributed transactions, which is one of those topics that sounds attractive in theory and painful in practice. In a monolithic application with one database, transactions are comforting because they give a clean all-or-nothing guarantee. In a distributed system, a single business operation may involve several services, several databases, and several network calls. The question becomes whether we can preserve that same atomic behavior across boundaries that are slow, failure-prone, and independently deployed.
+
+This matters because business operations still feel atomic to users. A customer placing an order expects the order, payment, and inventory outcome to make sense together. They do not think in terms of separate services. Engineers therefore have to decide whether to coordinate those services with strict distributed transaction mechanisms, weaker eventual consistency patterns, or compensation logic when things go wrong.
+
+By the end of this lecture, you should understand why distributed transactions are difficult, what a transaction coordinator actually does, and why many high-scale systems choose local transactions plus messaging patterns instead of trying to preserve full ACID behavior across services.
+
+## Slide 2: Outcomes
+There are three major learning goals here. First, you should be able to contrast local transactions with distributed transactions. Second, you should be able to explain how network latency and partial failure change the consistency story. Third, you should understand why a transaction coordinator can become a bottleneck, an availability dependency, and an operational risk.
+
+The deeper goal is to improve your judgment. Many engineers encounter distributed transaction mechanisms and assume they are the most correct answer because they look closest to the database model they already trust. In practice, the strongest guarantee is not always the most practical one. Strong architects ask whether the coordination cost is worth it for the business workflow.
+
+## Slide 3: Overview
+A local transaction is relatively simple because one database engine controls the whole state change. It can lock rows, write logs, and either commit or roll back within one bounded environment. Distributed transactions are different because no single storage engine owns the whole workflow. Now several participants must agree on the final outcome.
+
+That agreement must happen across a network, and the network introduces uncertainty. A message may arrive late, an acknowledgment may disappear, a participant may fail after preparing but before committing, or the coordinator may crash mid-protocol. Each of these situations creates ambiguity about who believes the transaction succeeded.
+
+A helpful real-world analogy is a group contract that requires signatures from several separate offices in different cities. It is much easier to manage when everyone is in one room. Once the approvals are distributed, delays, lost paperwork, and unavailable signers become part of the process. The transaction is no longer just a logic problem. It is a coordination problem.
+
+## Slide 4: The Fallacy of Distributed Transactions
+The big fallacy is assuming strong ACID behavior scales cleanly from one database to many independent services. In reality, maintaining strict consistency across services often harms availability and throughput. If one participant is unavailable, the entire transaction may block or fail. If locks are held across the network, latency and contention increase quickly.
+
+This is why distributed transactions often conflict with microservice goals. Microservices are supposed to allow independent scaling and partial failure tolerance. A strict distributed transaction can couple several services so tightly that one service's slowness or outage drags the whole business flow down with it.
+
+A practical example is checkout. If order creation, inventory reservation, and payment capture all participate in one strict distributed transaction, then the checkout path inherits the uptime and latency of all of them together. That may be acceptable in some enterprise systems, but it is expensive operationally and difficult to scale.
+
+## Slide 5: Atomic Commit Protocols
+Atomic commit protocols try to solve the coordination problem by introducing a coordinator and a set of participants. The coordinator tracks transaction state and asks each participant whether it can commit. The participants do their local preparation and respond. Then the coordinator decides whether everyone should commit or everyone should abort.
+
+The most common example is Two-Phase Commit, or 2PC. In the prepare phase, participants reserve the ability to commit but do not finalize yet. In the commit phase, they either all finalize or all roll back, based on the coordinator's decision.
+
+What makes this appealing is clear intent: everyone should agree on one outcome. What makes it painful is the amount of waiting, locking, and dependency involved. Participants may need to hold resources while the coordinator is still collecting responses from others. That waiting becomes a throughput problem and, under failure, a blocking problem.
+
+## Slide 6: The Reality of Scale
+At real scale, many systems give up on strong distributed ACID coordination and move toward eventual consistency. Instead of forcing every participant to commit together, each service performs a local transaction in its own boundary and then communicates the outcome via events or asynchronous commands.
+
+This is not a lazy compromise. It is often a deliberate architectural decision. The system accepts that some workflows will complete in stages and that temporary inconsistencies may exist, because the alternative is too much locking, too much latency, and too much coordination failure.
+
+This is why patterns such as transactional outbox, sagas, and idempotent consumers appear so often in modern architectures. They are not just messaging tricks. They are practical replacements for trying to stretch strict transaction semantics across unreliable boundaries.
+
+## Slide 7: Java JTA Example
+The Java example uses JTA-style distributed transaction handling. The code looks clean because the complexity is hidden behind the framework. It appears as if inventory reservation and payment charge are just part of one transaction.
+
+That simplicity is somewhat deceptive. For this to work reliably, both resources must support the required transaction protocol, often XA-style coordination. The services and resource managers are now participating in a much larger coordination mechanism than the code alone suggests.
+
+This is a common lesson in enterprise software: an API may look elegant while the underlying operational behavior is expensive. Strong engineers look past the annotation and ask what locking, network coordination, and failure handling are actually happening underneath.
+
+## Slide 8: Python Manual Coordination Example
+The Python example is deliberately imperfect. It inserts an order locally, then calls another service to reserve inventory, and if that second step fails it tries to delete the first step manually. This is not a real distributed transaction. It is manual coordination with compensating cleanup.
+
+This example is useful because many systems accidentally start here. A developer writes step one, then step two, then maybe a rollback if step two fails. The problem is that failure timing can make manual cleanup unreliable. What if the remote call succeeded but the response was lost? What if the delete fails? What if another process already reacted to the first insert?
+
+The lesson is not that manual coordination is always wrong. The lesson is that once several services are involved, failure timing becomes the core problem. Naive rollback logic often breaks under real uncertainty.
+
+## Slide 9: Go Transactional Outbox Example
+The Go example shows the transactional outbox pattern, which is often a better alternative than a full distributed transaction. The service writes its business data and an event record into the same local database transaction. Later, another process reads from the outbox table and publishes the event to the message bus.
+
+This works well because it preserves atomicity within one local boundary. The service does not try to atomically commit across several systems at once. Instead, it guarantees that if the local business write succeeds, the intent to notify others is stored durably too.
+
+This is a strong example of designing for eventual consistency while still preserving local correctness. It is one of the reasons many distributed systems prefer local transactions plus asynchronous propagation over strict cross-service atomic commit.
+
+## Slide 10: Design Diagram
+The diagram shows classic 2PC. The coordinator asks the inventory and payment databases to prepare. Both respond that they are ready and hold the necessary resources. Then the coordinator tells them to commit, and both acknowledge the final state.
+
+This diagram matters because it makes the waiting and central coordination explicit. The participants are not acting independently. They are blocked on a shared decision path.
+
+That shared decision is what gives strong consistency, but it is also what creates vulnerability. If the coordinator fails at the wrong time or a participant cannot hear the final decision, the system may be left in an uncertain or blocked state.
+
+## Slide 11: Risks and Tradeoffs
+The first big risk is blocking. If the coordinator fails during commit, participants may keep locks or remain in an uncertain prepared state until recovery happens. The second is throughput. The network round-trips and held resources reduce the number of transactions the system can process per second. The third is autonomy loss. Services involved in the transaction become tightly coupled in uptime and performance.
+
+The practical takeaway is that distributed transactions are sometimes necessary, but they are rarely free and often not the default answer in large-scale service architectures. Strong consistency across service boundaries can be justified for some domains, but many systems prefer local correctness plus compensating behavior because it preserves availability and scale more effectively.

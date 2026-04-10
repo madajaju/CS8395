@@ -1,0 +1,137 @@
+# Spring WebFlux and Reactor Overview Transcript
+
+This transcript follows the slide flow from `README.md` and `README.marp.adoc`. It is written as speaker notes for a college audience that already knows basic web application concepts and needs a deeper, practical explanation of reactive programming with Spring WebFlux and Project Reactor.
+
+## Slide 1: Spring WebFlux and Reactor Overview
+
+"Today we're looking at Spring WebFlux and Project Reactor. The goal is not just to memorize new class names like `Mono` and `Flux`, but to understand why this model exists and what kind of problems it is trying to solve.
+
+If you have worked with traditional Spring MVC, you already know the common pattern: one incoming request gets matched to a controller method, a server thread handles the work, and that thread stays occupied until the response is ready. That model is simple and productive, and for many systems it is still the right answer. WebFlux is different because it is designed around non-blocking, asynchronous request processing.
+
+The key idea is that when an application spends much of its time waiting on I/O, such as network calls, message brokers, or databases, keeping a whole thread blocked during that wait can be wasteful. WebFlux tries to use those waiting periods more efficiently.
+
+An easy real-life analogy is a restaurant. In a blocking model, imagine a waiter who takes one table's order and then just stands there in the kitchen doorway doing nothing until the meal is done. That is expensive and inefficient. In a non-blocking model, the waiter takes the order, lets the kitchen do its work, and serves other tables while waiting for the meal to be ready.
+
+That does not mean reactive is automatically better. It means reactive is optimized for a specific environment: lots of waiting, lots of concurrency, and a need to keep the system responsive under load."
+
+## Slide 2: Goals
+
+"Our goals today are to explain `Mono` and `Flux`, show how WebFlux handles non-blocking I/O, apply timeout and fallback operators, and recognize misuse patterns.
+
+Think of these goals as moving from vocabulary to architecture to judgment. First, vocabulary: you need to know what these types represent. Second, architecture: you need to see how an HTTP request becomes a reactive pipeline. Third, judgment: you need to know when using WebFlux is smart engineering and when it is just adding complexity.
+
+Students often make the mistake of learning a technology only at the API level. They remember method names but not the design reason behind them. With Reactor, that is dangerous, because you can write code that looks reactive but still behaves like a blocking system underneath.
+
+By the end, I want you to be able to look at a service and ask practical questions: Are the dependencies reactive? Is the workload I/O-heavy? Do we have the observability to debug asynchronous flows? Are we using timeouts and fallback correctly? Those are the questions that separate architecture from syntax."
+
+## Slide 3: Overview
+
+"WebFlux is Spring's reactive web stack, and Reactor is the programming library underneath it. Reactor models asynchronous computations as streams of signals. The two main types are `Mono`, which represents zero or one result, and `Flux`, which represents zero to many results.
+
+It is important to understand that a `Mono` is not just a fancy wrapper around a value. It represents a pipeline that may eventually produce a value, or may complete empty, or may fail with an error. A `Flux` does the same thing, but for multiple items over time.
+
+The word 'signals' matters here. Reactive streams are not only about data. They are about events such as 'here is the next item,' 'the sequence completed,' or 'an error occurred.' That is why operator chains are so central in Reactor. You are not just calling methods one after another. You are defining how the stream should react to success, failure, transformation, filtering, and composition.
+
+Backpressure is another key idea. In many real systems, producers can generate data faster than consumers can safely handle it. Backpressure gives the consumer a way to signal demand. Without it, a fast source can overwhelm memory, CPU, downstream services, or the network.
+
+In practical terms, WebFlux works best when the rest of your stack is also non-blocking. If you use reactive controllers but then call a blocking database driver or a blocking SDK deep in the request path, you lose much of the benefit. It is like buying a race car and then driving it through heavy mud. The advertised speed does not matter much anymore.
+
+It also requires observability discipline. Debugging synchronous code is easier because the stack trace usually tells a coherent story. In reactive systems, the path of execution is split across asynchronous boundaries. If you do not have tracing, metrics, and good logging, a production issue becomes much harder to diagnose."
+
+## Slide 4: Reactive Request Path
+
+"Let's walk through the request path shown on this slide.
+
+First, the client sends an HTTP request to a WebFlux controller. That controller does not immediately compute the response in a blocking way. Instead, it returns a `Mono` or a `Flux`. That return value is basically a description of future work.
+
+Next, the Reactor pipeline is built. That pipeline may include calls to external services, transformations, filtering, timeout logic, retries, or fallbacks. The important part is that the dependency calls are non-blocking. Rather than sitting on a thread waiting, the pipeline registers what should happen when the async result arrives.
+
+When the dependency responds, Reactor processes the incoming signal. If a value arrives, that may trigger `map`, `flatMap`, or other operators. If an error occurs, the pipeline can route to recovery logic. If the sequence completes, the HTTP response can be finalized.
+
+This is a different mental model from 'call a method and wait for its return value.' Here, you are wiring together events and reactions.
+
+A useful real-world example is a flight search website. When a user submits a search, the application might contact several airline or aggregator APIs. In a blocking system, many request threads can pile up while waiting on those external calls. In a reactive system, the application can keep a smaller number of threads busy coordinating many requests in flight.
+
+One anecdotal pattern that engineering teams often see is that their average latency looks acceptable, but their worst-case latency explodes during downstream slowness. That is where the thread-per-request model starts to struggle. Threads get tied up, the queue grows, and the whole server becomes less responsive. Reactive systems do not eliminate latency, but they can avoid wasting resources while latency is happening."
+
+## Slide 5: Example: Mono.zip
+
+"This slide shows `Mono.zip`, which is used to combine independent asynchronous computations.
+
+In the example, the controller needs two things to build a dashboard: user information and order history. These are independent calls, so instead of making one call, waiting, and then making the other call, we can initiate both and combine the results when both are ready.
+
+`Mono.zip(user, orders)` says: wait until both Monos complete successfully, then hand me the pair of results. After that, the `map` operator transforms the tuple into a `DashboardDto`.
+
+Architecturally, this is important because it expresses concurrency directly in the composition model. You are not manually creating threads, managing futures, or blocking on joins. The code states the dependency relationship clearly: these two things can happen independently, and the response depends on both of them.
+
+This is like preparing a meal where the rice cooker and the oven can run at the same time. If the dishes are independent, serializing them only makes dinner later for no reason.
+
+There is also a design lesson here. `zip` works well when the calls are truly independent. If one step depends on the output of the prior step, then you would typically use a composition operator like `flatMap` instead.
+
+One caution: concurrent composition is not free. If each request fans out to many downstream calls, your service can become a pressure multiplier. A dashboard endpoint that calls ten other services for every single user request may look elegant in code but can create serious load amplification in production. So reactive composition gives you power, but the architecture still has to be disciplined."
+
+## Slide 6: Example: Timeout + Fallback
+
+"This example may be the most operationally important one in the whole deck.
+
+The pipeline calls `inventoryClient.check(sku)`, sets a timeout of 300 milliseconds, and then provides a fallback result of `InventoryStatus.unknown()` if something goes wrong.
+
+Why is this so important? Because in distributed systems, waiting forever is rarely acceptable. A slow dependency is often almost as damaging as a failed dependency. If your service keeps waiting without bounds, requests pile up, resources get consumed, users experience long delays, and eventually you may trigger a broader outage.
+
+The timeout says, in effect, 'after this point, the answer is not worth waiting for.' That is an engineering policy decision, not just a syntax trick.
+
+The fallback says, 'if the ideal answer is unavailable, here is a degraded but acceptable response.' For inventory, maybe the business can tolerate returning 'unknown' and letting the UI show a warning. For a payment authorization, maybe fallback is not acceptable and you must fail fast instead.
+
+A real-life analogy is rideshare pricing. If the pricing service cannot respond quickly enough, the app might show 'price temporarily unavailable' instead of making the user stare at a spinner for fifteen seconds. Users often prefer a fast, honest degraded answer over a slow, uncertain one.
+
+This is also where students should see that reactive programming is not only about performance. It is about control. Timeouts, retries, circuit breakers, and fallbacks allow you to describe service behavior under stress. In mature systems, these policies matter as much as the happy-path logic.
+
+One anecdote from production systems in general: teams often discover that the biggest latency problem was not average performance, but a small percentage of requests that waited far too long. Those long-tail requests create support issues, poor user trust, and resource exhaustion. Timeout and fallback patterns are how you actively manage that tail."
+
+## Slide 7: When to Use
+
+"So when should you actually choose WebFlux?
+
+The first strong fit is high-concurrency, I/O-heavy APIs. If your service spends most of its time waiting on networks, streams, or external systems, reactive processing can improve concurrency efficiency.
+
+The second fit is streaming endpoints or event-driven flows. For example, server-sent events, live notifications, telemetry feeds, or systems consuming and producing streams of events are naturally aligned with `Flux`.
+
+The third fit is organizational readiness. If your team already uses reactive clients, reactive database drivers, and has tracing and metrics that work across asynchronous boundaries, then WebFlux becomes much more practical.
+
+A concrete example would be a live sports score service. Thousands of clients may stay connected while updates arrive over time. That pattern is more naturally modeled as a stream than as repeated blocking request-response cycles.
+
+Another example is a gateway or aggregation service that makes many outbound network calls. If those calls are reactive and the traffic is high, WebFlux can be a good fit.
+
+But the key phrase is 'good fit,' not 'universal solution.' Reactive is specialized. You do not adopt it because it sounds modern. You adopt it because the workload and platform justify it."
+
+## Slide 8: Tradeoffs and Pitfalls
+
+"Now for the part that matters most in real engineering: the tradeoffs and pitfalls.
+
+First, mixing reactive and blocking code defeats the benefits. If a reactive chain eventually calls a blocking JDBC driver or performs a long blocking file operation on the wrong thread, you can starve the event loop or scheduler threads and hurt throughput badly.
+
+Second, unbounded `flatMap` concurrency can overload downstream systems. If every input item launches uncontrolled concurrent work, you may create more pressure than your service or its dependencies can handle. Reactive systems do not magically prevent overload. They just give you tools to manage it if you use them correctly.
+
+Third, operator-heavy pipelines can raise the learning curve. A deeply chained sequence with many transformations, retries, conditionals, and context switches may be elegant to the author and confusing to everyone else. Code readability still matters.
+
+Fourth, you need to observe the system at each stage. Track queue depth, latency, timeouts, cancellations, and error rates. Without that visibility, troubleshooting becomes guesswork.
+
+Here is a real-world pattern that causes trouble: a team converts a controller to return `Mono`, but the service layer still makes blocking calls everywhere. On paper the app now looks reactive. In production, it still behaves like a blocking app, except it is harder to debug. That is worse than either model done cleanly.
+
+Another common misuse is over-applying reactive style to simple CRUD applications with modest load. If a service mostly reads and writes a local database, has straightforward traffic patterns, and the team is more fluent in imperative code, Spring MVC may be the better engineering choice.
+
+The lesson is simple: WebFlux is powerful, but it is not forgiving of sloppy design. The benefits show up when the whole system, including dependencies and operations, is aligned with the model."
+
+## Slide 9: Recap
+
+"To recap, WebFlux and Reactor provide a non-blocking model for handling asynchronous work in Spring applications. `Mono` represents zero or one result, and `Flux` represents zero to many results over time.
+
+This model is most useful in I/O-heavy, high-concurrency systems where waiting efficiently matters. It becomes especially valuable when you need streaming behavior, concurrent composition of remote calls, and precise control over latency with timeouts and fallbacks.
+
+At the same time, success depends on end-to-end design. Reactive controllers alone are not enough. The clients, drivers, error policies, and observability practices all need to support the approach.
+
+If you remember one sentence from this lecture, remember this: reactive programming is a tool for managing waiting, concurrency, and failure in networked systems. It is not a shortcut to better software by itself.
+
+When used well, it can improve resilience and concurrency behavior. When used casually, it can add complexity without solving the real bottleneck.
+
+That is the engineering mindset I want you to carry forward: do not ask only 'can I build this with WebFlux?' Ask 'what problem does WebFlux solve here, and what would it cost us to operate it well?'"

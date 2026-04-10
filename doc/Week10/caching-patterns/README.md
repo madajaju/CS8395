@@ -1,5 +1,7 @@
 # Caching Patterns
 
+Video: https://youtu.be/yF8CWUu0mYM
+
 **Purpose:** Explains how to use distributed caching to improve the performance and scalability of distributed systems, while navigating the complexities of data consistency.
 
 **Outcomes**

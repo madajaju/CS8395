@@ -1,9 +1,13 @@
 = Pub/Sub vs. Message Queues
 :revdate: 2024-03-24
 :revealjs_theme: black
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 :revealjs_transition: slide
 :source-highlighter: highlightjs
 :icons: font
+
+Video: https://youtu.be/Hjr_vw90lQA
 
 == Purpose
 Explains the fundamental differences between point-to-point queuing and one-to-many publish/subscribe models.

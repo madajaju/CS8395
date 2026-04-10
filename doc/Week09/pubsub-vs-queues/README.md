@@ -1,8 +1,10 @@
 # Pub/Sub vs. Message Queues
 
-**Purpose:** Explains the fundamental differences between point-to-point queuing and one-to-many publish/subscribe models, and how to choose the right one for your communication needs.
+Video: https://youtu.be/Hjr_vw90lQA 
 
-**Outcomes**
+**Purpo
+
+**Outco
 - Contrast the semantics of Message Queues and Pub/Sub
 - Identify appropriate use cases for each pattern
 - Analyze the impact on system scalability and consumer competition

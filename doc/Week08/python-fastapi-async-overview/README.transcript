@@ -1,0 +1,118 @@
+---
+
+### Slide 1 — Goals
+
+In this lecture we're diving into one of the most practical and powerful features of modern Python web development: asynchronous endpoints in FastAPI.
+
+By the end of this lecture you'll be able to explain *why* async matters in a web service context, identify the kinds of workloads that actually benefit from it — because not everything does — apply safe patterns for composing async calls, and recognize the pitfalls that can silently destroy the performance gains you were hoping for.
+
+This isn't just theory. We're going to look at real code, real tradeoffs, and the kind of decisions you'll face on the job.
+
+---
+
+### Slide 2 — Overview
+
+Let's set the stage. FastAPI is built on top of Starlette and runs on ASGI — the Asynchronous Server Gateway Interface. That's the foundation that makes async possible.
+
+When you define an endpoint with `async def`, you're writing a *coroutine*. The key word inside that coroutine is `await`. Every time your handler hits an `await`, it's essentially saying: "I'm going to pause here and wait for something — a database query, an HTTP call, a file read — and while I'm waiting, go ahead and handle other requests."
+
+This is the core value proposition: **better utilization of wait time**. A traditional synchronous server blocks a thread while waiting for I/O. An async server reuses that thread for other work. At high concurrency, this difference is enormous.
+
+But notice the last two bullet points on this slide — connection pooling and bounded concurrency. These aren't optional extras. They're the guardrails that keep async from becoming a liability. We'll come back to both.
+
+---
+
+### Slide 3 — Async Request Lifecycle
+
+Let's trace exactly what happens when a request comes in to an async FastAPI handler.
+
+A client sends a GET request. The FastAPI handler starts executing — synchronously at first — until it hits an `await`. At that point, control is yielded back to the ASGI event loop. The event loop is free to pick up another ready task — maybe another incoming request, maybe a resumed coroutine from a previous request.
+
+Meanwhile, the event loop dispatches the async I/O operation — say, an HTTP call to an external API. When that external API responds, the event loop marks our coroutine as ready to resume. On the next scheduling cycle, our handler picks up right where it left off, processes the response, and returns JSON to the client.
+
+The critical insight here is that **one thread can interleave many requests** as long as each request spends most of its time waiting. This is why async shines for I/O-bound services — API gateways, aggregation layers, anything that fans out to multiple downstream services.
+
+**Practical best practice:** Keep your handlers lean. The code between `await` points runs synchronously and blocks the event loop. If you have heavy computation between awaits, you're blocking every other coroutine.
+
+---
+
+### Slide 4 — Example: Async Aggregation
+
+Here's where async pays its biggest dividend. Look at this endpoint — it needs to fetch both a user profile and usage data before it can respond.
+
+The naive synchronous approach would fetch the profile, wait for it, then fetch usage, wait for it — sequential I/O. If each call takes 100ms, the total is 200ms.
+
+With `asyncio.gather`, both calls are launched *concurrently*. The event loop fires off both requests and waits for both to complete. If each takes 100ms, the total is still ~100ms — you've cut latency in half with a one-line change.
+
+This pattern — fan-out with gather — is the bread and butter of async API orchestration. Any time you have independent I/O calls that don't depend on each other's results, `asyncio.gather` is your tool.
+
+**Best practice:** Only use `gather` for truly independent calls. If call B depends on the result of call A, you still need to `await` them sequentially. Forcing parallelism on dependent calls is a logic error, not a performance win.
+
+**Tradeoff to consider:** `asyncio.gather` will raise an exception if *any* task fails, by default. In production, you often want `return_exceptions=True` so one failing downstream service doesn't blow up the entire response. Always think about partial failure handling.
+
+---
+
+### Slide 5 — Example: Async-Only Path
+
+This slide illustrates a simpler but equally important principle: **the entire call stack must be async**.
+
+Look at this report endpoint. It awaits `analytics_client.fetch()`. This only works correctly if `analytics_client` is an async-compatible library — something like `httpx` with async support, or `asyncpg` for PostgreSQL, or `motor` for MongoDB.
+
+If you swap that out for the `requests` library, or a synchronous database driver like `psycopg2`, you've introduced a **blocking call inside an async handler**. The event loop cannot yield during a blocking call. Your entire server stalls — every other coroutine waits — until that blocking operation completes.
+
+This is the single most common async mistake in Python. The code looks fine. It runs fine under low load. But under production traffic, you'll see latency spikes and worker saturation that are very hard to diagnose.
+
+**Best practice:** Audit every library you use in an async handler. If it doesn't have an async API, either find an async alternative or offload it to a thread pool using `asyncio.run_in_executor`. Never assume a library is async-safe just because it works.
+
+Also notice the comment about explicit timeout policies. Always set timeouts on your async HTTP clients. An awaited call with no timeout can hang indefinitely, holding a coroutine slot open and eventually exhausting your server's capacity.
+
+---
+
+### Slide 6 — When to Use
+
+So when should you actually reach for async? Three clear scenarios:
+
+**API orchestration** — when your service is a coordinator that calls multiple downstream services. This is the aggregation pattern we just saw. Async is a natural fit.
+
+**High-concurrency HTTP workloads** — when you expect many simultaneous connections and most of the work is waiting on I/O. Think public-facing APIs, webhook receivers, real-time dashboards.
+
+**Efficient wait-time utilization** — any service where the bottleneck is I/O latency rather than CPU. If your service spends 80% of its time waiting for a database, async can dramatically increase throughput without adding hardware.
+
+**When NOT to use async:** CPU-bound workloads. Image processing, machine learning inference, data transformation, cryptography — these don't benefit from async and can actually hurt performance because the GIL and the event loop add overhead. For CPU-bound work, use multiprocessing or a task queue like Celery.
+
+The honest answer is: most modern web services are I/O-bound, so async is usually the right default in FastAPI. But always profile before assuming.
+
+---
+
+### Slide 7 — Tradeoffs and Pitfalls
+
+Let's be direct about the downsides, because async is not a free lunch.
+
+**Blocking libraries** are the biggest trap. We covered this — one synchronous call in an async handler can stall your entire server. The fix is either an async library or `run_in_executor`, but both require deliberate action.
+
+**CPU-heavy work** needs to be offloaded. If you have a handler that does significant computation, you need to push it to a `ProcessPoolExecutor` or a separate worker service. Doing CPU work on the event loop thread is worse than synchronous code because it blocks *all* coroutines, not just one request.
+
+**Missing timeout and cancellation** is a silent killer. Every `await` that touches an external system needs a timeout. FastAPI supports request cancellation — if a client disconnects, the coroutine can be cancelled — but only if you've structured your code to respect cancellation signals. Libraries that don't support cancellation will keep running even after the client is gone, wasting resources.
+
+**Monitoring** is harder with async. Traditional thread-per-request models give you one thread per request, which maps cleanly to metrics. With async, one thread handles many requests. You need to monitor event loop lag, coroutine queue depth, and p95/p99 latency — not just average response time. Average latency can look fine while tail latency is catastrophic.
+
+**The honest tradeoff summary:** Async gives you better throughput per thread for I/O-bound workloads, but it increases code complexity, makes debugging harder, and introduces new failure modes. It's worth it for the right workloads — but it requires discipline.
+
+---
+
+### Slide 8 — Recap
+
+Let's bring it home.
+
+FastAPI async is genuinely powerful for I/O-bound services. The `async def` + `await` model, backed by an ASGI server like Uvicorn or Hypercorn, lets a single worker handle far more concurrent requests than a synchronous equivalent.
+
+The non-negotiable rule: **keep the entire dependency stack non-blocking**. One synchronous library call undoes all the benefits. Audit your dependencies. Use async clients. Set timeouts everywhere.
+
+And pair your async patterns with clear resource limits. Use connection pools with bounded sizes. Use semaphores to limit concurrency to downstream services. Monitor your event loop health in production.
+
+Async is not magic — it's a tool. Used correctly, it's one of the most effective ways to build high-throughput Python services without scaling horizontally. Used carelessly, it's a source of subtle, hard-to-diagnose production incidents.
+
+The best engineers don't just know *how* to use async — they know *when* it's the right choice, and they build the guardrails that keep it safe.
+
+---
+

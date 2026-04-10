@@ -1,0 +1,83 @@
+# Deployment Strategies
+
+## Slide 1: Purpose
+Today we are covering deployment strategies, which is really the study of how to change production safely. Writing new code is only part of shipping software. The other part is deciding how that code reaches real users without turning every release into a gamble.
+
+In distributed systems, the challenge is bigger because many instances, services, and dependencies may be involved. Teams usually cannot and should not update everything at once. Instead, they need strategies that let them roll forward gradually, observe behavior under real traffic, and roll back quickly when signals go bad.
+
+By the end of this lecture, you should be able to contrast rolling, blue-green, and canary strategies, understand the difference between deployment and release, and reason about rollback design as part of the deployment method rather than as an afterthought. The deeper goal is to see deployment as risk management, not just automation.
+
+## Slide 2: Outcomes
+There are three main outcomes here. First, you should be able to explain the major deployment strategies and when each is a good fit. Second, you should understand the role of feature flags in decoupling code rollout from user-visible release. Third, you should be able to reason about rollback differently depending on the chosen strategy.
+
+The deeper outcome is release engineering judgment. A mature team does not ask only how to ship code. It asks how to reduce blast radius, how to observe the new version separately, and how to recover quickly if assumptions are wrong. That is what distinguishes a routine deployment process from a risky one.
+
+## Slide 3: Overview
+Updating a production system without downtime usually means changing it gradually. That may involve replacing instances in place, switching traffic between environments, or sending only a small fraction of users to the new version first. The strategy determines how much of the production risk is exposed at once.
+
+A useful way to think about deployment strategy is as a risk-management technique. The code may already be tested in staging, but production has real traffic patterns, real data, and real user behavior. The deployment strategy decides how much uncertainty the team accepts in one step and how quickly it can reverse course when signals become unhealthy.
+
+This is why deployment design is tightly connected to observability. A release strategy is only as safe as the team's ability to measure what the new version is doing differently. If the team cannot separate old-version and new-version metrics, even a careful canary becomes much less trustworthy.
+
+## Slide 4: Rolling Updates
+A rolling update gradually replaces old instances with new ones. This is common in Kubernetes and other orchestrated environments because it keeps the system available while limiting extra infrastructure cost. The cluster slowly rotates old instances out and new instances in.
+
+The biggest advantage is low overhead. You do not need a full second production environment. The system stays online, and the rollout can often be managed by standard orchestration tools. This makes rolling updates a practical default for many teams.
+
+The biggest challenge is coexistence. For part of the rollout, old and new versions run simultaneously. That means APIs, event formats, and database schema assumptions must remain compatible across versions during the change window. Teams that ignore compatibility often discover that their deployment problem is really a data-evolution problem.
+
+## Slide 5: Blue Green Deployment
+Blue-green deployment keeps two environments: one currently serving production traffic and one prepared with the new version. Once the new environment is validated, the load balancer or routing layer switches traffic from blue to green in a relatively sharp cutover.
+
+This is attractive because rollback is conceptually simple. If the new environment behaves badly, traffic can switch back to the old one quickly. It is also operationally nice for testing because the new environment can be validated more completely before receiving real users.
+
+The cost is duplication and drift. Maintaining two supposedly identical environments is expensive, and if they are not actually identical, the confidence gained from blue-green assumptions is weaker than it looks. Blue-green is often operationally elegant on paper and more expensive in practice.
+
+## Slide 6: Canary Deployment
+A canary deployment sends only a small percentage of traffic to the new version first. If metrics remain healthy, the percentage is increased gradually until the new version becomes dominant. This limits blast radius while still exposing the new version to real production behavior.
+
+The power of canary deployment is that it turns release risk into a controlled experiment. The system does not have to guess whether the new version is safe for everyone. It observes real user traffic on a small slice first and promotes the version only if the indicators stay healthy.
+
+The challenge is that canaries require sensitive monitoring and accurate traffic segmentation. If the team cannot distinguish old-version and new-version behavior clearly, the canary signal becomes noisy or misleading. Canary strategy is only as strong as the telemetry that supports it.
+
+## Slide 7: Deployment vs. Release
+Deployment means the new code is running in production infrastructure. Release means the new feature is actually visible or active for users. These are not the same thing, and strong teams keep them separate when possible.
+
+Feature flags are one of the most important tools in that separation. A team can deploy code safely, then decide later which users should actually see the new behavior. That means code distribution and feature exposure become separate control decisions.
+
+This distinction is operationally valuable because rolling back a feature flag is often much faster and safer than rolling back a whole deployment. It also allows targeted releases by tenant, geography, or percentage of users.
+
+## Slide 8: Python Feature Flag Example
+The Python example shows a payment path controlled by a feature flag. The code for a new Stripe version is already deployed, but the release decision depends on whether the flag is enabled. This is a strong example of decoupling deployment from release.
+
+This approach is powerful because the team can test the path gradually, enable it for selected users, or disable it quickly without a full redeploy. In product organizations, this also enables experiments, phased rollouts, and rapid containment when a feature misbehaves.
+
+The tradeoff is code complexity and flag hygiene. Long-lived flags clutter code, create confusing branching behavior, and increase testing complexity. Flags are useful, but they have lifecycle cost and must be removed when they are no longer serving an active release purpose.
+
+## Slide 9: Go Rolling Update Example
+The Kubernetes rolling update example configures how many instances can be unavailable and how much extra capacity can be added during rollout. These settings are not cosmetic. They shape the real behavior of the deployment.
+
+If `maxUnavailable` is too high, the rollout may reduce serving capacity too aggressively and harm users even if the new version is healthy. If `maxSurge` is too low, the rollout may proceed too slowly or fail to preserve enough headroom during the change. The right settings depend on traffic level, startup time, and how much spare capacity the service normally has.
+
+This is a reminder that deployment strategy is not only conceptual. It often involves concrete operational settings that determine whether the system remains stable while versions overlap.
+
+## Slide 10: Java Canary Rollback Example
+The Java example shows automatic rollback based on canary error rate. This captures one of the strongest properties of canary releases: they can be tied to measured health rather than only human intuition. If the canary degrades beyond a threshold, the system can cut traffic automatically.
+
+That is powerful because it shortens reaction time. The system does not need to wait for a human to notice an error-rate spike in a dashboard. It already knows which signals matter and when the exposure should stop.
+
+The caution is signal quality. If thresholds are noisy, too broad, or too delayed, rollback may happen too late or too often. Automated rollback is only as good as the metrics and policies behind it.
+
+## Slide 11: Design Diagram
+The diagram shows a canary split where most traffic goes to the stable version and a small percentage goes to the new one. If errors on the canary exceed a threshold, traffic to the canary stops. This is a clean visual of deployment as controlled exposure rather than all-at-once replacement.
+
+The new version earns more traffic by behaving well under real conditions. That mindset is important because it frames deployment as an experiment that must pass progressively larger tests rather than as a one-time switch that everyone hopes succeeds.
+
+This is why canaries are so attractive in high-scale systems. They align release decisions with actual runtime evidence instead of optimism.
+
+## Slide 12: Risks and Tradeoffs
+All deployment strategies have tradeoffs. Rolling updates require backward compatibility during coexistence. Blue-green requires extra infrastructure and strong environment parity. Canary deployments demand stronger observability and smarter traffic control.
+
+The hardest part in many real deployments is state compatibility. The database schema, event formats, cache behavior, and configuration often need to support old and new versions at the same time. Teams sometimes think they have a deployment-strategy problem when they really have a shared-state compatibility problem.
+
+The practical takeaway is that there is no universally best deployment strategy. The right choice depends on infrastructure cost tolerance, rollback speed needs, traffic-management capability, compatibility constraints, and observability maturity. Strong teams choose deployment strategy the same way they choose architecture: by evaluating operational tradeoffs rather than following habit.

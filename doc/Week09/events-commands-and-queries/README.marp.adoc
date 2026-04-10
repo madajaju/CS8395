@@ -2,8 +2,12 @@
 :revdate: 2024-03-24
 :revealjs_theme: black
 :revealjs_transition: slide
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 :source-highlighter: highlightjs
 :icons: font
+
+Video: https://youtu.be/BDxTHvLn7sI
 
 == Purpose
 Differentiates the three primary message types in distributed systems and explains when to use each to maintain decoupled, maintainable architectures.

@@ -2,6 +2,8 @@
 
 **Purpose:** Explores the guarantees a message broker provides when moving data between systems and the tradeoffs of each approach.
 
+Video: https://youtu.be/CEHvlHWh0hU
+
 **Outcomes**
 - Define "At-Most-Once", "At-Least-Once", and "Exactly-Once" delivery
 - Recognize how network failures impact delivery guarantees

@@ -1,0 +1,76 @@
+# API Gateway vs. Service Mesh
+
+## Slide 1: Purpose
+Today we are covering API gateways and service meshes, which are two traffic-management concepts that students often confuse because both involve proxies, routing, security, and observability. The clearest way to separate them is by traffic direction and scope of responsibility. An API gateway usually sits at the edge of the system and manages north-south traffic, meaning traffic that enters from outside clients. A service mesh usually manages east-west traffic, meaning service-to-service communication inside the platform.
+
+That difference may sound simple, but it shapes security policy, retry behavior, observability, and where operational complexity lives. If a team confuses these responsibilities, it often ends up pushing client-facing concerns into internal infrastructure or expecting the mesh to solve API product problems it was never meant to solve.
+
+By the end of this lecture, you should be able to explain what each layer is for, identify where their responsibilities overlap, and reason about when a service mesh is worth its complexity versus when an API gateway plus application libraries is enough. The deeper goal is architectural judgment about traffic layers, not memorizing vendor names.
+
+## Slide 2: Outcomes
+There are three major goals here. First, you should be able to contrast API gateway and service mesh responsibilities clearly. Second, you should understand typical features such as authentication, rate limiting, mTLS, retries, circuit breaking, and traffic splitting in the correct context. Third, you should be able to explain when a service mesh adds more operational burden than value.
+
+The deeper outcome is maturity in tool selection. Strong teams do not adopt a mesh because it sounds modern, and they do not assume a gateway is the universal answer to all traffic management. They ask what traffic problem exists, where it occurs in the request path, and whether the proposed layer actually solves that specific problem.
+
+## Slide 3: Overview
+Traffic management is a first-class concern in distributed systems because requests do not simply move from user to code. They pass through gateways, proxies, services, sidecars, and backing systems. The traffic pattern also differs depending on whether the caller is external or internal. That distinction matters because user-facing traffic often carries different risks and requirements than service-to-service traffic.
+
+North-south traffic is the external traffic from users or outside systems into your environment. East-west traffic is the internal traffic among your own services. A gateway and a mesh often coexist because they solve different problems at different layers. One helps govern entry into the platform. The other helps govern trust and behavior inside it.
+
+A useful analogy is an airport. The API gateway is like the outer security and check-in area for passengers entering the airport. The service mesh is more like the controlled movement and security rules among internal airport systems and staff zones. Both involve rules and movement control, but they operate in different parts of the environment and serve different actors.
+
+## Slide 4: API Gateway
+An API gateway acts as the front door to the system. It is usually the single entry point for clients and handles coarse-grained edge concerns such as authentication, request routing, rate limiting, protocol translation, request shaping, and sometimes response aggregation. If mobile apps, browser clients, and partner systems all need to enter the platform, the gateway is a natural place to normalize how they do that.
+
+This is where user-facing policies often belong. For example, the gateway may validate OAuth tokens, enforce tenant-level quotas, convert external REST requests into internal service calls, or hide internal topology from clients. It can also simplify product evolution by making version routing or backward compatibility decisions at the edge rather than exposing every internal service detail directly.
+
+The gateway focuses on perimeter behavior. It is concerned with client experience and boundary security, not with the full lifecycle of service-to-service communication inside the platform. That is why an API gateway is usually necessary in public-facing systems even if there is no service mesh at all.
+
+## Slide 5: Service Mesh
+A service mesh is an infrastructure layer for internal service-to-service traffic. It usually manages mTLS, retries, circuit breaking, traffic splitting, policy enforcement, and per-hop observability for east-west communication. In many implementations, the mesh works through sidecar proxies such as Envoy placed alongside each service instance.
+
+The appeal is consistency. Retry logic, service identity, timeout behavior, and telemetry can be standardized across many services without requiring every application team to reinvent the same networking logic independently. This is particularly attractive in large platforms where many teams own many services and central governance is otherwise difficult.
+
+The cost is significant operational complexity. Once a mesh is adopted, there is now a control plane, sidecar lifecycle, certificate management, policy rollout, and more moving parts in every request path. If the platform team is not prepared to operate that complexity well, the mesh can become a new source of outages rather than a cure for inconsistency.
+
+## Slide 6: Comparison Table
+The comparison table captures the central separation. The API gateway is at the perimeter, usually user-facing, and works at coarse global routing scope. The service mesh is internal, not directly user-facing, and often works at much finer-grained instance-to-instance scope. They may share some primitives such as routing and policy, but they do not have the same primary job.
+
+This difference matters when teams accidentally overload one tool with the job of the other. An API gateway is not a full substitute for internal mTLS, service identity, and east-west policy. A service mesh is not a replacement for client onboarding, API monetization, version exposure, or edge authentication strategy. Confusing those roles usually produces awkward architecture and unclear ownership.
+
+A useful rule is that the gateway protects and shapes entry into the system, while the mesh governs trust and behavior inside the system. That sentence is not perfect for every edge case, but it is a strong starting mental model.
+
+## Slide 7: Spring Cloud Gateway Example
+The Spring Cloud Gateway example shows coarse-grained routing at the edge. Requests coming into one path are mapped to an upstream target according to centralized policy. This is exactly the kind of problem a gateway is supposed to solve.
+
+This routing is useful because it centralizes edge behavior. Teams can enforce authentication, request limits, path rewriting, and version routing in one place rather than rebuilding it separately in every backend. That is valuable operationally because the system gains one authoritative place to reason about external entry behavior.
+
+The limitation is that this says little about how service A should trust service B or how retries among internal services should behave. A gateway is excellent at shaping incoming traffic, but it does not automatically solve east-west reliability or service identity. That is where the mesh discussion begins.
+
+## Slide 8: Envoy Retry Filter Example
+The Envoy retry example illustrates internal traffic policy managed by infrastructure rather than by each application team writing its own retry loop. This is one of the most common service-mesh benefits. Instead of every team inventing slightly different timeout and retry logic, the platform can define more consistent behavior.
+
+That consistency can improve resilience and reduce duplicated code. It can also improve observability because retries and failures are measured in a common layer. But the danger is hidden retries. If retry behavior is enforced by the mesh and poorly understood by application teams, incidents can become confusing because the system is amplifying traffic outside the business code.
+
+This is one of the most important mesh tradeoffs. Centralizing policy is useful, but centralized policy still has to reflect application semantics. A retry that is safe for one idempotent read may be dangerous for a payment capture or a state-changing command. The mesh does not eliminate the need for architectural thought.
+
+## Slide 9: Node.js Manual Retry Example
+The Node.js example shows what internal communication looks like without a mesh. The service itself owns timeout and retry behavior. This is common in smaller systems or in organizations that prefer application libraries and shared SDKs rather than sidecar infrastructure.
+
+There is nothing inherently wrong with this approach. In fact, it may be simpler operationally because there are fewer platform layers to install, upgrade, and debug. A team with five services may be better served by disciplined libraries and clear coding standards than by a full service mesh.
+
+The tradeoff is inconsistency. Different teams may implement retries differently, forget circuit breaking, or instrument calls unevenly. A service mesh often becomes attractive when that application-level duplication is no longer governable at scale.
+
+## Slide 10: Design Diagram
+The diagram shows a client entering through an API gateway with north-south traffic, and then service-to-service communication flowing inside the mesh through sidecars using mTLS. This is a realistic picture of how both layers can coexist in one production architecture.
+
+What matters here is separation of concerns. The gateway decides how external traffic enters and is shaped. The mesh decides how internal traffic is authenticated, observed, and controlled. If those concerns are kept distinct, ownership and debugging become clearer.
+
+That separation is one reason organizations often adopt both rather than choosing one as a universal traffic tool. The choice is not usually gateway or mesh. The more realistic question is whether the system needs only an edge layer or both an edge layer and an internal governance layer.
+
+## Slide 11: Risks and Tradeoffs
+Both layers introduce tradeoffs. Every proxy hop adds some latency. A service mesh introduces substantial operational complexity through its control plane and sidecar model. A gateway becomes a critical central component that must be highly available and carefully protected. The mesh control plane also becomes operationally important even if the data plane is distributed.
+
+There are also organizational tradeoffs. A gateway often has clear ownership because it sits at the edge. Mesh policy can be harder because it spans platform engineering and application-team expectations. If the platform team pushes policies without understanding application semantics, internal reliability can actually get worse.
+
+The practical takeaway is that API gateways and service meshes solve different problems. A gateway is usually a clear default for edge traffic. A service mesh is worth adopting when internal traffic policy, identity, and observability have become difficult to manage consistently at the application layer. Strong teams add a mesh because it solves a real governance or scaling problem, not because it sounds elegant in architecture diagrams.

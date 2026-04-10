@@ -1,0 +1,69 @@
+# Capacity and Load Testing
+
+## Slide 1: Purpose
+Today we are covering capacity and load testing, which is the discipline of learning how a system behaves before real users discover its limits for you. Many teams say they care about performance, but what they actually have is a vague hope that the system will probably be fine because it survived a demo, survived a sprint review, or survived some low-volume staging traffic. That is not a capacity strategy. In distributed systems, guessing capacity is dangerous because the first bottleneck is often not obvious from reading code or looking at a diagram.
+
+This topic matters because systems usually fail gradually before they fail dramatically. Latency rises, queues back up, connection pools saturate, retries amplify the original problem, and autoscaling takes longer than the demand spike that triggered it. Users do not experience those as tidy internal metrics. They experience them as spinning checkout pages, duplicate submissions, or intermittent errors that are hard to reproduce. A good capacity-testing practice reveals those failure shapes early enough that the team can change architecture, tune limits, or revise SLOs before production traffic forces the lesson.
+
+By the end of this lecture, you should be able to distinguish load testing, stress testing, soak testing, and spike testing, explain the golden signals during performance testing, and reason about why capacity work is not just about finding one maximum requests-per-second number. It is about understanding graceful degradation, weak links, recovery behavior, and the user experience when the system is under pressure.
+
+## Slide 2: Outcomes
+There are three main outcomes here. First, you should be able to explain the different testing styles and what operational question each one answers. Second, you should be able to identify common bottlenecks such as CPU saturation, memory pressure, slow garbage collection, network limits, thread-pool exhaustion, and exhausted database connections. Third, you should be able to connect test results to SLIs and SLOs instead of making performance claims with no evidence.
+
+The deeper outcome is architectural judgment. A strong engineer does not ask only how much traffic the system handled in one benchmark. They ask what broke first, what degraded gracefully, what failed suddenly, whether backpressure worked, and what customers would have seen while the system was straining. That mindset turns performance testing from vanity benchmarking into operational learning.
+
+## Slide 3: Overview
+Capacity and load testing exist because production is a terrible place to discover basic scaling facts. The team needs a controlled way to answer questions such as how many concurrent users the system can support, where latency begins to rise, how autoscaling responds, and what dependency becomes dominant as demand grows.
+
+A common mistake is assuming the slowest-looking component must be the bottleneck. In practice, performance failures often emerge indirectly. A service may have plenty of CPU but still degrade badly because its database pool is exhausted. A cache may hide problems until a TTL wave triggers a coordinated miss storm. A reverse proxy may be the real limit while the application containers look fine. Sometimes the true bottleneck is not throughput at all, but queue time caused by one shared dependency.
+
+A useful analogy is highway traffic. The bottleneck is often not the longest stretch of road. It is the merge, the toll gate, or the broken signal light. Distributed systems behave the same way. The visible application logic is not always where throughput collapses. This is why strong load testing always pairs generated traffic with good observability. Without that, the team learns that the system got slow, but not why.
+
+## Slide 4: Core Testing Types
+Load testing means applying the expected level of traffic and verifying that the system meets its normal performance goals. This is the most business-aligned kind of testing because it asks whether the system behaves well under the conditions it is supposed to serve every day. If your product expects three thousand active users during the lunch rush, then a reasonable load test should model that kind of demand and check whether latency and error rate stay within SLO.
+
+Stress testing pushes beyond expected capacity until something breaks or degrades severely. This matters because teams need to know not only the safe range, but also the weakest link and the shape of failure. Does the system slow down gradually and reject excess work, or does it enter a retry storm and collapse? A payment platform that gracefully sheds load is very different from one that times out everywhere and leaves customers unsure whether charges went through.
+
+Soak testing holds a steady load for a long time to expose memory leaks, connection leaks, log growth, lock contention, or background cleanup problems that short tests never reveal. Spike testing abruptly increases traffic to observe autoscaling delay, queue buildup, cold-start cost, and the effectiveness of rate limiting. Mature teams use several of these, because each one answers a different operational question. If you only do one short benchmark, you are usually learning the least interesting part of the story.
+
+## Slide 5: Golden Signals
+The golden signals give a practical lens for observing a run. Latency tells you how long requests take. Traffic tells you how much demand is arriving. Errors tell you when requests are starting to fail. Saturation tells you how close the system is to a hard resource limit. These four together are much more informative than raw throughput alone.
+
+A system may still be processing many requests per second while latency is already becoming unacceptable. Another may show very few errors until saturation reaches a cliff and then fail suddenly. Looking only at average response time also hides too much, because users experience tail latency too. If p50 stays flat while p99 explodes, the system may look fine in a dashboard and still feel broken to real users.
+
+This is why teams should observe latency as a distribution, not a single number. Median, p95, and p99 often reveal stress before averages do. The practical question is not only can the system handle 500 requests per second. It is can it do that while meeting the user-facing latency promise, and what signal warns you before that promise breaks.
+
+## Slide 6: Go Custom Load Generator Example
+The Go example shows a simple custom hammer that continuously issues HTTP requests using worker goroutines. This is useful for understanding the mechanics of generated load and for quick experiments against a known endpoint. It is also a realistic pattern in teams that need to test an internal protocol or a highly specific sequence that off-the-shelf tools do not model well.
+
+The strength of a custom script is flexibility. You can shape payloads, schedule requests, and encode special cases with very little ceremony. The weakness is realism and observability. A simplistic hammer often does not model actual user behavior, backoff, think time, authentication flow, or mixed request types. It may also hide client-side bottlenecks, meaning the load generator becomes the limit before the system under test does.
+
+This is a useful lesson: generating traffic is easy; generating meaningful traffic is harder. If the test pattern does not resemble production usage, the discovered bottleneck may not resemble production either. Teams often learn this the hard way when a benchmark says the system is fine, but launch-day traffic triggers a completely different failure mode because real users search, write, retry, and browse in a more chaotic mix than the test ever modeled.
+
+## Slide 7: Python Locust Example
+The Locust example models a user workflow by defining a purchase task. This is closer to real behavior because the test tool simulates sequences of actions rather than raw HTTP floods. That distinction matters. Many product bottlenecks come from workflow shape, not just request count. A checkout path may trigger writes, reads, cache misses, fraud checks, and third-party calls very differently than a simple status endpoint.
+
+A good real-life example is an online ticket sale. The user does not just call one endpoint. They search events, load seat maps, reserve seats, submit payment, and refresh if things feel slow. That traffic mix places stress on caches, databases, and payment providers in a pattern that a single-endpoint benchmark will never reproduce. Workflow-oriented testing exposes where user behavior, not just raw volume, drives infrastructure cost and instability.
+
+The tradeoff is complexity. More realistic behavior takes more effort to define and maintain. Test data has to make sense. User sessions must not all behave identically. Dependencies may need sandbox credentials. But that extra effort is often justified because the results are much more meaningful for product-facing systems.
+
+## Slide 8: Node.js Autocannon Example
+The Autocannon example is a high-performance benchmarking tool invoked from the command line. This is a good fit for quick HTTP throughput tests and repeatable baseline measurement. A team might use it before and after a code change to see whether a new validation layer or serialization format regressed a hot endpoint.
+
+This kind of narrow benchmarking is valuable because not every performance question needs a huge end-to-end scenario. Sometimes you really do need to know whether one endpoint got slower after a framework upgrade. In that case, a focused tool is exactly right. It gives fast feedback and can be part of the normal engineering loop rather than a once-a-quarter exercise.
+
+The limitation is scope. Benchmarking an isolated endpoint is not the same as capacity planning for a real system. It does not capture downstream dependencies, mixed workloads, queue buildup, or user think time. So the correct interpretation is not this service can handle ten thousand requests per second in production. The correct interpretation is this endpoint under this synthetic condition behaved this way.
+
+## Slide 9: Design Diagram
+The diagram shows a load generator sending increasing traffic into the system under test while the application queries the database and exports metrics. The note identifies the database pool saturating around 500 requests per second and latency rising sharply afterward. This is exactly the kind of insight a useful test should reveal.
+
+The goal is not merely to say the system handled a number. The goal is to identify the specific dependency or resource that became the limit and understand what users experienced after that point. If latency climbs because database connections are queued, then the next engineering question might be whether the pool is undersized, the queries are inefficient, the workload needs caching, or the service should shed load earlier.
+
+This also shows why load testing and observability belong together. Without monitoring, a load generator only tells you that performance got worse. With metrics, logs, and traces, you can tell whether the application was CPU-bound, whether queries slowed, whether retries amplified traffic, and whether one hot route caused the pain. That is the difference between a graph and an explanation.
+
+## Slide 10: Risks and Tradeoffs
+Capacity testing has real costs. Large runs consume compute and bandwidth. Staging environments rarely match production exactly because production has different data shape, network conditions, and background traffic. Synthetic runs can pollute storage with fake records. Poorly isolated tests can even affect neighboring infrastructure or trigger autoscaling and billing surprises.
+
+There are also organizational tradeoffs. If tests are too realistic, they become expensive and hard to maintain. If they are too synthetic, they become easy to run but less trustworthy. If teams only test happy paths, they may miss the recovery behavior that matters most during incidents. If they only test until the first failure, they may never learn whether the system recovers cleanly after load falls.
+
+The practical takeaway is that capacity testing is not about producing the biggest chart in a slide deck. It is about learning the system's safe operating zone, its degradation pattern, and its first hard limits. Strong teams use that information to set realistic SLOs, tune autoscaling, implement backpressure, and make failure behavior predictable before real traffic forces the issue.

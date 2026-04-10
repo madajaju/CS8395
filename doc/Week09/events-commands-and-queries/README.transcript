@@ -1,0 +1,84 @@
+# Events, Commands, and Queries
+
+## Slide 1: Purpose
+This lecture is about one of the most useful language tools in distributed architecture: distinguishing events, commands, and queries. At first glance, these may look like minor naming choices, but they actually shape coupling, ownership, and system behavior. If you call everything a message, teams start building systems where intent is ambiguous. A service sends something onto the network, another service receives it, and nobody is fully clear whether the sender was ordering work, announcing a fact, or asking for data. That ambiguity leads to brittle integration.
+
+In mature systems, clear message semantics help teams design cleaner interfaces. A command says do this. An event says this happened. A query says tell me something. Those differences affect routing, error handling, service independence, and scaling strategy. They also influence how developers read code. A well-named command or event can communicate business intent faster than a paragraph of documentation.
+
+By the end of this lecture, you should be able to define the semantic differences among commands, events, and queries, map each one to realistic system interactions, and explain why mixing them carelessly creates architectural problems. Just as importantly, you should be able to look at an integration point and ask, what kind of communication is this really supposed to be?
+
+## Slide 2: Overview
+Distributed systems are built from conversations between services. The quality of those conversations determines how tightly the services are coupled. If one service directly tells another service exactly what to do every time something happens, you may get fast coordination but also tight dependency. If a service simply publishes facts and lets others decide whether to react, you gain flexibility but lose some direct control. If a service asks for data synchronously, you may get fresh answers but also add runtime dependency and latency.
+
+A good analogy is communication inside a hospital. A doctor writing an order for a nurse to administer medication is like a command. It is directed, intentional, and expects one responsible party to act. A lab system publishing that a test result is now available is like an event. It is a fact that many people may care about, but the publisher does not direct each consumer individually. A receptionist asking for a patient’s room number is like a query. It requests information and should not change the hospital state.
+
+When teams fail to keep these meanings separate, architectures become confusing. They publish events that are secretly commands. They issue queries that trigger writes. They create commands with names that sound like historical facts. The result is not only messy naming. It is hidden coupling and incorrect operational assumptions.
+
+## Slide 3: Commands
+A command is an instruction to perform a specific action. It is future-oriented. The sender is saying, do this now or as soon as you can. Commands are usually targeted to one responsible handler because the sender knows which service owns that business capability. A payment service can receive ProcessPayment. A shipping service can receive CreateShipment. A user service can receive ResetPassword.
+
+Commands are useful when you need clear ownership and explicit intent. In an online store, when the checkout service wants payment to occur, it should send a command to the payment service, not emit a vague event and hope someone interprets it correctly. Commands are strong because they make responsibility visible. If the command fails, you know which service was supposed to handle it.
+
+But commands also create tighter coupling. The sender needs to know who should receive the instruction and often depends on that handler being available or at least reachable through an agreed path. If a system overuses commands, it can turn into a central orchestration web where every service tells every other service what to do. That often creates what teams call a god service: one component knows too much and coordinates too much. When that happens, replacing or evolving services becomes harder.
+
+A practical rule is that commands are best when the sender has legitimate authority to request an action and there is a clear business owner for that action. If you are not sure who owns the responsibility, it may not be a command at all.
+
+## Slide 4: Events
+An event is a statement of fact about something that already happened. It is past-oriented. The publisher is not instructing anyone; it is announcing history. PaymentProcessed, UserRegistered, InventoryReserved, and OrderShipped are event-style names because they describe completed business facts. Good events are declarative and often use past tense because they are telling the truth about the system state.
+
+Events are powerful because they reduce coupling. The publishing service does not need to know who is listening. That means a new subscriber can be added later without modifying the original publisher. For example, when an order service publishes OrderPlaced, today the inventory and shipping services may subscribe. Later, analytics, fraud detection, customer notifications, and loyalty points can subscribe too. The order service does not need hard-coded knowledge of any of them.
+
+The downside is that events can make flows harder to trace. If one business outcome triggers five downstream reactions across different services, debugging the end-to-end behavior becomes harder than following a direct command chain. This is where distributed tracing, clear schemas, and event catalogs become important. Events give flexibility, but they can also create what developers informally call event spaghetti if everything reacts to everything with little discipline.
+
+A useful test is this: if the message could be true even when nobody listens, it is probably an event. The fact stands on its own. That is a stronger semantic foundation than publishing something that secretly depends on a subscriber doing the real work.
+
+## Slide 5: Queries
+A query is a request for information. It asks for state without intending to change state. Queries are usually synchronous, though they do not have to be, and they should be side-effect free from the caller’s perspective. GetOrderStatus, FindUserByEmail, and CalculateShippingQuote are query-style operations because they ask for data or computation results rather than triggering business mutation.
+
+Queries matter because they keep read concerns separate from write concerns. When a frontend asks for the details of an order, it should not accidentally start a fulfillment workflow. When a reporting tool asks for sales totals, it should not update inventory. That sounds obvious, but many systems violate it in subtle ways by logging, mutating caches incorrectly, or triggering lazy write behavior inside read paths.
+
+In microservices, queries also raise performance questions. Sometimes the answer a client needs lives in one service, so the query is straightforward. Other times the answer is spread across services, which leads to API composition, read models, or CQRS-style approaches. For example, a customer dashboard may need profile data from one service, subscription data from another, and recent invoices from a third. If the dashboard issues synchronous queries to all three at runtime, latency compounds. This is why query design is not just about semantics. It also affects user experience and operational load.
+
+A strong team treats queries as read-only contracts and resists the temptation to bury business side effects inside them.
+
+## Slide 6: Architectural Comparison
+The comparison table captures the central differences. Commands are instructions about the future. Events are facts about the past. Queries are requests about the present. Commands are targeted and usually imply responsibility. Events are broadcast and decoupled. Queries are targeted but read-oriented. Commands produce side effects. Queries should not. Events describe the result of side effects rather than causing them directly, even though consumers may choose to react with their own later work.
+
+This comparison helps when reviewing architecture diagrams. If a line between services is labeled with a command, you should expect ownership and directed intent. If it is labeled with an event, you should expect decoupling and optional consumers. If it is labeled as a query, you should expect a read interaction and think about latency, caching, and failure behavior.
+
+A common classroom mistake is to think the three forms are interchangeable because they all move data. They are not. The semantic contract is as important as the payload. A message schema without clear semantic intent is like a sentence without a verb tense. You might still guess the meaning, but misunderstandings are likely.
+
+## Slide 7: Go Command Example
+The Go command example defines a CreateUserCommand struct and a handler that persists a user. This is a classic targeted operation. The handler knows it has work to do, and the sender expects a user creation attempt to occur. In real systems, command handlers often also perform validation, authorization checks, and domain rule enforcement before committing state.
+
+What is useful about the example is the naming. CreateUserCommand is imperative. It does not say UserCreated because the user has not been created yet. That distinction may feel small, but it matters. If the operation fails, the command was still valid as a request, but the event UserCreated would be false. Good names reduce confusion in logs, code, and incident response.
+
+In practice, commands often produce events after successful completion. The user service handles CreateUser, saves the user, and then emits UserCreated. That sequence keeps cause and effect clean. The command asks for work. The event reports the outcome.
+
+## Slide 8: Python Event Example
+The Python event example creates a UserCreatedEvent and publishes it to a bus. That is a clean pub-sub pattern. The publisher does not target a specific service. It says, this user now exists, and interested consumers may react. One subscriber might send a welcome email. Another might initialize a profile. Another might update analytics.
+
+The real value of this style shows up as the system evolves. If the signup flow later needs fraud scoring or CRM synchronization, those behaviors can subscribe to the event without forcing the user service to make direct calls to each new dependency. This keeps the core service simpler and reduces the chance that adding one downstream consumer breaks the signup path.
+
+The operational caution is that events need governance. You need versioning, schema discipline, and observability. If publishers change event meaning casually or consumers assume fields that are not guaranteed, decoupling turns into confusion. Events remove direct compile-time coupling, but they require stronger contract discipline.
+
+## Slide 9: Java Query Example
+The Java query example defines GetOrderQuery and a handler that returns an OrderResponse from a repository. This is straightforward, but that simplicity is the point. Queries should be boring in the best sense. They should ask for data clearly and return it predictably.
+
+In production, query handlers often become the place where read performance strategies matter most. You may use specialized indexes, projection tables, cache layers, or denormalized read models to answer queries quickly. For example, an ecommerce site may keep a customer-facing order summary table specifically so that GetOrderStatus returns quickly without joining several write-optimized tables at runtime.
+
+A useful design question is whether the query belongs on the transactional service itself or on a separate read model. That depends on scale, freshness needs, and ownership. The important point here is that the query asks for information. It is not secretly asking another service to perform work.
+
+## Slide 10: Design Diagram
+The design diagram demonstrates how the three message types cooperate in one system. A user first issues a query to ask for order status. That query flows through the API gateway to the ordering service and returns data. Later, the user places an order, which is a command. The ordering service handles the command, persists the order, and acknowledges the result. After that, the ordering service emits the OrderPlaced event, which inventory and shipping consume independently.
+
+This is a good architecture pattern because each message type is used for what it does best. Queries fetch information. Commands initiate owned work. Events distribute business facts. That separation makes the system easier to reason about. If something goes wrong, you can ask whether the failure happened in the read path, the write path, or a downstream reaction path.
+
+This pattern also scales organizationally. Different teams can own subscribers without changing the core publisher. The ordering team can focus on commands and order truth. Other teams can build on events. Frontend teams can optimize around query contracts.
+
+## Slide 11: Risks and Tradeoffs
+Each style has tradeoffs. Too many commands can create tight coupling and orchestration overload. Too many loosely governed events can create event spaghetti that is hard to debug. Query-heavy architectures can suffer from latency and availability problems if every screen requires fan-out calls across many services.
+
+Another common risk is semantic drift. Teams start with clear definitions but later use an event to tell another team what to do because it feels more decoupled, or they let a query trigger cache mutation and side effects because it is convenient. Over time the system loses its architectural clarity.
+
+The practical takeaway is to treat message type as part of the design contract, not just naming style. If you are giving an instruction, call it a command. If you are announcing a completed fact, call it an event. If you are asking for information, make it a query and keep it side-effect free. Clear semantics do not solve every distributed systems problem, but they prevent a large class of avoidable confusion.

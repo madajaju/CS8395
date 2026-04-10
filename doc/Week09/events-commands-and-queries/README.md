@@ -1,5 +1,7 @@
 # Events, Commands, and Queries
 
+Video: https://youtu.be/BDxTHvLn7sI
+
 **Purpose:** Differentiates the three primary message types in distributed systems and explains when to use each to maintain decoupled, maintainable architectures.
 
 **Outcomes**

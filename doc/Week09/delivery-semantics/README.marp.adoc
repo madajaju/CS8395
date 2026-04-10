@@ -2,8 +2,12 @@
 :revdate: 2024-03-24
 :revealjs_theme: black
 :revealjs_transition: slide
+:revealjs_width: "100%"
+:revealjs_height: "100%"
 :source-highlighter: highlightjs
 :icons: font
+
+Video: https://youtu.be/CEHvlHWh0hU
 
 == Purpose
 Explores the guarantees a message broker provides when moving data between systems and the tradeoffs of each approach.
