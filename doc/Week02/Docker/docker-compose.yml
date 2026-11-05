@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   zookeeper:
-    image: bitnami/zookeeper:3.8
+    image: soldevelo/zookeeper:3.8
     container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
@@ -12,7 +12,7 @@ services:
       - kafka-net
 
   kafka:
-    image: bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: kafka
     depends_on:
       - zookeeper
@@ -30,7 +30,7 @@ services:
       - kafka-net
 
   producer1:
-    image: bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: producer1
     depends_on:
       - kafka
@@ -48,7 +48,7 @@ services:
       - kafka-net
 
   producer2:
-    image: bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: producer2
     depends_on:
       - kafka
@@ -66,7 +66,7 @@ services:
       - kafka-net
 
   consumer1:
-    image: bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: consumer1
     depends_on:
       - kafka
@@ -81,7 +81,7 @@ services:
       - kafka-net
 
   consumer2:
-    image: bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: consumer2
     depends_on:
       - kafka
@@ -96,7 +96,7 @@ services:
       - kafka-net
 
   consumer3:
-    image: bitnami/kafka:3.5
+    image: soldevelo/kafka:3.5
     container_name: consumer3
     depends_on:
       - kafka
